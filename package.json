@@ -1,0 +1,22 @@
+{
+  "name": "ts-webcam",
+  "version": "1.0.0",
+  "description": "A TypeScript library for managing webcam access using the MediaDevices API",
+  "main": "dist/ts-webcam.js",
+  "types": "dist/ts-webcam.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "webcam",
+    "typescript",
+    "mediadevices",
+    "browser"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}
