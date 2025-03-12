@@ -49,6 +49,11 @@ class Webcam {
                 currentFocusMode: "none",
                 supportedFocusModes: [],
             },
+            currentOrientation: "portrait-primary",
+            currentPermission: {
+                camera: "prompt",
+                microphone: "prompt",
+            },
         };
         this.deviceChangeListener = null;
         this.orientationChangeListener = null;
@@ -158,18 +163,35 @@ class Webcam {
         });
         // ตั้งค่า orientation change listener
         this.orientationChangeListener = () => {
-            var _a;
-            if (this.isActive() && ((_a = this.state.config) === null || _a === void 0 ? void 0 : _a.autoRotation)) {
-                // รีสตาร์ทกล้องเพื่อปรับการหมุน
-                const wasActive = this.isActive();
-                if (wasActive) {
-                    this.stop();
-                    this.start().catch((error) => {
-                        var _a;
-                        if ((_a = this.state.config) === null || _a === void 0 ? void 0 : _a.onError) {
-                            this.state.config.onError(new CameraError("camera-initialization-error", "Failed to restart camera after orientation change", error));
-                        }
-                    });
+            if (this.isActive()) {
+                if (screen.orientation) {
+                    console.log("Screen orientation is supported");
+                    const orientation = screen.orientation.type;
+                    const angle = screen.orientation.angle;
+                    console.log(`Orientation type: ${orientation}, angle: ${angle}`);
+                    // เก็บค่า orientation ปัจจุบัน
+                    this.state.currentOrientation = orientation;
+                    switch (orientation) {
+                        case "portrait-primary":
+                            console.log("Portrait (ปกติ)");
+                            break;
+                        case "portrait-secondary":
+                            console.log("Portrait (กลับหัว)");
+                            break;
+                        case "landscape-primary":
+                            console.log("Landscape (ปกติ)");
+                            break;
+                        case "landscape-secondary":
+                            console.log("Landscape (กลับด้าน)");
+                            break;
+                        default:
+                            console.log("Unknown orientation");
+                            this.state.currentOrientation = "unknown";
+                    }
+                }
+                else {
+                    console.log("screen.orientation is not supported");
+                    this.state.currentOrientation = "unknown";
                 }
             }
         };
@@ -313,68 +335,20 @@ class Webcam {
         return __awaiter(this, void 0, void 0, function* () {
             var _a;
             try {
-                // ตรวจสอบว่ารองรับ Permissions API หรือไม่
                 if ((_a = navigator === null || navigator === void 0 ? void 0 : navigator.permissions) === null || _a === void 0 ? void 0 : _a.query) {
-                    console.log("permission query");
-                    // ใช้ Permissions API
                     const { state } = yield navigator.permissions.query({
                         name: "camera",
                     });
+                    this.state.currentPermission.camera = state;
                     return state;
                 }
-                // ถ้าไม่รองรับ ใช้วิธีเดิม
-                let tempStream = null;
-                try {
-                    console.log("old way");
-                    tempStream = yield navigator.mediaDevices.getUserMedia({ video: true });
-                    return "granted";
-                }
-                catch (error) {
-                    if (error instanceof Error) {
-                        if (error.name === "NotAllowedError" ||
-                            error.name === "PermissionDeniedError") {
-                            return "denied";
-                        }
-                    }
-                    return "prompt";
-                }
-                finally {
-                    if (tempStream) {
-                        tempStream.getTracks().forEach((track) => track.stop());
-                    }
-                }
-            }
-            catch (error) {
-                // กรณีเกิดข้อผิดพลาดจาก Permissions API
-                if (error instanceof Error) {
-                    console.warn("Permissions API error:", error);
-                    // ลองใช้วิธีเดิม
-                    return this.checkCameraPermissionFallback();
-                }
+                this.state.currentPermission.camera = "prompt";
                 return "prompt";
             }
-        });
-    }
-    checkCameraPermissionFallback() {
-        return __awaiter(this, void 0, void 0, function* () {
-            let tempStream = null;
-            try {
-                tempStream = yield navigator.mediaDevices.getUserMedia({ video: true });
-                return "granted";
-            }
             catch (error) {
-                if (error instanceof Error) {
-                    if (error.name === "NotAllowedError" ||
-                        error.name === "PermissionDeniedError") {
-                        return "denied";
-                    }
-                }
+                console.warn("Permissions API error:", error);
+                this.state.currentPermission.camera = "prompt";
                 return "prompt";
-            }
-            finally {
-                if (tempStream) {
-                    tempStream.getTracks().forEach((track) => track.stop());
-                }
             }
         });
     }
@@ -382,79 +356,82 @@ class Webcam {
         return __awaiter(this, void 0, void 0, function* () {
             var _a;
             try {
-                // ตรวจสอบว่ารองรับ Permissions API หรือไม่
                 if ((_a = navigator === null || navigator === void 0 ? void 0 : navigator.permissions) === null || _a === void 0 ? void 0 : _a.query) {
-                    // ใช้ Permissions API
                     const { state } = yield navigator.permissions.query({
                         name: "microphone",
                     });
+                    this.state.currentPermission.microphone = state;
                     return state;
                 }
-                // ถ้าไม่รองรับ ใช้วิธีเดิม
-                let tempStream = null;
-                try {
-                    tempStream = yield navigator.mediaDevices.getUserMedia({ audio: true });
-                    return "granted";
-                }
-                catch (error) {
-                    if (error instanceof Error) {
-                        if (error.name === "NotAllowedError" ||
-                            error.name === "PermissionDeniedError") {
-                            return "denied";
-                        }
-                    }
-                    return "prompt";
-                }
-                finally {
-                    if (tempStream) {
-                        tempStream.getTracks().forEach((track) => track.stop());
-                    }
-                }
+                this.state.currentPermission.microphone = "prompt";
+                return "prompt";
             }
             catch (error) {
-                // กรณีเกิดข้อผิดพลาดจาก Permissions API
-                if (error instanceof Error) {
-                    console.warn("Permissions API error:", error);
-                    // ลองใช้วิธีเดิม
-                    return this.checkMicrophonePermissionFallback();
-                }
+                console.warn("Permissions API error:", error);
+                this.state.currentPermission.microphone = "prompt";
                 return "prompt";
             }
         });
     }
-    checkMicrophonePermissionFallback() {
+    requestMediaPermission(mediaType) {
         return __awaiter(this, void 0, void 0, function* () {
-            let tempStream = null;
             try {
-                tempStream = yield navigator.mediaDevices.getUserMedia({ audio: true });
+                const stream = yield navigator.mediaDevices.getUserMedia({
+                    [mediaType]: true,
+                });
+                stream.getTracks().forEach((track) => track.stop());
+                const permissionType = mediaType === "video" ? "camera" : "microphone";
+                this.state.currentPermission[permissionType] = "granted";
                 return "granted";
             }
             catch (error) {
                 if (error instanceof Error) {
                     if (error.name === "NotAllowedError" ||
                         error.name === "PermissionDeniedError") {
+                        const permissionType = mediaType === "video" ? "camera" : "microphone";
+                        this.state.currentPermission[permissionType] = "denied";
                         return "denied";
                     }
                 }
+                const permissionType = mediaType === "video" ? "camera" : "microphone";
+                this.state.currentPermission[permissionType] = "prompt";
                 return "prompt";
-            }
-            finally {
-                if (tempStream) {
-                    tempStream.getTracks().forEach((track) => track.stop());
-                }
             }
         });
     }
     requestPermissions() {
         return __awaiter(this, void 0, void 0, function* () {
             var _a;
+            // ขอสิทธิ์กล้องก่อนเสมอ
+            const cameraPermission = yield this.requestMediaPermission("video");
+            // ขอสิทธิ์ไมโครโฟนเฉพาะเมื่อต้องการใช้งาน
+            let microphonePermission = "prompt";
+            if ((_a = this.state.config) === null || _a === void 0 ? void 0 : _a.audio) {
+                microphonePermission = yield this.requestMediaPermission("audio");
+            }
             return {
-                camera: yield this.checkCameraPermission(),
-                microphone: ((_a = this.state.config) === null || _a === void 0 ? void 0 : _a.audio)
-                    ? yield this.checkMicrophonePermission()
-                    : "prompt",
+                camera: cameraPermission,
+                microphone: microphonePermission,
             };
         });
+    }
+    // เพิ่มเมธอดใหม่สำหรับตรวจสอบสถานะสิทธิ์ปัจจุบัน
+    getCurrentPermissions() {
+        return Object.assign({}, this.state.currentPermission);
+    }
+    // เพิ่มเมธอดสำหรับตรวจสอบว่าต้องขอสิทธิ์หรือไม่
+    needsPermissionRequest() {
+        var _a;
+        return (this.state.currentPermission.camera === "prompt" ||
+            (!!((_a = this.state.config) === null || _a === void 0 ? void 0 : _a.audio) &&
+                this.state.currentPermission.microphone === "prompt"));
+    }
+    // เพิ่มเมธอดสำหรับตรวจสอบว่าถูกปฏิเสธสิทธิ์หรือไม่
+    hasPermissionDenied() {
+        var _a;
+        return (this.state.currentPermission.camera === "denied" ||
+            (!!((_a = this.state.config) === null || _a === void 0 ? void 0 : _a.audio) &&
+                this.state.currentPermission.microphone === "denied"));
     }
     // Private helper methods
     initializeWebcam() {
@@ -465,14 +442,6 @@ class Webcam {
             this.validatePermissions(permissions);
             yield this.openCamera();
         });
-    }
-    validatePermissions(permissions) {
-        if (permissions.camera === "denied") {
-            throw new CameraError("permission-denied", "Camera permission denied");
-        }
-        if (this.state.config.audio && permissions.microphone === "denied") {
-            throw new CameraError("microphone-permission-denied", "Microphone permission denied");
-        }
     }
     openCamera() {
         return __awaiter(this, void 0, void 0, function* () {
@@ -621,6 +590,9 @@ class Webcam {
                 focusModeActive: false,
                 currentFocusMode: "none",
                 supportedFocusModes: [],
+            }, currentOrientation: "portrait-primary", currentPermission: {
+                camera: "prompt",
+                microphone: "prompt",
             } });
     }
     updateDeviceList() {
@@ -637,6 +609,14 @@ class Webcam {
                 console.error("Error enumerating devices:", error);
             }
         });
+    }
+    validatePermissions(permissions) {
+        if (permissions.camera === "denied") {
+            throw new CameraError("permission-denied", "กรุณาอนุญาตให้ใช้งานกล้อง");
+        }
+        if (this.state.config.audio && permissions.microphone === "denied") {
+            throw new CameraError("microphone-permission-denied", "กรุณาอนุญาตให้ใช้งานไมโครโฟน");
+        }
     }
 }
 exports.Webcam = Webcam;

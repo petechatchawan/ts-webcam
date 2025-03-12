@@ -146,16 +146,131 @@ webcam.stopDeviceTracking();
 
 ### Permission Management
 
-```typescript
-// Check individual permissions
-const cameraPermission = await webcam.checkCameraPermission();
-const micPermission = await webcam.checkMicrophonePermission();
-// Returns: 'granted' | 'denied' | 'prompt'
+การจัดการสิทธิ์การใช้งานกล้องและไมโครโฟนมี 4 ส่วนหลัก:
 
-// Check both permissions at once
-const permissions = await webcam.requestPermissions();
-console.log("Camera permission:", permissions.camera);
-console.log("Microphone permission:", permissions.microphone);
+1. ตรวจสอบสถานะสิทธิ์:
+
+```typescript
+// ตรวจสอบสถานะสิทธิ์กล้อง
+const cameraStatus = await webcam.checkCameraPermission();
+console.log("สถานะสิทธิ์กล้อง:", cameraStatus); // 'granted' | 'denied' | 'prompt'
+
+// ตรวจสอบสถานะสิทธิ์ไมโครโฟน
+const micStatus = await webcam.checkMicrophonePermission();
+console.log("สถานะสิทธิ์ไมโครโฟน:", micStatus); // 'granted' | 'denied' | 'prompt'
+
+// ดึงสถานะสิทธิ์ปัจจุบันทั้งหมด
+const currentPermissions = webcam.getCurrentPermissions();
+console.log("สถานะสิทธิ์ปัจจุบัน:", currentPermissions);
+```
+
+2. ขอสิทธิ์การใช้งาน:
+
+```typescript
+try {
+  // ตรวจสอบก่อนว่าต้องขอสิทธิ์หรือไม่
+  if (webcam.needsPermissionRequest()) {
+    const permissions = await webcam.requestPermissions();
+
+    if (permissions.camera === "granted") {
+      console.log("ได้รับสิทธิ์การใช้งานกล้อง");
+    }
+
+    if (permissions.microphone === "granted") {
+      console.log("ได้รับสิทธิ์การใช้งานไมโครโฟน");
+    }
+  }
+} catch (error) {
+  if (error instanceof CameraError) {
+    switch (error.code) {
+      case "permission-denied":
+        console.log("ผู้ใช้ปฏิเสธการใช้งานกล้อง");
+        break;
+      case "microphone-permission-denied":
+        console.log("ผู้ใช้ปฏิเสธการใช้งานไมโครโฟน");
+        break;
+    }
+  }
+}
+```
+
+3. ตรวจสอบสถานะการปฏิเสธสิทธิ์:
+
+```typescript
+// ตรวจสอบว่าถูกปฏิเสธสิทธิ์หรือไม่
+if (webcam.hasPermissionDenied()) {
+  console.log("กรุณาเปิดสิทธิ์การใช้งานในการตั้งค่าเบราว์เซอร์");
+}
+```
+
+4. การจัดการข้อผิดพลาด:
+
+```typescript
+webcam.setupConfiguration({
+  // ...
+  onError: (error: CameraError) => {
+    switch (error.code) {
+      case "permission-denied":
+        console.log("กรุณาอนุญาตให้ใช้งานกล้อง");
+        break;
+      case "microphone-permission-denied":
+        console.log("กรุณาอนุญาตให้ใช้งานไมโครโฟน");
+        break;
+      case "no-permissions-api":
+        console.log("เบราว์เซอร์ไม่รองรับ Permissions API");
+        break;
+    }
+  },
+});
+```
+
+#### หมายเหตุ:
+
+- `currentPermission` ใน state เก็บสถานะสิทธิ์ปัจจุบันของทั้งกล้องและไมโครโฟน
+- `getCurrentPermissions()` ใช้ดึงสถานะสิทธิ์ปัจจุบัน
+- `needsPermissionRequest()` ใช้ตรวจสอบว่าต้องขอสิทธิ์หรือไม่
+- `hasPermissionDenied()` ใช้ตรวจสอบว่าถูกปฏิเสธสิทธิ์หรือไม่
+- สถานะสิทธิ์มี 3 แบบ:
+  - `granted`: ได้รับอนุญาตแล้ว
+  - `denied`: ถูกปฏิเสธ
+  - `prompt`: ยังไม่เคยขอสิทธิ์หรือต้องขอใหม่
+
+#### ตัวอย่างการใช้งานร่วมกับ UI:
+
+```typescript
+// ตรวจสอบสถานะสิทธิ์เมื่อโหลดคอมโพเนนต์
+useEffect(() => {
+  const checkPermissions = async () => {
+    await webcam.checkCameraPermission();
+    await webcam.checkMicrophonePermission();
+    const permissions = webcam.getCurrentPermissions();
+
+    // อัปเดต UI ตามสถานะสิทธิ์
+    if (webcam.hasPermissionDenied()) {
+      setShowSettingsButton(true);
+    } else if (webcam.needsPermissionRequest()) {
+      setShowRequestButton(true);
+    }
+  };
+
+  checkPermissions();
+}, []);
+
+// แสดงปุ่มตามสถานะสิทธิ์
+return (
+  <div>
+    {webcam.needsPermissionRequest() && (
+      <button onClick={() => webcam.requestPermissions()}>
+        ขออนุญาตใช้งานกล้อง
+      </button>
+    )}
+    {webcam.hasPermissionDenied() && (
+      <button onClick={() => openBrowserSettings()}>
+        เปิดการตั้งค่าสิทธิ์
+      </button>
+    )}
+  </div>
+);
 ```
 
 ### Advanced Camera Controls

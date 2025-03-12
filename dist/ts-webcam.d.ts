@@ -61,7 +61,13 @@ export interface WebcamState {
     lastError: CameraError | null;
     devices: DeviceInfo[];
     capabilities: WebcamCapabilities;
+    currentOrientation?: OrientationType;
+    currentPermission: {
+        camera: PermissionState;
+        microphone: PermissionState;
+    };
 }
+export type OrientationType = "portrait-primary" | "portrait-secondary" | "landscape-primary" | "landscape-secondary" | "unknown";
 export declare class Webcam {
     private state;
     private deviceChangeListener;
@@ -92,15 +98,19 @@ export declare class Webcam {
     setFocusMode(mode: string): Promise<void>;
     updateConfig(newConfig: Partial<WebcamConfig>): void;
     checkCameraPermission(): Promise<PermissionState>;
-    private checkCameraPermissionFallback;
     checkMicrophonePermission(): Promise<PermissionState>;
-    private checkMicrophonePermissionFallback;
+    private requestMediaPermission;
     requestPermissions(): Promise<{
         camera: PermissionState;
         microphone: PermissionState;
     }>;
+    getCurrentPermissions(): {
+        camera: PermissionState;
+        microphone: PermissionState;
+    };
+    needsPermissionRequest(): boolean;
+    hasPermissionDenied(): boolean;
     private initializeWebcam;
-    private validatePermissions;
     private openCamera;
     private tryResolution;
     private tryAnyResolution;
@@ -112,4 +122,5 @@ export declare class Webcam {
     private stopStream;
     private resetState;
     private updateDeviceList;
+    private validatePermissions;
 }

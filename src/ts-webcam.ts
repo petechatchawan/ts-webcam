@@ -126,7 +126,20 @@ export interface WebcamState {
   lastError: CameraError | null;
   devices: DeviceInfo[];
   capabilities: WebcamCapabilities;
+  currentOrientation?: OrientationType;
+  currentPermission: {
+    camera: PermissionState;
+    microphone: PermissionState;
+  };
 }
+
+// เพิ่ม type สำหรับ orientation
+export type OrientationType =
+  | "portrait-primary"
+  | "portrait-secondary"
+  | "landscape-primary"
+  | "landscape-secondary"
+  | "unknown";
 
 export class Webcam {
   // รวม state ทั้งหมดไว้ในที่เดียว
@@ -147,6 +160,11 @@ export class Webcam {
       focusModeActive: false,
       currentFocusMode: "none",
       supportedFocusModes: [],
+    },
+    currentOrientation: "portrait-primary",
+    currentPermission: {
+      camera: "prompt",
+      microphone: "prompt",
     },
   };
 
@@ -307,12 +325,15 @@ export class Webcam {
 
     // ตั้งค่า orientation change listener
     this.orientationChangeListener = () => {
-      if (this.isActive() && this.state.config?.autoRotation) {
+      if (this.isActive()) {
         if (screen.orientation) {
           console.log("Screen orientation is supported");
-          const orientation = screen.orientation.type;
+          const orientation = screen.orientation.type as OrientationType;
           const angle = screen.orientation.angle;
           console.log(`Orientation type: ${orientation}, angle: ${angle}`);
+
+          // เก็บค่า orientation ปัจจุบัน
+          this.state.currentOrientation = orientation;
 
           switch (orientation) {
             case "portrait-primary":
@@ -329,28 +350,11 @@ export class Webcam {
               break;
             default:
               console.log("Unknown orientation");
-          }
-
-          // แจ้งเตือนผู้ใช้ว่าต้อง restart กล้องเอง
-          if (this.state.config?.onError) {
-            this.state.config.onError(
-              new CameraError(
-                "camera-initialization-error",
-                `Screen orientation changed to ${orientation}. Please restart the camera manually.`
-              )
-            );
+              this.state.currentOrientation = "unknown";
           }
         } else {
           console.log("screen.orientation is not supported");
-          // แจ้งเตือนกรณีไม่รองรับ
-          if (this.state.config?.onError) {
-            this.state.config.onError(
-              new CameraError(
-                "camera-initialization-error",
-                "Screen orientation detection is not supported on this device."
-              )
-            );
-          }
+          this.state.currentOrientation = "unknown";
         }
       }
     };
@@ -561,118 +565,50 @@ export class Webcam {
   // Permission management
   public async checkCameraPermission(): Promise<PermissionState> {
     try {
-      // ตรวจสอบว่ารองรับ Permissions API หรือไม่
       if (navigator?.permissions?.query) {
-        console.log("permission query");
-
-        // ใช้ Permissions API
         const { state } = await navigator.permissions.query({
           name: "camera" as PermissionName,
         });
-
+        this.state.currentPermission.camera = state as PermissionState;
         return state as PermissionState;
       }
-
-      // ถ้าไม่รองรับ ใช้วิธีเดิม
-      let tempStream: MediaStream | null = null;
-      try {
-        console.log("old way");
-        tempStream = await navigator.mediaDevices.getUserMedia({ video: true });
-        return "granted";
-      } catch (error) {
-        if (error instanceof Error) {
-          if (
-            error.name === "NotAllowedError" ||
-            error.name === "PermissionDeniedError"
-          ) {
-            return "denied";
-          }
-        }
-        return "prompt";
-      } finally {
-        if (tempStream) {
-          tempStream.getTracks().forEach((track) => track.stop());
-        }
-      }
-    } catch (error) {
-      // กรณีเกิดข้อผิดพลาดจาก Permissions API
-      if (error instanceof Error) {
-        console.warn("Permissions API error:", error);
-        // ลองใช้วิธีเดิม
-        return this.checkCameraPermissionFallback();
-      }
+      this.state.currentPermission.camera = "prompt";
       return "prompt";
-    }
-  }
-
-  private async checkCameraPermissionFallback(): Promise<PermissionState> {
-    let tempStream: MediaStream | null = null;
-    try {
-      tempStream = await navigator.mediaDevices.getUserMedia({ video: true });
-      return "granted";
     } catch (error) {
-      if (error instanceof Error) {
-        if (
-          error.name === "NotAllowedError" ||
-          error.name === "PermissionDeniedError"
-        ) {
-          return "denied";
-        }
-      }
+      console.warn("Permissions API error:", error);
+      this.state.currentPermission.camera = "prompt";
       return "prompt";
-    } finally {
-      if (tempStream) {
-        tempStream.getTracks().forEach((track) => track.stop());
-      }
     }
   }
 
   public async checkMicrophonePermission(): Promise<PermissionState> {
     try {
-      // ตรวจสอบว่ารองรับ Permissions API หรือไม่
       if (navigator?.permissions?.query) {
-        // ใช้ Permissions API
         const { state } = await navigator.permissions.query({
           name: "microphone" as PermissionName,
         });
+        this.state.currentPermission.microphone = state as PermissionState;
         return state as PermissionState;
       }
-
-      // ถ้าไม่รองรับ ใช้วิธีเดิม
-      let tempStream: MediaStream | null = null;
-      try {
-        tempStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        return "granted";
-      } catch (error) {
-        if (error instanceof Error) {
-          if (
-            error.name === "NotAllowedError" ||
-            error.name === "PermissionDeniedError"
-          ) {
-            return "denied";
-          }
-        }
-        return "prompt";
-      } finally {
-        if (tempStream) {
-          tempStream.getTracks().forEach((track) => track.stop());
-        }
-      }
+      this.state.currentPermission.microphone = "prompt";
+      return "prompt";
     } catch (error) {
-      // กรณีเกิดข้อผิดพลาดจาก Permissions API
-      if (error instanceof Error) {
-        console.warn("Permissions API error:", error);
-        // ลองใช้วิธีเดิม
-        return this.checkMicrophonePermissionFallback();
-      }
+      console.warn("Permissions API error:", error);
+      this.state.currentPermission.microphone = "prompt";
       return "prompt";
     }
   }
 
-  private async checkMicrophonePermissionFallback(): Promise<PermissionState> {
-    let tempStream: MediaStream | null = null;
+  private async requestMediaPermission(
+    mediaType: "video" | "audio"
+  ): Promise<PermissionState> {
     try {
-      tempStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        [mediaType]: true,
+      });
+      stream.getTracks().forEach((track) => track.stop());
+      const permissionType = mediaType === "video" ? "camera" : "microphone";
+      this.state.currentPermission[permissionType] = "granted";
       return "granted";
     } catch (error) {
       if (error instanceof Error) {
@@ -680,14 +616,15 @@ export class Webcam {
           error.name === "NotAllowedError" ||
           error.name === "PermissionDeniedError"
         ) {
+          const permissionType =
+            mediaType === "video" ? "camera" : "microphone";
+          this.state.currentPermission[permissionType] = "denied";
           return "denied";
         }
       }
+      const permissionType = mediaType === "video" ? "camera" : "microphone";
+      this.state.currentPermission[permissionType] = "prompt";
       return "prompt";
-    } finally {
-      if (tempStream) {
-        tempStream.getTracks().forEach((track) => track.stop());
-      }
     }
   }
 
@@ -695,12 +632,45 @@ export class Webcam {
     camera: PermissionState;
     microphone: PermissionState;
   }> {
+    // ขอสิทธิ์กล้องก่อนเสมอ
+    const cameraPermission = await this.requestMediaPermission("video");
+
+    // ขอสิทธิ์ไมโครโฟนเฉพาะเมื่อต้องการใช้งาน
+    let microphonePermission: PermissionState = "prompt";
+    if (this.state.config?.audio) {
+      microphonePermission = await this.requestMediaPermission("audio");
+    }
+
     return {
-      camera: await this.checkCameraPermission(),
-      microphone: this.state.config?.audio
-        ? await this.checkMicrophonePermission()
-        : "prompt",
+      camera: cameraPermission,
+      microphone: microphonePermission,
     };
+  }
+
+  // เพิ่มเมธอดใหม่สำหรับตรวจสอบสถานะสิทธิ์ปัจจุบัน
+  public getCurrentPermissions(): {
+    camera: PermissionState;
+    microphone: PermissionState;
+  } {
+    return { ...this.state.currentPermission };
+  }
+
+  // เพิ่มเมธอดสำหรับตรวจสอบว่าต้องขอสิทธิ์หรือไม่
+  public needsPermissionRequest(): boolean {
+    return (
+      this.state.currentPermission.camera === "prompt" ||
+      (!!this.state.config?.audio &&
+        this.state.currentPermission.microphone === "prompt")
+    );
+  }
+
+  // เพิ่มเมธอดสำหรับตรวจสอบว่าถูกปฏิเสธสิทธิ์หรือไม่
+  public hasPermissionDenied(): boolean {
+    return (
+      this.state.currentPermission.camera === "denied" ||
+      (!!this.state.config?.audio &&
+        this.state.currentPermission.microphone === "denied")
+    );
   }
 
   // Private helper methods
@@ -712,21 +682,6 @@ export class Webcam {
     this.validatePermissions(permissions);
 
     await this.openCamera();
-  }
-
-  private validatePermissions(permissions: {
-    camera: PermissionState;
-    microphone: PermissionState;
-  }): void {
-    if (permissions.camera === "denied") {
-      throw new CameraError("permission-denied", "Camera permission denied");
-    }
-    if (this.state.config!.audio && permissions.microphone === "denied") {
-      throw new CameraError(
-        "microphone-permission-denied",
-        "Microphone permission denied"
-      );
-    }
   }
 
   private async openCamera(): Promise<void> {
@@ -907,6 +862,11 @@ export class Webcam {
         currentFocusMode: "none",
         supportedFocusModes: [],
       },
+      currentOrientation: "portrait-primary",
+      currentPermission: {
+        camera: "prompt",
+        microphone: "prompt",
+      },
     };
   }
 
@@ -920,6 +880,21 @@ export class Webcam {
       }));
     } catch (error) {
       console.error("Error enumerating devices:", error);
+    }
+  }
+
+  private validatePermissions(permissions: {
+    camera: PermissionState;
+    microphone: PermissionState;
+  }): void {
+    if (permissions.camera === "denied") {
+      throw new CameraError("permission-denied", "กรุณาอนุญาตให้ใช้งานกล้อง");
+    }
+    if (this.state.config!.audio && permissions.microphone === "denied") {
+      throw new CameraError(
+        "microphone-permission-denied",
+        "กรุณาอนุญาตให้ใช้งานไมโครโฟน"
+      );
     }
   }
 }
