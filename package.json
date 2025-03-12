@@ -7,6 +7,7 @@
   "scripts": {
     "build": "tsc",
     "test": "echo \"Error: no test specified\" && exit 1",
+    "format": "prettier --write \"src/**/*.ts\"",
     "prepare": "npm run build"
   },
   "keywords": [
@@ -31,5 +32,8 @@
   "bugs": {
     "url": "https://github.com/yourusername/ts-webcam/issues"
   },
-  "homepage": "https://github.com/yourusername/ts-webcam#readme"
+  "homepage": "https://github.com/yourusername/ts-webcam#readme",
+  "dependencies": {
+    "prettier": "^3.5.3"
+  }
 }
