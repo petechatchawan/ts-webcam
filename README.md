@@ -11,8 +11,9 @@ A TypeScript library for managing webcam access using the MediaDevices API. This
 - Event callbacks for start and error handling
 - Permission management for camera and microphone
 - Advanced camera capabilities (zoom, torch, focus mode)
-- Device change tracking with callbacks
-- Comprehensive status tracking and error handling
+- Device change tracking
+- Comprehensive error handling with error codes
+- Detailed status tracking
 
 ## Installation
 
@@ -25,7 +26,7 @@ npm install ts-webcam
 ### Basic Example
 
 ```typescript
-import { Webcam } from "ts-webcam";
+import { Webcam, CameraError } from "ts-webcam";
 
 // Create Webcam instance
 const webcam = new Webcam();
@@ -46,16 +47,88 @@ webcam.setupConfiguration({
   autoRotation: true,
   previewElement: document.getElementById("preview") as HTMLVideoElement,
   onStart: () => console.log("Webcam started"),
-  onError: (error) => console.error("Error:", error),
+  onError: (error: CameraError) => {
+    console.error("Error code:", error.code);
+    console.error("Error message:", error.message);
+    if (error.originalError) {
+      console.error("Original error:", error.originalError);
+    }
+  },
 });
 
-// Start the webcam
-await webcam.start();
+// Start the webcam with error handling
+try {
+  await webcam.start();
+} catch (error) {
+  if (error instanceof CameraError) {
+    switch (error.code) {
+      case "permission-denied":
+        console.log("กรุณาอนุญาตให้ใช้งานกล้อง");
+        break;
+      case "no-device":
+        console.log("ไม่พบอุปกรณ์กล้อง");
+        break;
+      case "camera-already-in-use":
+        console.log("กล้องกำลังถูกใช้งานโดยแอพอื่น");
+        break;
+      default:
+        console.log("เกิดข้อผิดพลาด:", error.message);
+    }
+  }
+}
 ```
 
-### Device Management
+### Error Handling
 
-The library provides methods to track and manage connected devices:
+The library provides a comprehensive error handling system with specific error codes:
+
+```typescript
+// Get last error
+const error = webcam.getLastError();
+if (error) {
+  console.log("Error code:", error.code);
+  console.log("Error message:", error.message);
+  if (error.originalError) {
+    console.log("Original error:", error.originalError);
+  }
+}
+
+// Clear error and reset status
+webcam.clearError();
+```
+
+Error codes are categorized as follows:
+
+1. Permission-related errors:
+
+   - `no-permissions-api`: Browser does not support the Permissions API
+   - `permission-denied`: User denied camera access
+   - `microphone-permission-denied`: User denied microphone access
+
+2. Device and configuration errors:
+
+   - `configuration-error`: Camera constraints cannot be satisfied
+   - `no-device`: No camera device found
+   - `no-media-devices-support`: Browser does not support media devices
+   - `invalid-device-id`: Invalid device ID provided
+   - `no-resolutions`: No resolutions specified
+
+3. Camera initialization and operation errors:
+
+   - `camera-start-error`: Failed to start the camera
+   - `camera-initialization-error`: Failed to initialize the camera
+   - `no-stream`: No video stream available
+   - `camera-settings-error`: Failed to apply camera settings
+   - `camera-stop-error`: Failed to stop the camera
+   - `camera-already-in-use`: Camera is already in use by another application
+
+4. Camera functionality errors:
+   - `zoom-not-supported`: Zoom is not supported
+   - `torch-not-supported`: Torch is not supported
+   - `focus-not-supported`: Focus mode is not supported
+   - `device-list-error`: Failed to get device list
+
+### Device Management
 
 ```typescript
 // Start tracking device changes
@@ -67,19 +140,11 @@ const videoDevices = webcam.getVideoDevices();
 const audioInputDevices = webcam.getAudioInputDevices();
 const audioOutputDevices = webcam.getAudioOutputDevices();
 
-// Example: Check for new video devices periodically
-setInterval(() => {
-  const videoDevices = webcam.getVideoDevices();
-  console.log("Current video devices:", videoDevices);
-}, 1000);
-
 // Stop tracking when no longer needed
 webcam.stopDeviceTracking();
 ```
 
 ### Permission Management
-
-The library provides methods to check and request permissions:
 
 ```typescript
 // Check individual permissions
@@ -91,16 +156,9 @@ const micPermission = await webcam.checkMicrophonePermission();
 const permissions = await webcam.requestPermissions();
 console.log("Camera permission:", permissions.camera);
 console.log("Microphone permission:", permissions.microphone);
-
-// Start webcam only if permissions are granted
-if (permissions.camera === "granted") {
-  await webcam.start();
-}
 ```
 
 ### Advanced Camera Controls
-
-The library supports advanced camera controls when available:
 
 ```typescript
 // Get camera capabilities
@@ -108,87 +166,55 @@ const capabilities = webcam.getCapabilities();
 
 // Zoom control
 if (capabilities.zoom) {
-  await webcam.setZoom(2.0); // 2x zoom
+  try {
+    await webcam.setZoom(2.0); // 2x zoom
+  } catch (error) {
+    if (error instanceof CameraError && error.code === "zoom-not-supported") {
+      console.log("Zoom is not supported on this device");
+    }
+  }
 }
 
 // Torch control
 if (capabilities.torch) {
-  await webcam.setTorch(true); // Turn on torch
+  try {
+    await webcam.setTorch(true);
+  } catch (error) {
+    if (error instanceof CameraError && error.code === "torch-not-supported") {
+      console.log("Torch is not supported on this device");
+    }
+  }
 }
 
 // Focus mode control
 if (capabilities.focusMode) {
-  await webcam.setFocusMode("continuous"); // Set continuous auto-focus
+  try {
+    await webcam.setFocusMode("continuous");
+  } catch (error) {
+    if (error instanceof CameraError && error.code === "focus-not-supported") {
+      console.log("Focus mode is not supported on this device");
+    }
+  }
 }
 ```
 
-### Status and Error Handling
+### Status Tracking
 
 ```typescript
 // Get current status
 const status = webcam.getStatus(); // Returns: 'idle' | 'initializing' | 'ready' | 'error'
 
-// Get last error if any
-const lastError = webcam.getLastError();
+// Get current state
+const state = webcam.getState();
+console.log("Current status:", state.status);
+console.log("Current capabilities:", state.capabilities);
+console.log("Last error:", state.lastError);
 
 // Get current resolution
 const resolution = webcam.getCurrentResolution();
 if (resolution) {
   console.log(`Current resolution: ${resolution.width}x${resolution.height}`);
 }
-```
-
-### Configuration Interface
-
-```typescript
-interface WebcamConfig {
-  /** Enable/disable audio */
-  audio?: boolean;
-  /** Device ID (required) */
-  device: string;
-  /** List of preferred resolutions in priority order */
-  resolutions: Resolution[];
-  /** Allow any resolution if specified ones fail */
-  allowAnyResolution?: boolean;
-  /** Mirror the video output */
-  mirror?: boolean;
-  /** Auto-rotate based on device orientation */
-  autoRotation?: boolean;
-  /** Video element for preview */
-  previewElement?: HTMLVideoElement;
-  /** Callback when webcam starts successfully */
-  onStart?: () => void;
-  /** Callback when an error occurs */
-  onError?: (error: Error) => void;
-}
-
-interface Resolution {
-  name: string;
-  width: number;
-  height: number;
-  aspectRatio?: number;
-}
-
-interface WebcamCapabilities {
-  zoom: boolean;
-  torch: boolean;
-  focusMode: boolean;
-  currentZoom: number;
-  minZoom: number;
-  maxZoom: number;
-  torchActive: boolean;
-  focusModeActive: boolean;
-  currentFocusMode: string;
-  supportedFocusModes: string[];
-}
-
-interface DeviceInfo {
-  id: string;
-  label: string;
-  kind: "audioinput" | "audiooutput" | "videoinput";
-}
-
-type PermissionState = "granted" | "denied" | "prompt";
 ```
 
 ## System Requirements
@@ -207,23 +233,15 @@ The library is compatible with modern browsers that support the MediaDevices API
 - Chrome for Android 47+
 - Safari on iOS 11+
 
-## Error Handling
-
-Common error scenarios and their meanings:
-
-- `NotAllowedError`: User denied permission or the permission was already denied
-- `NotFoundError`: No camera device found
-- `NotReadableError`: Camera is already in use or hardware error occurred
-- `OverconstrainedError`: Requested resolution not supported by the camera
-- `TypeError`: Invalid configuration provided
-
 ## Best Practices
 
 1. Always check device availability before starting the webcam
-2. Handle permission denials gracefully
+2. Handle permission denials gracefully using error codes
 3. Provide fallback resolutions for better compatibility
 4. Use the `allowAnyResolution` option if exact resolution is not critical
 5. Clean up resources by calling `stop()` when the webcam is no longer needed
+6. Always handle errors using the provided error codes
+7. Check capabilities before using advanced features
 
 ## License
 

@@ -1,4 +1,10 @@
 export type PermissionState = "granted" | "denied" | "prompt";
+export type CameraErrorCode = "no-permissions-api" | "permission-denied" | "microphone-permission-denied" | "configuration-error" | "no-device" | "no-media-devices-support" | "invalid-device-id" | "no-resolutions" | "camera-start-error" | "camera-initialization-error" | "no-stream" | "camera-settings-error" | "camera-stop-error" | "camera-already-in-use" | "zoom-not-supported" | "torch-not-supported" | "focus-not-supported" | "device-list-error" | "unknown";
+export declare class CameraError extends Error {
+    code: CameraErrorCode;
+    originalError?: Error | undefined;
+    constructor(code: CameraErrorCode, message: string, originalError?: Error | undefined);
+}
 export interface Resolution {
     name: string;
     width: number;
@@ -12,7 +18,7 @@ export interface WebcamConfig {
     device: string;
     /** รายการความละเอียดที่ต้องการใช้งาน เรียงตามลำดับความสำคัญ */
     resolutions: Resolution[];
-    /** อนุญาตให้ใช้ความละเอียดใดๆ ได้ หากไม่สามารถใช้ความละเอียดที่กำหนดใน resolutions ได้ */
+    /** อนุญาตให้ใช้ความละเอียดใดๆ ได้ หากไม่สามารถใช้ความละเอียดที่กำหนดไว้นนความละเอียดที่กำหนดไว้ */
     allowAnyResolution?: boolean;
     /** กลับด้านการแสดงผล */
     mirror?: boolean;
@@ -23,7 +29,7 @@ export interface WebcamConfig {
     /** callback เมื่อเปิดกล้องสำเร็จ */
     onStart?: () => void;
     /** callback เมื่อเกิดข้อผิดพลาด */
-    onError?: (error: Error) => void;
+    onError?: (error: CameraError) => void;
 }
 export interface WebcamCapabilities {
     zoom: boolean;
@@ -48,28 +54,37 @@ export declare enum WebcamStatus {
     READY = "ready",
     ERROR = "error"
 }
+export interface WebcamState {
+    status: WebcamStatus;
+    config: Required<WebcamConfig> | null;
+    stream: MediaStream | null;
+    lastError: CameraError | null;
+    devices: DeviceInfo[];
+    capabilities: WebcamCapabilities;
+}
 export declare class Webcam {
-    private config;
-    private stream;
-    private status;
-    private lastError;
-    private devices;
-    private deviceChangeCallbacks;
+    private state;
     private deviceChangeListener;
+    private orientationChangeListener;
     private readonly defaultConfig;
-    private capabilities;
     constructor();
     setupConfiguration(config: WebcamConfig): void;
     start(): Promise<void>;
     stop(): void;
     isActive(): boolean;
-    onDeviceChange(callback: (devices: DeviceInfo[]) => void): void;
+    startDeviceTracking(): void;
+    stopDeviceTracking(): void;
     getDeviceList(): DeviceInfo[];
     getVideoDevices(): DeviceInfo[];
     getAudioInputDevices(): DeviceInfo[];
     getAudioOutputDevices(): DeviceInfo[];
+    getCurrentDevice(): DeviceInfo | null;
+    setupChangeListeners(): void;
+    stopChangeListeners(): void;
+    getState(): WebcamState;
     getStatus(): WebcamStatus;
-    getLastError(): Error | null;
+    getLastError(): CameraError | null;
+    clearError(): void;
     getCapabilities(): WebcamCapabilities;
     getCurrentResolution(): Resolution | null;
     setZoom(zoomLevel: number): Promise<void>;
@@ -77,7 +92,9 @@ export declare class Webcam {
     setFocusMode(mode: string): Promise<void>;
     updateConfig(newConfig: Partial<WebcamConfig>): void;
     checkCameraPermission(): Promise<PermissionState>;
+    private checkCameraPermissionFallback;
     checkMicrophonePermission(): Promise<PermissionState>;
+    private checkMicrophonePermissionFallback;
     requestPermissions(): Promise<{
         camera: PermissionState;
         microphone: PermissionState;
@@ -94,7 +111,5 @@ export declare class Webcam {
     private handleError;
     private stopStream;
     private resetState;
-    private startDeviceChangeTracking;
-    private stopDeviceChangeTracking;
     private updateDeviceList;
 }
