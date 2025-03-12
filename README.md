@@ -10,7 +10,9 @@ A TypeScript library for managing webcam access using the MediaDevices API. This
 - Customizable preview element integration
 - Event callbacks for start and error handling
 - Permission management for camera and microphone
-- Comprehensive set of basic methods
+- Advanced camera capabilities (zoom, torch, focus mode)
+- Device change tracking with callbacks
+- Comprehensive status tracking and error handling
 
 ## Installation
 
@@ -20,9 +22,7 @@ npm install ts-webcam
 
 ## Usage
 
-### Permission Management
-
-The library provides methods to check and request permissions for camera and microphone access. You can check permissions before setting up the webcam configuration:
+### Basic Example
 
 ```typescript
 import { Webcam } from "ts-webcam";
@@ -30,57 +30,112 @@ import { Webcam } from "ts-webcam";
 // Create Webcam instance
 const webcam = new Webcam();
 
-// Check permissions first
-const cameraPermission = await webcam.checkCameraPermission();
-const micPermission = await webcam.checkMicrophonePermission();
+// Get available video devices
+const videoDevices = webcam.getVideoDevices();
+const selectedDevice = videoDevices[0]; // หรือให้ผู้ใช้เลือก
 
-// Or check both at once
-const permissions = await webcam.requestPermissions();
-console.log("Camera permission:", permissions.camera);
-console.log("Microphone permission:", permissions.microphone);
+// Setup configuration
+webcam.setupConfiguration({
+  device: selectedDevice.id,
+  resolutions: [
+    { name: "HD", width: 1280, height: 720, aspectRatio: 16 / 9 },
+    { name: "VGA", width: 640, height: 480, aspectRatio: 4 / 3 },
+  ],
+  allowAnyResolution: true,
+  mirror: true,
+  autoRotation: true,
+  previewElement: document.getElementById("preview") as HTMLVideoElement,
+  onStart: () => console.log("Webcam started"),
+  onError: (error) => console.error("Error:", error),
+});
 
-// If permissions are granted, proceed with setup
-if (permissions.camera === "granted") {
-  // Get available devices
-  const devices = await navigator.mediaDevices.enumerateDevices();
-  const videoDevices = devices.filter((device) => device.kind === "videoinput");
-  const selectedDevice = videoDevices[0]; // หรือให้ผู้ใช้เลือก
-
-  // Setup configuration
-  webcam.setupConfiguration({
-    audio: permissions.microphone === "granted", // Enable audio only if permitted
-    device: selectedDevice.deviceId,
-    resolutions: [
-      { name: "HD", width: 1280, height: 720, aspectRatio: 16 / 9 },
-      { name: "VGA", width: 640, height: 480, aspectRatio: 4 / 3 },
-    ],
-    allowAnyResolution: true,
-    mirror: true,
-    autoRotation: true,
-    previewElement: document.getElementById("preview") as HTMLVideoElement,
-    onStart: () => console.log("Webcam started successfully"),
-    onError: (error) => console.error("Error:", error),
-  });
-
-  // Start the webcam
-  await webcam.start();
-}
+// Start the webcam
+await webcam.start();
 ```
 
-You can also check permissions individually:
+### Device Management
+
+The library provides methods to track and manage connected devices:
 
 ```typescript
-// Check camera permission
-const cameraPermission = await webcam.checkCameraPermission();
-// Returns: 'granted' | 'denied' | 'prompt'
+// Start tracking device changes
+webcam.startDeviceTracking();
 
-// Check microphone permission
+// Get current device lists
+const allDevices = webcam.getDeviceList();
+const videoDevices = webcam.getVideoDevices();
+const audioInputDevices = webcam.getAudioInputDevices();
+const audioOutputDevices = webcam.getAudioOutputDevices();
+
+// Example: Check for new video devices periodically
+setInterval(() => {
+  const videoDevices = webcam.getVideoDevices();
+  console.log("Current video devices:", videoDevices);
+}, 1000);
+
+// Stop tracking when no longer needed
+webcam.stopDeviceTracking();
+```
+
+### Permission Management
+
+The library provides methods to check and request permissions:
+
+```typescript
+// Check individual permissions
+const cameraPermission = await webcam.checkCameraPermission();
 const micPermission = await webcam.checkMicrophonePermission();
 // Returns: 'granted' | 'denied' | 'prompt'
 
 // Check both permissions at once
 const permissions = await webcam.requestPermissions();
-// Returns: { camera: PermissionState, microphone: PermissionState }
+console.log("Camera permission:", permissions.camera);
+console.log("Microphone permission:", permissions.microphone);
+
+// Start webcam only if permissions are granted
+if (permissions.camera === "granted") {
+  await webcam.start();
+}
+```
+
+### Advanced Camera Controls
+
+The library supports advanced camera controls when available:
+
+```typescript
+// Get camera capabilities
+const capabilities = webcam.getCapabilities();
+
+// Zoom control
+if (capabilities.zoom) {
+  await webcam.setZoom(2.0); // 2x zoom
+}
+
+// Torch control
+if (capabilities.torch) {
+  await webcam.setTorch(true); // Turn on torch
+}
+
+// Focus mode control
+if (capabilities.focusMode) {
+  await webcam.setFocusMode("continuous"); // Set continuous auto-focus
+}
+```
+
+### Status and Error Handling
+
+```typescript
+// Get current status
+const status = webcam.getStatus(); // Returns: 'idle' | 'initializing' | 'ready' | 'error'
+
+// Get last error if any
+const lastError = webcam.getLastError();
+
+// Get current resolution
+const resolution = webcam.getCurrentResolution();
+if (resolution) {
+  console.log(`Current resolution: ${resolution.width}x${resolution.height}`);
+}
 ```
 
 ### Configuration Interface
@@ -89,7 +144,7 @@ const permissions = await webcam.requestPermissions();
 interface WebcamConfig {
   /** Enable/disable audio */
   audio?: boolean;
-  /** Device ID (required) - Get from MediaDevices.enumerateDevices() */
+  /** Device ID (required) */
   device: string;
   /** List of preferred resolutions in priority order */
   resolutions: Resolution[];
@@ -97,7 +152,7 @@ interface WebcamConfig {
   allowAnyResolution?: boolean;
   /** Mirror the video output */
   mirror?: boolean;
-  /** Auto-rotate width/height based on device orientation */
+  /** Auto-rotate based on device orientation */
   autoRotation?: boolean;
   /** Video element for preview */
   previewElement?: HTMLVideoElement;
@@ -108,48 +163,67 @@ interface WebcamConfig {
 }
 
 interface Resolution {
-  name: string; // Resolution name (e.g., "HD", "FHD", "VGA")
-  width: number; // Width in pixels
-  height: number; // Height in pixels
-  aspectRatio?: number; // Optional aspect ratio (e.g., 16/9, 4/3)
+  name: string;
+  width: number;
+  height: number;
+  aspectRatio?: number;
+}
+
+interface WebcamCapabilities {
+  zoom: boolean;
+  torch: boolean;
+  focusMode: boolean;
+  currentZoom: number;
+  minZoom: number;
+  maxZoom: number;
+  torchActive: boolean;
+  focusModeActive: boolean;
+  currentFocusMode: string;
+  supportedFocusModes: string[];
+}
+
+interface DeviceInfo {
+  id: string;
+  label: string;
+  kind: "audioinput" | "audiooutput" | "videoinput";
 }
 
 type PermissionState = "granted" | "denied" | "prompt";
 ```
 
-### Resolution Handling
-
-The library attempts to open the webcam with resolutions in the specified order:
-
-1. Tries each resolution in the `resolutions` array
-2. If all fail and `allowAnyResolution` is true, attempts to open with any supported resolution
-3. If all fail and `allowAnyResolution` is false, throws an error
-
-### Additional Methods Example
-
-```typescript
-// Check active status
-console.log("Is active:", webcam.isActive());
-
-// Get current resolution
-const resolution = webcam.getCurrentResolution();
-console.log("Resolution:", resolution);
-// Output: Resolution: { name: "Current", width: 1280, height: 720, aspectRatio: 1.7777777777777777 }
-
-// Update configuration
-webcam.updateConfig({
-  mirror: true,
-  resolutions: [
-    { name: "FHD", width: 1920, height: 1080, aspectRatio: 16 / 9 },
-  ],
-  allowAnyResolution: true,
-});
-```
-
 ## System Requirements
 
-- Browser with MediaDevices API support (Chrome, Firefox, Edge, Safari)
+- Modern browser with MediaDevices API support (Chrome, Firefox, Edge, Safari)
 - TypeScript (if using in a TypeScript project)
+
+## Browser Compatibility
+
+The library is compatible with modern browsers that support the MediaDevices API:
+
+- Chrome 47+
+- Firefox 44+
+- Edge 12+
+- Safari 11+
+- Chrome for Android 47+
+- Safari on iOS 11+
+
+## Error Handling
+
+Common error scenarios and their meanings:
+
+- `NotAllowedError`: User denied permission or the permission was already denied
+- `NotFoundError`: No camera device found
+- `NotReadableError`: Camera is already in use or hardware error occurred
+- `OverconstrainedError`: Requested resolution not supported by the camera
+- `TypeError`: Invalid configuration provided
+
+## Best Practices
+
+1. Always check device availability before starting the webcam
+2. Handle permission denials gracefully
+3. Provide fallback resolutions for better compatibility
+4. Use the `allowAnyResolution` option if exact resolution is not critical
+5. Clean up resources by calling `stop()` when the webcam is no longer needed
 
 ## License
 

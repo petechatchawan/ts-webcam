@@ -1,11 +1,11 @@
-interface Resolution {
+export type PermissionState = "granted" | "denied" | "prompt";
+export interface Resolution {
     name: string;
     width: number;
     height: number;
     aspectRatio?: number;
 }
-type PermissionState = "granted" | "denied" | "prompt";
-interface WebcamConfig {
+export interface WebcamConfig {
     /** เปิด/ปิดเสียง */
     audio?: boolean;
     /** ID ของอุปกรณ์กล้อง (required) */
@@ -25,44 +25,76 @@ interface WebcamConfig {
     /** callback เมื่อเกิดข้อผิดพลาด */
     onError?: (error: Error) => void;
 }
+export interface WebcamCapabilities {
+    zoom: boolean;
+    torch: boolean;
+    focusMode: boolean;
+    currentZoom: number;
+    minZoom: number;
+    maxZoom: number;
+    torchActive: boolean;
+    focusModeActive: boolean;
+    currentFocusMode: string;
+    supportedFocusModes: string[];
+}
+export interface DeviceInfo {
+    id: string;
+    label: string;
+    kind: "audioinput" | "audiooutput" | "videoinput";
+}
+export declare enum WebcamStatus {
+    IDLE = "idle",
+    INITIALIZING = "initializing",
+    READY = "ready",
+    ERROR = "error"
+}
 export declare class Webcam {
     private config;
     private stream;
+    private status;
+    private lastError;
+    private devices;
+    private deviceChangeCallbacks;
+    private deviceChangeListener;
     private readonly defaultConfig;
+    private capabilities;
     constructor();
-    /**
-     * ตั้งค่าการทำงานของ webcam
-     * @param config การตั้งค่าต่างๆ
-     */
     setupConfiguration(config: WebcamConfig): void;
-    /**
-     * ตรวจสอบว่าได้ตั้งค่าแล้วหรือยัง
-     */
-    private checkConfiguration;
-    /**
-     * ตรวจสอบสถานะการอนุญาตใช้งานกล้อง
-     * @returns Promise<PermissionState> สถานะการอนุญาต ('granted', 'denied', 'prompt')
-     */
+    start(): Promise<void>;
+    stop(): void;
+    isActive(): boolean;
+    onDeviceChange(callback: (devices: DeviceInfo[]) => void): void;
+    getDeviceList(): DeviceInfo[];
+    getVideoDevices(): DeviceInfo[];
+    getAudioInputDevices(): DeviceInfo[];
+    getAudioOutputDevices(): DeviceInfo[];
+    getStatus(): WebcamStatus;
+    getLastError(): Error | null;
+    getCapabilities(): WebcamCapabilities;
+    getCurrentResolution(): Resolution | null;
+    setZoom(zoomLevel: number): Promise<void>;
+    setTorch(active: boolean): Promise<void>;
+    setFocusMode(mode: string): Promise<void>;
+    updateConfig(newConfig: Partial<WebcamConfig>): void;
     checkCameraPermission(): Promise<PermissionState>;
-    /**
-     * ตรวจสอบสถานะการอนุญาตใช้งานไมโครโฟน
-     * @returns Promise<PermissionState> สถานะการอนุญาต ('granted', 'denied', 'prompt')
-     */
     checkMicrophonePermission(): Promise<PermissionState>;
-    /**
-     * ขอสิทธิ์การใช้งานกล้องและไมโครโฟน
-     * @returns Promise<{camera: PermissionState, microphone: PermissionState}> สถานะการอนุญาตของทั้งกล้องและไมโครโฟน
-     */
     requestPermissions(): Promise<{
         camera: PermissionState;
         microphone: PermissionState;
     }>;
-    start(): Promise<void>;
-    stop(): void;
-    isActive(): boolean;
-    getCurrentResolution(): Resolution | null;
-    updateConfig(newConfig: Partial<WebcamConfig>): void;
+    private initializeWebcam;
+    private validatePermissions;
+    private openCamera;
+    private tryResolution;
+    private tryAnyResolution;
+    private setupPreviewElement;
+    private updateCapabilities;
     private buildConstraints;
-    private handleDeviceOrientation;
+    private checkConfiguration;
+    private handleError;
+    private stopStream;
+    private resetState;
+    private startDeviceChangeTracking;
+    private stopDeviceChangeTracking;
+    private updateDeviceList;
 }
-export {};
