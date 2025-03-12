@@ -81,12 +81,6 @@ export interface WebcamCapabilities {
     supportedFocusModes: string[];
 }
 
-export interface DeviceInfo {
-    id: string;
-    label: string;
-    kind: 'audioinput' | 'audiooutput' | 'videoinput';
-}
-
 // ===== MediaDevices API Extensions =====
 interface ExtendedMediaTrackCapabilities extends MediaTrackCapabilities {
     zoom?: {
@@ -124,7 +118,7 @@ export interface WebcamState {
     config: Required<WebcamConfig> | null;
     stream: MediaStream | null;
     lastError: CameraError | null;
-    devices: DeviceInfo[];
+    devices: MediaDeviceInfo[];
     capabilities: WebcamCapabilities;
     currentOrientation?: OrientationType;
     currentPermission: {
@@ -187,7 +181,9 @@ export class Webcam {
         onError: () => {},
     };
 
-    constructor() {}
+    constructor() {
+        // ไม่ต้องเรียก getAvailableDevices ตั้งแต่ constructor
+    }
 
     // Public API methods
     public setupConfiguration(config: WebcamConfig): void {
@@ -229,48 +225,58 @@ export class Webcam {
     }
 
     // Device management
-    public startDeviceTracking(): void {
-        if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
-            throw new CameraError(
-                'no-media-devices-support',
-                'MediaDevices API is not supported in this browser',
+    public async getAvailableDevices(): Promise<void> {
+        try {
+            if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
+                throw new CameraError(
+                    'no-media-devices-support',
+                    'MediaDevices API is not supported in this browser',
+                );
+            }
+            await this.updateDeviceList();
+        } catch (error) {
+            this.handleError(
+                new CameraError(
+                    'device-list-error',
+                    'ไม่สามารถดึงรายการอุปกรณ์ได้',
+                    error as Error,
+                ),
             );
         }
-
-        // อัปเดตรายการอุปกรณ์ครั้งแรก
-        this.updateDeviceList();
-
-        // ตั้งค่า listener สำหรับติดตามการเปลี่ยนแปลง
-        this.deviceChangeListener = () => this.updateDeviceList();
-        navigator.mediaDevices.addEventListener('devicechange', this.deviceChangeListener);
     }
 
-    public stopDeviceTracking(): void {
-        if (this.deviceChangeListener) {
-            navigator.mediaDevices.removeEventListener('devicechange', this.deviceChangeListener);
-            this.deviceChangeListener = null;
+    private async updateDeviceList(): Promise<void> {
+        try {
+            const devices = await navigator.mediaDevices.enumerateDevices();
+            this.state.devices = devices;
+        } catch (error) {
+            console.error('Error enumerating devices:', error);
+            throw error;
         }
     }
 
-    public getDeviceList(): DeviceInfo[] {
+    public getDeviceList(): MediaDeviceInfo[] {
         return [...this.state.devices];
     }
 
-    public getVideoDevices(): DeviceInfo[] {
+    public getVideoDevices(): MediaDeviceInfo[] {
         return this.getDeviceList().filter((device) => device.kind === 'videoinput');
     }
 
-    public getAudioInputDevices(): DeviceInfo[] {
+    public getAudioInputDevices(): MediaDeviceInfo[] {
         return this.getDeviceList().filter((device) => device.kind === 'audioinput');
     }
 
-    public getAudioOutputDevices(): DeviceInfo[] {
+    public getAudioOutputDevices(): MediaDeviceInfo[] {
         return this.getDeviceList().filter((device) => device.kind === 'audiooutput');
     }
 
-    public getCurrentDevice(): DeviceInfo | null {
+    public getCurrentDevice(): MediaDeviceInfo | null {
         if (!this.state.config?.device) return null;
-        return this.state.devices.find((device) => device.id === this.state.config!.device) || null;
+        return (
+            this.state.devices.find((device) => device.deviceId === this.state.config!.device) ||
+            null
+        );
     }
 
     public setupChangeListeners(): void {
@@ -283,11 +289,11 @@ export class Webcam {
         }
 
         // อัปเดตรายการอุปกรณ์ครั้งแรก
-        this.updateDeviceList();
+        this.getAvailableDevices();
 
         // ตั้งค่า device change listener
         this.deviceChangeListener = async () => {
-            await this.updateDeviceList();
+            await this.getAvailableDevices();
 
             // ตรวจสอบว่าอุปกรณ์ปัจจุบันยังคงมีอยู่หรือไม่
             const currentDevice = this.getCurrentDevice();
@@ -543,6 +549,7 @@ export class Webcam {
                 this.state.currentPermission.microphone = state as PermissionState;
                 return state as PermissionState;
             }
+
             this.state.currentPermission.microphone = 'prompt';
             return 'prompt';
         } catch (error) {
@@ -616,6 +623,17 @@ export class Webcam {
             this.state.currentPermission.camera === 'denied' ||
             (!!this.state.config?.audio && this.state.currentPermission.microphone === 'denied')
         );
+    }
+
+    // เพิ่มฟังก์ชัน toggleMirrorMode
+    public toggleMirrorMode(): void {
+        this.checkConfiguration();
+        this.state.config!.mirror = !this.state.config!.mirror;
+        if (this.state.config!.previewElement) {
+            this.state.config!.previewElement.style.transform = this.state.config!.mirror
+                ? 'scaleX(-1)'
+                : 'none';
+        }
     }
 
     // Private helper methods
@@ -807,19 +825,6 @@ export class Webcam {
             // currentOrientation: this.state.currentOrientation,
             // currentPermission: { ...this.state.currentPermission },
         };
-    }
-
-    private async updateDeviceList(): Promise<void> {
-        try {
-            const devices = await navigator.mediaDevices.enumerateDevices();
-            this.state.devices = devices.map((device) => ({
-                id: device.deviceId,
-                label: device.label || `${device.kind} (${device.deviceId})`,
-                kind: device.kind as 'audioinput' | 'audiooutput' | 'videoinput',
-            }));
-        } catch (error) {
-            console.error('Error enumerating devices:', error);
-        }
     }
 
     private validatePermissions(permissions: {

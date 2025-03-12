@@ -1,5 +1,5 @@
-export type PermissionState = "granted" | "denied" | "prompt";
-export type CameraErrorCode = "no-permissions-api" | "permission-denied" | "microphone-permission-denied" | "configuration-error" | "no-device" | "no-media-devices-support" | "invalid-device-id" | "no-resolutions" | "camera-start-error" | "camera-initialization-error" | "no-stream" | "camera-settings-error" | "camera-stop-error" | "camera-already-in-use" | "zoom-not-supported" | "torch-not-supported" | "focus-not-supported" | "device-list-error" | "unknown";
+export type PermissionState = 'granted' | 'denied' | 'prompt';
+export type CameraErrorCode = 'no-permissions-api' | 'permission-denied' | 'microphone-permission-denied' | 'configuration-error' | 'no-device' | 'no-media-devices-support' | 'invalid-device-id' | 'no-resolutions' | 'camera-start-error' | 'camera-initialization-error' | 'no-stream' | 'camera-settings-error' | 'camera-stop-error' | 'camera-already-in-use' | 'zoom-not-supported' | 'torch-not-supported' | 'focus-not-supported' | 'device-list-error' | 'unknown';
 export declare class CameraError extends Error {
     code: CameraErrorCode;
     originalError?: Error | undefined;
@@ -43,11 +43,6 @@ export interface WebcamCapabilities {
     currentFocusMode: string;
     supportedFocusModes: string[];
 }
-export interface DeviceInfo {
-    id: string;
-    label: string;
-    kind: "audioinput" | "audiooutput" | "videoinput";
-}
 export declare enum WebcamStatus {
     IDLE = "idle",
     INITIALIZING = "initializing",
@@ -59,7 +54,7 @@ export interface WebcamState {
     config: Required<WebcamConfig> | null;
     stream: MediaStream | null;
     lastError: CameraError | null;
-    devices: DeviceInfo[];
+    devices: MediaDeviceInfo[];
     capabilities: WebcamCapabilities;
     currentOrientation?: OrientationType;
     currentPermission: {
@@ -67,7 +62,7 @@ export interface WebcamState {
         microphone: PermissionState;
     };
 }
-export type OrientationType = "portrait-primary" | "portrait-secondary" | "landscape-primary" | "landscape-secondary" | "unknown";
+export type OrientationType = 'portrait-primary' | 'portrait-secondary' | 'landscape-primary' | 'landscape-secondary' | 'unknown';
 export declare class Webcam {
     private state;
     private deviceChangeListener;
@@ -78,13 +73,13 @@ export declare class Webcam {
     start(): Promise<void>;
     stop(): void;
     isActive(): boolean;
-    startDeviceTracking(): void;
-    stopDeviceTracking(): void;
-    getDeviceList(): DeviceInfo[];
-    getVideoDevices(): DeviceInfo[];
-    getAudioInputDevices(): DeviceInfo[];
-    getAudioOutputDevices(): DeviceInfo[];
-    getCurrentDevice(): DeviceInfo | null;
+    getAvailableDevices(): Promise<void>;
+    private updateDeviceList;
+    getDeviceList(): MediaDeviceInfo[];
+    getVideoDevices(): MediaDeviceInfo[];
+    getAudioInputDevices(): MediaDeviceInfo[];
+    getAudioOutputDevices(): MediaDeviceInfo[];
+    getCurrentDevice(): MediaDeviceInfo | null;
     setupChangeListeners(): void;
     stopChangeListeners(): void;
     getState(): WebcamState;
@@ -110,6 +105,7 @@ export declare class Webcam {
     };
     needsPermissionRequest(): boolean;
     hasPermissionDenied(): boolean;
+    toggleMirrorMode(): void;
     private initializeWebcam;
     private openCamera;
     private tryResolution;
@@ -121,6 +117,5 @@ export declare class Webcam {
     private handleError;
     private stopStream;
     private resetState;
-    private updateDeviceList;
     private validatePermissions;
 }

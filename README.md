@@ -101,47 +101,109 @@ Error codes are categorized as follows:
 
 1. Permission-related errors:
 
-   - `no-permissions-api`: Browser does not support the Permissions API
-   - `permission-denied`: User denied camera access
-   - `microphone-permission-denied`: User denied microphone access
+    - `no-permissions-api`: Browser does not support the Permissions API
+    - `permission-denied`: User denied camera access
+    - `microphone-permission-denied`: User denied microphone access
 
 2. Device and configuration errors:
 
-   - `configuration-error`: Camera constraints cannot be satisfied
-   - `no-device`: No camera device found
-   - `no-media-devices-support`: Browser does not support media devices
-   - `invalid-device-id`: Invalid device ID provided
-   - `no-resolutions`: No resolutions specified
+    - `configuration-error`: Camera constraints cannot be satisfied
+    - `no-device`: No camera device found
+    - `no-media-devices-support`: Browser does not support media devices
+    - `invalid-device-id`: Invalid device ID provided
+    - `no-resolutions`: No resolutions specified
 
 3. Camera initialization and operation errors:
 
-   - `camera-start-error`: Failed to start the camera
-   - `camera-initialization-error`: Failed to initialize the camera
-   - `no-stream`: No video stream available
-   - `camera-settings-error`: Failed to apply camera settings
-   - `camera-stop-error`: Failed to stop the camera
-   - `camera-already-in-use`: Camera is already in use by another application
+    - `camera-start-error`: Failed to start the camera
+    - `camera-initialization-error`: Failed to initialize the camera
+    - `no-stream`: No video stream available
+    - `camera-settings-error`: Failed to apply camera settings
+    - `camera-stop-error`: Failed to stop the camera
+    - `camera-already-in-use`: Camera is already in use by another application
 
 4. Camera functionality errors:
-   - `zoom-not-supported`: Zoom is not supported
-   - `torch-not-supported`: Torch is not supported
-   - `focus-not-supported`: Focus mode is not supported
-   - `device-list-error`: Failed to get device list
+    - `zoom-not-supported`: Zoom is not supported
+    - `torch-not-supported`: Torch is not supported
+    - `focus-not-supported`: Focus mode is not supported
+    - `device-list-error`: Failed to get device list
 
 ### Device Management
 
+การจัดการอุปกรณ์ใน ts-webcam มีขั้นตอนดังนี้:
+
+1. ดึงรายการอุปกรณ์ที่มี:
+
 ```typescript
-// Start tracking device changes
-webcam.startDeviceTracking();
+// ขอ permission ก่อน
+const permissions = await webcam.requestPermissions();
+if (permissions.camera === 'granted') {
+    // ดึงรายการอุปกรณ์หลังได้รับ permission
+    await webcam.getAvailableDevices();
 
-// Get current device lists
-const allDevices = webcam.getDeviceList();
-const videoDevices = webcam.getVideoDevices();
-const audioInputDevices = webcam.getAudioInputDevices();
-const audioOutputDevices = webcam.getAudioOutputDevices();
+    // ดูรายการอุปกรณ์
+    const allDevices = webcam.getDeviceList();
+    const videoDevices = webcam.getVideoDevices();
+    const audioInputDevices = webcam.getAudioInputDevices();
+    const audioOutputDevices = webcam.getAudioOutputDevices();
 
-// Stop tracking when no longer needed
-webcam.stopDeviceTracking();
+    // ดูอุปกรณ์ที่กำลังใช้งานอยู่
+    const currentDevice = webcam.getCurrentDevice();
+}
+```
+
+2. ติดตามการเปลี่ยนแปลงอุปกรณ์:
+
+```typescript
+// เริ่มติดตามการเปลี่ยนแปลง
+webcam.setupChangeListeners();
+
+// หยุดติดตามเมื่อไม่ต้องการแล้ว
+webcam.stopChangeListeners();
+```
+
+**หมายเหตุ:**
+
+- รายการอุปกรณ์จะมีข้อมูลครบถ้วน (เช่น label) หลังจากได้รับ permission แล้วเท่านั้น
+- `setupChangeListeners()` จะเรียก `getAvailableDevices()` ให้อัตโนมัติเมื่อเริ่มต้น
+- เมื่อมีการเปลี่ยนแปลงอุปกรณ์ ระบบจะเรียก `getAvailableDevices()` ให้อัตโนมัติ
+- ถ้าอุปกรณ์ที่กำลังใช้งานอยู่ถูกถอดออก ระบบจะหยุดการทำงานและส่ง error
+
+ตัวอย่างการใช้งานแบบสมบูรณ์:
+
+```typescript
+const webcam = new Webcam();
+
+async function initializeWebcam() {
+    try {
+        // 1. ขอ permission
+        const permissions = await webcam.requestPermissions();
+        if (permissions.camera === 'granted') {
+            // 2. ดึงรายการอุปกรณ์
+            await webcam.getAvailableDevices();
+            const cameras = webcam.getVideoDevices();
+
+            if (cameras.length > 0) {
+                // 3. ตั้งค่ากล้อง
+                webcam.setupConfiguration({
+                    device: cameras[0].id,
+                    // ... config อื่นๆ
+                });
+
+                // 4. ติดตามการเปลี่ยนแปลงอุปกรณ์
+                webcam.setupChangeListeners();
+
+                // 5. เริ่มใช้งานกล้อง
+                await webcam.start();
+            }
+        }
+    } catch (error) {
+        console.error('Error initializing webcam:', error);
+    }
+}
+
+// เริ่มต้นใช้งาน
+initializeWebcam();
 ```
 
 ### Permission Management
@@ -231,9 +293,9 @@ webcam.setupConfiguration({
 - `needsPermissionRequest()` ใช้ตรวจสอบว่าต้องขอสิทธิ์หรือไม่
 - `hasPermissionDenied()` ใช้ตรวจสอบว่าถูกปฏิเสธสิทธิ์หรือไม่
 - สถานะสิทธิ์มี 3 แบบ:
-  - `granted`: ได้รับอนุญาตแล้ว
-  - `denied`: ถูกปฏิเสธ
-  - `prompt`: ยังไม่เคยขอสิทธิ์หรือต้องขอใหม่
+    - `granted`: ได้รับอนุญาตแล้ว
+    - `denied`: ถูกปฏิเสธ
+    - `prompt`: ยังไม่เคยขอสิทธิ์หรือต้องขอใหม่
 
 #### ตัวอย่างการใช้งานร่วมกับ UI:
 
@@ -311,6 +373,9 @@ if (capabilities.focusMode) {
     }
   }
 }
+
+// Mirror mode toggle
+webcam.toggleMirrorMode(); // Toggle mirror mode
 ```
 
 ### Status Tracking
@@ -330,6 +395,31 @@ const resolution = webcam.getCurrentResolution();
 if (resolution) {
   console.log(`Current resolution: ${resolution.width}x${resolution.height}`);
 }
+```
+
+### State Management
+
+การจัดการ state ใน ts-webcam แบ่งออกเป็น 2 ประเภท:
+
+1. State การทำงานปัจจุบัน (Operational State):
+
+    - `status`: สถานะการทำงานของกล้อง
+    - `stream`: MediaStream ปัจจุบัน
+    - `lastError`: ข้อผิดพลาดล่าสุด
+    - `capabilities`: ความสามารถของกล้องที่ใช้งานอยู่
+
+2. ข้อมูลพื้นฐานของระบบ (System Data):
+    - `config`: การตั้งค่าปัจจุบัน
+    - `devices`: รายการอุปกรณ์ที่มี
+    - `currentOrientation`: การวางแนวของอุปกรณ์
+    - `currentPermission`: สถานะสิทธิ์การใช้งาน
+
+เมื่อเรียกใช้ `stop()` จะ reset เฉพาะ state การทำงานปัจจุบันเท่านั้น โดยจะคงค่าข้อมูลพื้นฐานของระบบไว้ เพื่อให้สามารถเริ่มกล้องใหม่ได้โดยใช้การตั้งค่าเดิม
+
+```typescript
+// ตัวอย่างการหยุดและเริ่มกล้องใหม่
+webcam.stop();  // reset เฉพาะ operational state
+await webcam.start();  // เริ่มกล้องใหม่โดยใช้ config เดิม
 ```
 
 ## System Requirements
