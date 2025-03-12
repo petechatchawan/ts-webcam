@@ -579,6 +579,7 @@ class Webcam {
     }
     resetState() {
         this.stopChangeListeners();
+        // Reset เฉพาะ state ที่เกี่ยวข้องกับการทำงานปัจจุบัน
         this.state = Object.assign(Object.assign({}, this.state), { status: WebcamStatus.IDLE, stream: null, lastError: null, capabilities: {
                 zoom: false,
                 torch: false,
@@ -590,9 +591,6 @@ class Webcam {
                 focusModeActive: false,
                 currentFocusMode: "none",
                 supportedFocusModes: [],
-            }, currentOrientation: "portrait-primary", currentPermission: {
-                camera: "prompt",
-                microphone: "prompt",
             } });
     }
     updateDeviceList() {

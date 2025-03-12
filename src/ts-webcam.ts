@@ -845,6 +845,8 @@ export class Webcam {
 
   private resetState(): void {
     this.stopChangeListeners();
+
+    // Reset เฉพาะ state ที่เกี่ยวข้องกับการทำงานปัจจุบัน
     this.state = {
       ...this.state,
       status: WebcamStatus.IDLE,
@@ -862,11 +864,11 @@ export class Webcam {
         currentFocusMode: "none",
         supportedFocusModes: [],
       },
-      currentOrientation: "portrait-primary",
-      currentPermission: {
-        camera: "prompt",
-        microphone: "prompt",
-      },
+      // คงค่า state ที่เป็นข้อมูลพื้นฐานของระบบไว้
+      // config: this.state.config,  // คง config ไว้เพื่อใช้ในการเริ่มกล้องใหม่
+      // devices: [...this.state.devices],
+      // currentOrientation: this.state.currentOrientation,
+      // currentPermission: { ...this.state.currentPermission },
     };
   }
 
