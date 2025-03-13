@@ -51,7 +51,7 @@ export declare enum WebcamStatus {
 }
 export interface WebcamState {
     status: WebcamStatus;
-    config: Required<WebcamConfig> | null;
+    config: WebcamConfig | null;
     stream: MediaStream | null;
     lastError: CameraError | null;
     devices: MediaDeviceInfo[];
@@ -64,6 +64,25 @@ export interface WebcamState {
     captureCanvas?: HTMLCanvasElement;
 }
 export type OrientationType = 'portrait-primary' | 'portrait-secondary' | 'landscape-primary' | 'landscape-secondary' | 'unknown';
+export interface DeviceCapabilitiesData {
+    deviceId: string;
+    maxWidth: number;
+    maxHeight: number;
+    minWidth: number;
+    minHeight: number;
+    supportedResolutions: {
+        width: number;
+        height: number;
+        aspectRatio: number;
+    }[];
+    supportedFrameRates: number[];
+    hasZoom: boolean;
+    hasTorch: boolean;
+    hasFocus: boolean;
+    maxZoom?: number;
+    minZoom?: number;
+    supportedFocusModes?: string[];
+}
 export declare class Webcam {
     private state;
     private deviceChangeListener;
@@ -74,12 +93,12 @@ export declare class Webcam {
     start(): Promise<void>;
     stop(): void;
     isActive(): boolean;
-    getAvailableDevices(): Promise<void>;
-    private updateDeviceList;
+    private getAvailableDevices;
     getDeviceList(): MediaDeviceInfo[];
-    getVideoDevices(): MediaDeviceInfo[];
-    getAudioInputDevices(): MediaDeviceInfo[];
-    getAudioOutputDevices(): MediaDeviceInfo[];
+    getVideoDevices(): Promise<MediaDeviceInfo[]>;
+    getAudioInputDevices(): Promise<MediaDeviceInfo[]>;
+    getAudioOutputDevices(): Promise<MediaDeviceInfo[]>;
+    refreshDevices(): Promise<void>;
     getCurrentDevice(): MediaDeviceInfo | null;
     setupChangeListeners(): void;
     stopChangeListeners(): void;
@@ -112,6 +131,23 @@ export declare class Webcam {
         mediaType?: 'image/png' | 'image/jpeg';
         quality?: number;
     }): string;
+    checkDevicesCapabilitiesData(deviceId: string): Promise<DeviceCapabilitiesData>;
+    checkSupportedResolutions(deviceCapabilities: DeviceCapabilitiesData[], desiredResolutions: Resolution[]): {
+        resolutions: {
+            name: string;
+            width: number;
+            height: number;
+            aspectRatio: number;
+            supported: boolean;
+        }[];
+        deviceInfo: {
+            deviceId: string;
+            maxWidth: number;
+            maxHeight: number;
+            minWidth: number;
+            minHeight: number;
+        };
+    };
     private initializeWebcam;
     private openCamera;
     private tryResolution;

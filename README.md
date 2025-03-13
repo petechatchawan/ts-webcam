@@ -156,21 +156,16 @@ Device management in ts-webcam involves the following steps:
 1. Get available devices:
 
 ```typescript
-// Request permissions first
-const permissions = await webcam.requestPermissions();
-if (permissions.camera === 'granted') {
-    // Get device list after permission is granted
-    await webcam.getAvailableDevices();
+// Get video devices
+const videoDevices = await webcam.getVideoDevices();
+const audioInputDevices = await webcam.getAudioInputDevices();
+const audioOutputDevices = await webcam.getAudioOutputDevices();
 
-    // View device lists
-    const allDevices = webcam.getDeviceList();
-    const videoDevices = webcam.getVideoDevices();
-    const audioInputDevices = webcam.getAudioInputDevices();
-    const audioOutputDevices = webcam.getAudioOutputDevices();
+// Get current active device
+const currentDevice = webcam.getCurrentDevice();
 
-    // Get current active device
-    const currentDevice = webcam.getCurrentDevice();
-}
+// Refresh device list if needed
+await webcam.refreshDevices();
 ```
 
 2. Track device changes:
@@ -186,8 +181,8 @@ webcam.stopChangeListeners();
 **Notes:**
 
 - Device list will have complete information (e.g., labels) only after permissions are granted
-- `setupChangeListeners()` will automatically call `getAvailableDevices()` on initialization
-- When devices change, the system will automatically call `getAvailableDevices()`
+- `setupChangeListeners()` will automatically call `refreshDevices()` on initialization
+- When devices change, the system will automatically call `refreshDevices()`
 - If the currently active device is removed, the system will stop and send an error
 
 Complete usage example:
@@ -201,8 +196,7 @@ async function initializeWebcam() {
         const permissions = await webcam.requestPermissions();
         if (permissions.camera === 'granted') {
             // 2. Get device list
-            await webcam.getAvailableDevices();
-            const cameras = webcam.getVideoDevices();
+            const cameras = await webcam.getVideoDevices();
 
             if (cameras.length > 0) {
                 // 3. Setup camera configuration

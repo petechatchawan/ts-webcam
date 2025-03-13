@@ -90,6 +90,21 @@ interface ExtendedMediaTrackCapabilities extends MediaTrackCapabilities {
     };
     torch?: boolean;
     focusMode?: string[];
+    width?: {
+        min: number;
+        max: number;
+        step: number;
+    };
+    height?: {
+        min: number;
+        max: number;
+        step: number;
+    };
+    frameRate?: {
+        min: number;
+        max: number;
+        step: number;
+    };
 }
 
 interface ExtendedMediaTrackSettings extends MediaTrackSettings {
@@ -135,6 +150,26 @@ export type OrientationType =
     | 'landscape-primary'
     | 'landscape-secondary'
     | 'unknown';
+
+export interface DeviceCapabilitiesData {
+    deviceId: string;
+    maxWidth: number;
+    maxHeight: number;
+    minWidth: number;
+    minHeight: number;
+    supportedResolutions: {
+        width: number;
+        height: number;
+        aspectRatio: number;
+    }[];
+    supportedFrameRates: number[];
+    hasZoom: boolean;
+    hasTorch: boolean;
+    hasFocus: boolean;
+    maxZoom?: number;
+    minZoom?: number;
+    supportedFocusModes?: string[];
+}
 
 export class Webcam {
     // รวม state ทั้งหมดไว้ในที่เดียว
@@ -246,7 +281,7 @@ export class Webcam {
     }
 
     // Device management
-    public async getAvailableDevices(): Promise<void> {
+    private async getAvailableDevices(): Promise<MediaDeviceInfo[]> {
         try {
             if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
                 throw new CameraError(
@@ -254,7 +289,9 @@ export class Webcam {
                     'MediaDevices API is not supported in this browser',
                 );
             }
-            await this.updateDeviceList();
+
+            this.state.devices = await navigator.mediaDevices.enumerateDevices();
+            return [...this.state.devices];
         } catch (error) {
             this.handleError(
                 new CameraError(
@@ -263,16 +300,7 @@ export class Webcam {
                     error as Error,
                 ),
             );
-        }
-    }
-
-    private async updateDeviceList(): Promise<void> {
-        try {
-            const devices = await navigator.mediaDevices.enumerateDevices();
-            this.state.devices = devices;
-        } catch (error) {
-            console.error('Error enumerating devices:', error);
-            throw error;
+            return [];
         }
     }
 
@@ -280,16 +308,32 @@ export class Webcam {
         return [...this.state.devices];
     }
 
-    public getVideoDevices(): MediaDeviceInfo[] {
-        return this.getDeviceList().filter((device) => device.kind === 'videoinput');
+    public async getVideoDevices(): Promise<MediaDeviceInfo[]> {
+        // ถ้ายังไม่มีข้อมูลอุปกรณ์ ให้เรียก getAvailableDevices ก่อน
+        if (this.state.devices.length === 0) {
+            await this.getAvailableDevices();
+        }
+        return this.state.devices.filter((device) => device.kind === 'videoinput');
     }
 
-    public getAudioInputDevices(): MediaDeviceInfo[] {
-        return this.getDeviceList().filter((device) => device.kind === 'audioinput');
+    public async getAudioInputDevices(): Promise<MediaDeviceInfo[]> {
+        // ถ้ายังไม่มีข้อมูลอุปกรณ์ ให้เรียก getAvailableDevices ก่อน
+        if (this.state.devices.length === 0) {
+            await this.getAvailableDevices();
+        }
+        return this.state.devices.filter((device) => device.kind === 'audioinput');
     }
 
-    public getAudioOutputDevices(): MediaDeviceInfo[] {
-        return this.getDeviceList().filter((device) => device.kind === 'audiooutput');
+    public async getAudioOutputDevices(): Promise<MediaDeviceInfo[]> {
+        // ถ้ายังไม่มีข้อมูลอุปกรณ์ ให้เรียก getAvailableDevices ก่อน
+        if (this.state.devices.length === 0) {
+            await this.getAvailableDevices();
+        }
+        return this.state.devices.filter((device) => device.kind === 'audiooutput');
+    }
+
+    public async refreshDevices(): Promise<void> {
+        await this.getAvailableDevices();
     }
 
     public getCurrentDevice(): MediaDeviceInfo | null {
@@ -310,11 +354,11 @@ export class Webcam {
         }
 
         // อัปเดตรายการอุปกรณ์ครั้งแรก
-        this.getAvailableDevices();
+        this.refreshDevices();
 
         // ตั้งค่า device change listener
         this.deviceChangeListener = async () => {
-            await this.getAvailableDevices();
+            await this.refreshDevices();
 
             // ตรวจสอบว่าอุปกรณ์ปัจจุบันยังคงมีอยู่หรือไม่
             const currentDevice = this.getCurrentDevice();
@@ -408,7 +452,7 @@ export class Webcam {
     }
 
     public getCurrentResolution(): Resolution | null {
-        // ถ้าไม่มี stream หรือไม่มี config ให้คืนค่า null
+        // ถ้าไม่มี stream หรือไม่มี config ้คืนค่า null
         if (!this.state.stream || !this.state.config) return null;
 
         const videoTrack = this.state.stream.getVideoTracks()[0];
@@ -708,6 +752,175 @@ export class Webcam {
                   : undefined; // ค่า default สำหรับ JPEG
 
         return canvas.toDataURL(mediaType, quality);
+    }
+
+    // เพิ่มฟังก์ชันตรวจสอบความสามารถของกล้อง
+    public async checkDevicesCapabilitiesData(deviceId: string): Promise<DeviceCapabilitiesData> {
+        try {
+            // ขอสิทธิ์การใช้งานกล้องก่อน
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: { deviceId: { exact: deviceId } },
+            });
+
+            const videoTrack = stream.getVideoTracks()[0];
+            const capabilities = videoTrack.getCapabilities() as ExtendedMediaTrackCapabilities;
+
+            // เก็บข้อมูลความละเอียดที่รองรับ
+            const supportedResolutions: { width: number; height: number; aspectRatio: number }[] =
+                [];
+
+            // ตรวจสอบ width และ height ที่รองรับ
+            if (
+                capabilities.width?.max &&
+                capabilities.width?.min &&
+                capabilities.width?.step &&
+                capabilities.height?.max &&
+                capabilities.height?.min &&
+                capabilities.height?.step
+            ) {
+                const widths = Array.from(
+                    {
+                        length:
+                            Math.floor(
+                                (capabilities.width.max - capabilities.width.min) /
+                                    capabilities.width.step,
+                            ) + 1,
+                    },
+                    (_, i) => capabilities.width!.min + i * capabilities.width!.step,
+                );
+                const heights = Array.from(
+                    {
+                        length:
+                            Math.floor(
+                                (capabilities.height.max - capabilities.height.min) /
+                                    capabilities.height.step,
+                            ) + 1,
+                    },
+                    (_, i) => capabilities.height!.min + i * capabilities.height!.step,
+                );
+
+                // สร้างรายการ resolution ที่เป็นไปได้
+                for (const width of widths) {
+                    for (const height of heights) {
+                        const aspectRatio = width / height;
+                        // กรองเฉพาะ resolution ที่มี aspect ratio มาตรฐาน (เช่น 16:9, 4:3)
+                        if (
+                            Math.abs(aspectRatio - 16 / 9) < 0.1 ||
+                            Math.abs(aspectRatio - 4 / 3) < 0.1
+                        ) {
+                            supportedResolutions.push({
+                                width,
+                                height,
+                                aspectRatio,
+                            });
+                        }
+                    }
+                }
+            }
+
+            // เก็บข้อมูล frame rate ที่รองรับ
+            const frameRates: number[] = [];
+            if (
+                capabilities.frameRate?.min &&
+                capabilities.frameRate?.max &&
+                capabilities.frameRate?.step
+            ) {
+                const { min, max, step } = capabilities.frameRate;
+                for (let fps = min; fps <= max; fps += step) {
+                    frameRates.push(fps);
+                }
+            }
+
+            // หยุดการใช้งานกล้อง
+            stream.getTracks().forEach((track) => track.stop());
+
+            return {
+                deviceId,
+                maxWidth: capabilities.width?.max || 0,
+                maxHeight: capabilities.height?.max || 0,
+                minWidth: capabilities.width?.min || 0,
+                minHeight: capabilities.height?.min || 0,
+                supportedResolutions,
+                supportedFrameRates: frameRates,
+                hasZoom: !!capabilities.zoom,
+                hasTorch: !!capabilities.torch,
+                hasFocus: !!capabilities.focusMode,
+                maxZoom: capabilities.zoom?.max,
+                minZoom: capabilities.zoom?.min,
+                supportedFocusModes: capabilities.focusMode,
+            };
+        } catch (error) {
+            throw new CameraError(
+                'camera-settings-error',
+                'Failed to check device capabilities',
+                error as Error,
+            );
+        }
+    }
+
+    // เพิ่มฟังก์ชันตรวจสอบ resolution ที่รองรับ
+    public checkSupportedResolutions(
+        deviceCapabilities: DeviceCapabilitiesData[],
+        desiredResolutions: Resolution[],
+    ): {
+        resolutions: {
+            name: string;
+            width: number;
+            height: number;
+            aspectRatio: number;
+            supported: boolean;
+        }[];
+        deviceInfo: {
+            deviceId: string;
+            maxWidth: number;
+            maxHeight: number;
+            minWidth: number;
+            minHeight: number;
+        };
+    } {
+        // เลือกใช้ความสามารถของกล้องตัวแรก (หรือจะให้เลือกได้)
+        const capability = deviceCapabilities[0];
+
+        // สร้างข้อมูลอุปกรณ์
+        const deviceInfo = {
+            deviceId: capability.deviceId,
+            maxWidth: capability.maxWidth,
+            maxHeight: capability.maxHeight,
+            minWidth: capability.minWidth,
+            minHeight: capability.minHeight,
+        };
+
+        // ตรวจสอบแต่ละ resolution
+        const resolutions = desiredResolutions.map((resolution) => {
+            // ตรวจสอบว่า resolution อยู่ในช่วงที่รองรับหรือไม่
+            const isWidthSupported =
+                resolution.width >= capability.minWidth && resolution.width <= capability.maxWidth;
+            const isHeightSupported =
+                resolution.height >= capability.minHeight &&
+                resolution.height <= capability.maxHeight;
+
+            // ตรวจสอบว่ามี resolution ที่ตรงกันในรายการที่รองรับหรือไม่
+            const matchedResolution = capability.supportedResolutions.find(
+                (supported) =>
+                    supported.width === resolution.width &&
+                    supported.height === resolution.height &&
+                    (!resolution.aspectRatio ||
+                        Math.abs(supported.aspectRatio - resolution.aspectRatio) < 0.1),
+            );
+
+            return {
+                name: resolution.name,
+                width: resolution.width,
+                height: resolution.height,
+                aspectRatio: resolution.aspectRatio || resolution.width / resolution.height,
+                supported: isWidthSupported && isHeightSupported && !!matchedResolution,
+            };
+        });
+
+        return {
+            resolutions,
+            deviceInfo,
+        };
     }
 
     // Private helper methods
