@@ -52,9 +52,9 @@ export interface WebcamConfig {
     audio?: boolean;
     /** ID ของอุปกรณ์กล้อง (required) */
     device: string;
-    /** รายการความละเอียดที่ต้องการใช้งาน เรียงตามลำดับความสำคัญ */
-    resolutions: Resolution[];
-    /** อนุญาตให้ใช้ความละเอียดใดๆ ได้ หากไม่สามารถใช้ความละเอียดที่กำหนดไว้นนความละเอียดที่กำหนดไว้ */
+    /** ความละเอียดที่ต้องการใช้งาน (optional) */
+    resolution?: Resolution | Resolution[];
+    /** อนุญาตให้ใช้ resolution อื่นได้ถ้าเปิดด้วย resolution ที่กำหนดไม่ได้ */
     allowAnyResolution?: boolean;
     /** กลับด้านการแสดงผล */
     mirror?: boolean;
@@ -115,7 +115,7 @@ export enum WebcamStatus {
 // ===== State Interface =====
 export interface WebcamState {
     status: WebcamStatus;
-    config: Required<WebcamConfig> | null;
+    config: WebcamConfig | null;
     stream: MediaStream | null;
     lastError: CameraError | null;
     devices: MediaDeviceInfo[];
@@ -168,13 +168,9 @@ export class Webcam {
     private orientationChangeListener: (() => void) | null = null;
 
     // Default values
-    private readonly defaultConfig: Required<WebcamConfig> = {
+    private readonly defaultConfig: WebcamConfig = {
         audio: false,
         device: '',
-        resolutions: [
-            { name: 'HD', width: 1280, height: 720, aspectRatio: 16 / 9 },
-            { name: 'VGA', width: 640, height: 480, aspectRatio: 4 / 3 },
-        ],
         allowAnyResolution: false,
         mirror: false,
         autoRotation: true,
@@ -218,10 +214,6 @@ export class Webcam {
     public setupConfiguration(config: WebcamConfig): void {
         if (!config.device) {
             throw new CameraError('invalid-device-id', 'Device ID is required');
-        }
-
-        if (!config.resolutions || config.resolutions.length === 0) {
-            throw new CameraError('no-resolutions', 'At least one resolution must be specified');
         }
 
         this.state.config = { ...this.defaultConfig, ...config };
@@ -431,9 +423,12 @@ export class Webcam {
             : settings.height || 0;
 
         // หา resolution ที่ตรงกับขนาดปัจจุบันจากรายการที่กำหนดไว้
-        const matchedResolution = this.state.config.resolutions.find(
-            (r) => r.width === currentWidth && r.height === currentHeight,
-        );
+        const matchedResolution =
+            this.state.config.resolution instanceof Array
+                ? this.state.config.resolution.find(
+                      (r: Resolution) => r.width === currentWidth && r.height === currentHeight,
+                  )
+                : this.state.config.resolution;
 
         return {
             name: matchedResolution?.name || `${currentWidth}x${currentHeight}`,
@@ -727,29 +722,39 @@ export class Webcam {
     }
 
     private async openCamera(): Promise<void> {
-        for (const resolution of this.state.config!.resolutions) {
-            try {
-                await this.tryResolution(resolution);
-                return;
-            } catch (error) {
-                console.log(
-                    `Failed to open camera with resolution: ${resolution.name}. Error:`,
-                    error,
-                );
-                continue;
+        // ถ้ามีการกำหนด resolution ให้ลองใช้ตามที่กำหนด
+        if (this.state.config!.resolution) {
+            const resolutions =
+                this.state.config!.resolution instanceof Array
+                    ? this.state.config!.resolution
+                    : [this.state.config!.resolution];
+
+            for (const resolution of resolutions) {
+                try {
+                    await this.tryResolution(resolution);
+                    return;
+                } catch (error) {
+                    console.log(
+                        `Failed to open camera with resolution: ${resolution.name}. Error:`,
+                        error,
+                    );
+                    // ถ้าไม่สามารถเปิดด้วย resolution ที่กำหนดได้
+                    // และไม่ได้กำหนด allowAnyResolution ให้แจ้ง error
+                    if (!this.state.config!.allowAnyResolution) {
+                        throw new CameraError(
+                            'camera-initialization-error',
+                            `Cannot open camera with specified resolution: ${resolution.name}`,
+                            error as Error,
+                        );
+                    }
+                    continue;
+                }
             }
         }
 
-        if (this.state.config!.allowAnyResolution) {
-            await this.tryAnyResolution();
-        } else {
-            throw new CameraError(
-                'configuration-error',
-                `Unable to open camera with specified resolutions: ${this.state
-                    .config!.resolutions.map((r) => `${r.name} (${r.width}x${r.height})`)
-                    .join(', ')}`,
-            );
-        }
+        // ถ้าไม่มีการกำหนด resolution หรือ allowAnyResolution เป็น true
+        // ให้ใช้ resolution ที่กล้องรองรับ
+        await this.tryAnyResolution();
     }
 
     private async tryResolution(resolution: Resolution): Promise<void> {
@@ -765,12 +770,21 @@ export class Webcam {
 
         console.log(`Successfully opened camera with resolution: ${resolution.name}`);
         this.state.status = WebcamStatus.READY;
-        this.state.config!.onStart();
+        this.state.config?.onStart?.();
     }
 
     private async tryAnyResolution(): Promise<void> {
         console.log('Attempting to open camera with any supported resolution');
 
+        // ขอข้อมูลความสามารถของกล้องก่อน
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const device = devices.find((d) => d.deviceId === this.state.config!.device);
+
+        if (!device) {
+            throw new CameraError('no-device', 'Selected device not found');
+        }
+
+        // สร้าง constraints โดยไม่ระบุ resolution
         const constraints: MediaStreamConstraints = {
             video: {
                 deviceId: { exact: this.state.config!.device },
@@ -778,17 +792,24 @@ export class Webcam {
             audio: this.state.config!.audio,
         };
 
-        this.state.stream = await navigator.mediaDevices.getUserMedia(constraints);
+        try {
+            this.state.stream = await navigator.mediaDevices.getUserMedia(constraints);
+            await this.updateCapabilities();
+            await this.setupPreviewElement();
 
-        await this.updateCapabilities();
-        await this.setupPreviewElement();
+            const videoTrack = this.state.stream.getVideoTracks()[0];
+            const settings = videoTrack.getSettings();
+            console.log(`Opened camera with resolution: ${settings.width}x${settings.height}`);
 
-        const videoTrack = this.state.stream.getVideoTracks()[0];
-        const settings = videoTrack.getSettings();
-        console.log(`Opened camera with resolution: ${settings.width}x${settings.height}`);
-
-        this.state.status = WebcamStatus.READY;
-        this.state.config!.onStart();
+            this.state.status = WebcamStatus.READY;
+            this.state.config?.onStart?.();
+        } catch (error) {
+            throw new CameraError(
+                'camera-initialization-error',
+                'Failed to initialize camera with any resolution',
+                error as Error,
+            );
+        }
     }
 
     private async setupPreviewElement(): Promise<void> {
@@ -861,9 +882,7 @@ export class Webcam {
             error instanceof CameraError ? error : new CameraError('unknown', error.message, error);
 
         // เรียก callback onError ถ้ามี config
-        if (this.state.config?.onError) {
-            this.state.config.onError(this.state.lastError as CameraError);
-        }
+        this.state.config?.onError?.(this.state.lastError as CameraError);
     }
 
     private stopStream(): void {
@@ -880,7 +899,7 @@ export class Webcam {
     private resetState(): void {
         this.stopChangeListeners();
 
-        // Reset เฉพาะ state ที่เกี่ยวข้องกับการทำงานปัจจุบัน
+        // Reset เฉพาะ state ที่เกี่ยวข้อมูลพื้นฐานของระบบไว้
         this.state = {
             ...this.state,
             status: WebcamStatus.IDLE,

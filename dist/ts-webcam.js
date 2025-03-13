@@ -54,6 +54,7 @@ class Webcam {
                 camera: 'prompt',
                 microphone: 'prompt',
             },
+            captureCanvas: document.createElement('canvas'),
         };
         this.deviceChangeListener = null;
         this.orientationChangeListener = null;
@@ -61,10 +62,7 @@ class Webcam {
         this.defaultConfig = {
             audio: false,
             device: '',
-            resolutions: [
-                { name: 'HD', width: 1280, height: 720, aspectRatio: 16 / 9 },
-                { name: 'VGA', width: 640, height: 480, aspectRatio: 4 / 3 },
-            ],
+            resolution: { name: 'HD', width: 1280, height: 720, aspectRatio: 16 / 9 },
             allowAnyResolution: false,
             mirror: false,
             autoRotation: true,
@@ -73,15 +71,38 @@ class Webcam {
             onError: () => { },
         };
         // ไม่ต้องเรียก getAvailableDevices ตั้งแต่ constructor
-        // ลบการตั้งค่าเริ่มต้นของ mirror
+        // สร้าง canvas element สำหรับการถ่ายภาพ
+        const canvas = document.createElement('canvas');
+        this.state = {
+            status: WebcamStatus.IDLE,
+            config: null,
+            stream: null,
+            lastError: null,
+            devices: [],
+            capabilities: {
+                zoom: false,
+                torch: false,
+                focusMode: false,
+                currentZoom: 1,
+                minZoom: 1,
+                maxZoom: 1,
+                torchActive: false,
+                focusModeActive: false,
+                currentFocusMode: 'none',
+                supportedFocusModes: [],
+            },
+            captureCanvas: canvas,
+            currentOrientation: 'portrait-primary',
+            currentPermission: {
+                camera: 'prompt',
+                microphone: 'prompt',
+            },
+        };
     }
     // Public API methods
     setupConfiguration(config) {
         if (!config.device) {
             throw new CameraError('invalid-device-id', 'Device ID is required');
-        }
-        if (!config.resolutions || config.resolutions.length === 0) {
-            throw new CameraError('no-resolutions', 'At least one resolution must be specified');
         }
         this.state.config = Object.assign(Object.assign({}, this.defaultConfig), config);
     }
@@ -257,7 +278,9 @@ class Webcam {
             ? settings.width || 0
             : settings.height || 0;
         // หา resolution ที่ตรงกับขนาดปัจจุบันจากรายการที่กำหนดไว้
-        const matchedResolution = this.state.config.resolutions.find((r) => r.width === currentWidth && r.height === currentHeight);
+        const matchedResolution = this.state.config.resolution instanceof Array
+            ? this.state.config.resolution.find((r) => r.width === currentWidth && r.height === currentHeight)
+            : this.state.config.resolution;
         return {
             name: (matchedResolution === null || matchedResolution === void 0 ? void 0 : matchedResolution.name) || `${currentWidth}x${currentHeight}`,
             width: currentWidth,
@@ -460,7 +483,8 @@ class Webcam {
         }
         const videoTrack = this.state.stream.getVideoTracks()[0];
         const settings = videoTrack.getSettings();
-        const canvas = document.createElement('canvas');
+        // ใช้ canvas จาก state
+        const canvas = this.state.captureCanvas;
         const context = canvas.getContext('2d');
         if (!context) {
             throw new CameraError('camera-settings-error', 'Failed to get canvas context');
@@ -473,7 +497,17 @@ class Webcam {
             context.scale(-1, 1);
         }
         context.drawImage(this.state.config.previewElement, 0, 0, canvas.width, canvas.height);
-        return canvas.toDataURL(config.mediaType || 'image/png');
+        // รีเซ็ต transform matrix
+        if (this.state.config.mirror) {
+            context.setTransform(1, 0, 0, 1, 0, 0);
+        }
+        const mediaType = config.mediaType || 'image/png';
+        const quality = typeof config.quality === 'number'
+            ? Math.min(Math.max(config.quality, 0), 1) // ควบคุมค่าให้อยู่ระหว่าง 0-1
+            : mediaType === 'image/jpeg'
+                ? 0.92
+                : undefined; // ค่า default สำหรับ JPEG
+        return canvas.toDataURL(mediaType, quality);
     }
     // Private helper methods
     initializeWebcam() {
@@ -487,24 +521,30 @@ class Webcam {
     }
     openCamera() {
         return __awaiter(this, void 0, void 0, function* () {
-            for (const resolution of this.state.config.resolutions) {
-                try {
-                    yield this.tryResolution(resolution);
-                    return;
+            // ถ้ามีการกำหนด resolution ให้ลองใช้ตามที่กำหนด
+            if (this.state.config.resolution) {
+                const resolutions = this.state.config.resolution instanceof Array
+                    ? this.state.config.resolution
+                    : [this.state.config.resolution];
+                for (const resolution of resolutions) {
+                    try {
+                        yield this.tryResolution(resolution);
+                        return;
+                    }
+                    catch (error) {
+                        console.log(`Failed to open camera with resolution: ${resolution.name}. Error:`, error);
+                        // ถ้าไม่สามารถเปิดด้วย resolution ที่กำหนดได้
+                        // และไม่ได้กำหนด allowAnyResolution ให้แจ้ง error
+                        if (!this.state.config.allowAnyResolution) {
+                            throw new CameraError('camera-initialization-error', `Cannot open camera with specified resolution: ${resolution.name}`, error);
+                        }
+                        continue;
+                    }
                 }
-                catch (error) {
-                    console.log(`Failed to open camera with resolution: ${resolution.name}. Error:`, error);
-                    continue;
-                }
             }
-            if (this.state.config.allowAnyResolution) {
-                yield this.tryAnyResolution();
-            }
-            else {
-                throw new CameraError('configuration-error', `Unable to open camera with specified resolutions: ${this.state
-                    .config.resolutions.map((r) => `${r.name} (${r.width}x${r.height})`)
-                    .join(', ')}`);
-            }
+            // ถ้าไม่มีการกำหนด resolution หรือ allowAnyResolution เป็น true
+            // ให้ใช้ resolution ที่กล้องรองรับ
+            yield this.tryAnyResolution();
         });
     }
     tryResolution(resolution) {
@@ -522,20 +562,32 @@ class Webcam {
     tryAnyResolution() {
         return __awaiter(this, void 0, void 0, function* () {
             console.log('Attempting to open camera with any supported resolution');
+            // ขอข้อมูลความสามารถของกล้องก่อน
+            const devices = yield navigator.mediaDevices.enumerateDevices();
+            const device = devices.find((d) => d.deviceId === this.state.config.device);
+            if (!device) {
+                throw new CameraError('no-device', 'Selected device not found');
+            }
+            // สร้าง constraints โดยไม่ระบุ resolution
             const constraints = {
                 video: {
                     deviceId: { exact: this.state.config.device },
                 },
                 audio: this.state.config.audio,
             };
-            this.state.stream = yield navigator.mediaDevices.getUserMedia(constraints);
-            yield this.updateCapabilities();
-            yield this.setupPreviewElement();
-            const videoTrack = this.state.stream.getVideoTracks()[0];
-            const settings = videoTrack.getSettings();
-            console.log(`Opened camera with resolution: ${settings.width}x${settings.height}`);
-            this.state.status = WebcamStatus.READY;
-            this.state.config.onStart();
+            try {
+                this.state.stream = yield navigator.mediaDevices.getUserMedia(constraints);
+                yield this.updateCapabilities();
+                yield this.setupPreviewElement();
+                const videoTrack = this.state.stream.getVideoTracks()[0];
+                const settings = videoTrack.getSettings();
+                console.log(`Opened camera with resolution: ${settings.width}x${settings.height}`);
+                this.state.status = WebcamStatus.READY;
+                this.state.config.onStart();
+            }
+            catch (error) {
+                throw new CameraError('camera-initialization-error', 'Failed to initialize camera with any resolution', error);
+            }
         });
     }
     setupPreviewElement() {
@@ -618,7 +670,7 @@ class Webcam {
     }
     resetState() {
         this.stopChangeListeners();
-        // Reset เฉพาะ state ที่เกี่ยวข้องกับการทำงานปัจจุบัน
+        // Reset เฉพาะ state ที่เกี่ยวข้อมูลพื้นฐานของระบบไว้
         this.state = Object.assign(Object.assign({}, this.state), { status: WebcamStatus.IDLE, stream: null, lastError: null, capabilities: {
                 zoom: false,
                 torch: false,

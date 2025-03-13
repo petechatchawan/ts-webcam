@@ -16,9 +16,9 @@ export interface WebcamConfig {
     audio?: boolean;
     /** ID ของอุปกรณ์กล้อง (required) */
     device: string;
-    /** รายการความละเอียดที่ต้องการใช้งาน เรียงตามลำดับความสำคัญ */
-    resolutions: Resolution[];
-    /** อนุญาตให้ใช้ความละเอียดใดๆ ได้ หากไม่สามารถใช้ความละเอียดที่กำหนดไว้นนความละเอียดที่กำหนดไว้ */
+    /** ความละเอียดที่ต้องการใช้งาน (optional) */
+    resolution?: Resolution | Resolution[];
+    /** อนุญาตให้ใช้ resolution อื่นได้ถ้าเปิดด้วย resolution ที่กำหนดไม่ได้ */
     allowAnyResolution?: boolean;
     /** กลับด้านการแสดงผล */
     mirror?: boolean;
@@ -61,6 +61,7 @@ export interface WebcamState {
         camera: PermissionState;
         microphone: PermissionState;
     };
+    captureCanvas?: HTMLCanvasElement;
 }
 export type OrientationType = 'portrait-primary' | 'portrait-secondary' | 'landscape-primary' | 'landscape-secondary' | 'unknown';
 export declare class Webcam {
@@ -109,6 +110,7 @@ export declare class Webcam {
     captureImage(config?: {
         scale?: number;
         mediaType?: 'image/png' | 'image/jpeg';
+        quality?: number;
     }): string;
     private initializeWebcam;
     private openCamera;
