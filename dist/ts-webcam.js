@@ -73,6 +73,7 @@ class Webcam {
             onError: () => { },
         };
         // ไม่ต้องเรียก getAvailableDevices ตั้งแต่ constructor
+        // ลบการตั้งค่าเริ่มต้นของ mirror
     }
     // Public API methods
     setupConfiguration(config) {
@@ -450,6 +451,29 @@ class Webcam {
                 ? 'scaleX(-1)'
                 : 'none';
         }
+    }
+    // ฟังก์ชันสำหรับถ่ายภาพ
+    captureImage(config = {}) {
+        this.checkConfiguration();
+        if (!this.state.stream) {
+            throw new CameraError('no-stream', 'No active stream to capture image from');
+        }
+        const videoTrack = this.state.stream.getVideoTracks()[0];
+        const settings = videoTrack.getSettings();
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        if (!context) {
+            throw new CameraError('camera-settings-error', 'Failed to get canvas context');
+        }
+        const scale = config.scale || 1;
+        canvas.width = (settings.width || 640) * scale;
+        canvas.height = (settings.height || 480) * scale;
+        if (this.state.config.mirror) {
+            context.translate(canvas.width, 0);
+            context.scale(-1, 1);
+        }
+        context.drawImage(this.state.config.previewElement, 0, 0, canvas.width, canvas.height);
+        return canvas.toDataURL(config.mediaType || 'image/png');
     }
     // Private helper methods
     initializeWebcam() {

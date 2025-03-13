@@ -125,6 +125,7 @@ export interface WebcamState {
         camera: PermissionState;
         microphone: PermissionState;
     };
+    captureCanvas?: HTMLCanvasElement;
 }
 
 // เพิ่ม type สำหรับ orientation
@@ -160,6 +161,7 @@ export class Webcam {
             camera: 'prompt',
             microphone: 'prompt',
         },
+        captureCanvas: document.createElement('canvas'),
     };
 
     private deviceChangeListener: (() => void) | null = null;
@@ -183,6 +185,33 @@ export class Webcam {
 
     constructor() {
         // ไม่ต้องเรียก getAvailableDevices ตั้งแต่ constructor
+        // สร้าง canvas element สำหรับการถ่ายภาพ
+        const canvas = document.createElement('canvas');
+        this.state = {
+            status: WebcamStatus.IDLE,
+            config: null,
+            stream: null,
+            lastError: null,
+            devices: [],
+            capabilities: {
+                zoom: false,
+                torch: false,
+                focusMode: false,
+                currentZoom: 1,
+                minZoom: 1,
+                maxZoom: 1,
+                torchActive: false,
+                focusModeActive: false,
+                currentFocusMode: 'none',
+                supportedFocusModes: [],
+            },
+            captureCanvas: canvas,
+            currentOrientation: 'portrait-primary',
+            currentPermission: {
+                camera: 'prompt',
+                microphone: 'prompt',
+            },
+        };
     }
 
     // Public API methods
@@ -634,6 +663,56 @@ export class Webcam {
                 ? 'scaleX(-1)'
                 : 'none';
         }
+    }
+
+    // ฟังก์ชันสำหรับถ่ายภาพ
+    public captureImage(
+        config: {
+            scale?: number;
+            mediaType?: 'image/png' | 'image/jpeg';
+            quality?: number; // 0.0 - 1.0
+        } = {},
+    ): string {
+        this.checkConfiguration();
+        if (!this.state.stream) {
+            throw new CameraError('no-stream', 'No active stream to capture image from');
+        }
+
+        const videoTrack = this.state.stream.getVideoTracks()[0];
+        const settings = videoTrack.getSettings();
+
+        // ใช้ canvas จาก state
+        const canvas = this.state.captureCanvas!;
+        const context = canvas.getContext('2d');
+        if (!context) {
+            throw new CameraError('camera-settings-error', 'Failed to get canvas context');
+        }
+
+        const scale = config.scale || 1;
+        canvas.width = (settings.width || 640) * scale;
+        canvas.height = (settings.height || 480) * scale;
+
+        if (this.state.config!.mirror) {
+            context.translate(canvas.width, 0);
+            context.scale(-1, 1);
+        }
+
+        context.drawImage(this.state.config!.previewElement!, 0, 0, canvas.width, canvas.height);
+
+        // รีเซ็ต transform matrix
+        if (this.state.config!.mirror) {
+            context.setTransform(1, 0, 0, 1, 0, 0);
+        }
+
+        const mediaType = config.mediaType || 'image/png';
+        const quality =
+            typeof config.quality === 'number'
+                ? Math.min(Math.max(config.quality, 0), 1) // ควบคุมค่าให้อยู่ระหว่าง 0-1
+                : mediaType === 'image/jpeg'
+                  ? 0.92
+                  : undefined; // ค่า default สำหรับ JPEG
+
+        return canvas.toDataURL(mediaType, quality);
     }
 
     // Private helper methods

@@ -106,6 +106,10 @@ export declare class Webcam {
     needsPermissionRequest(): boolean;
     hasPermissionDenied(): boolean;
     toggleMirrorMode(): void;
+    captureImage(config?: {
+        scale?: number;
+        mediaType?: 'image/png' | 'image/jpeg';
+    }): string;
     private initializeWebcam;
     private openCamera;
     private tryResolution;
