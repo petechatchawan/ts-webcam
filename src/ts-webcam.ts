@@ -893,27 +893,19 @@ export class Webcam {
         // ตรวจสอบแต่ละ resolution
         const resolutions = desiredResolutions.map((resolution) => {
             // ตรวจสอบว่า resolution อยู่ในช่วงที่รองรับหรือไม่
-            const isWidthSupported =
-                resolution.width >= capability.minWidth && resolution.width <= capability.maxWidth;
-            const isHeightSupported =
-                resolution.height >= capability.minHeight &&
-                resolution.height <= capability.maxHeight;
-
-            // ตรวจสอบว่ามี resolution ที่ตรงกันในรายการที่รองรับหรือไม่
-            const matchedResolution = capability.supportedResolutions.find(
-                (supported) =>
-                    supported.width === resolution.width &&
-                    supported.height === resolution.height &&
-                    (!resolution.aspectRatio ||
-                        Math.abs(supported.aspectRatio - resolution.aspectRatio) < 0.1),
-            );
+            // กล้องจะรองรับถ้า width และ height ไม่เกินค่าสูงสุดที่กล้องรองรับ
+            const isSupported =
+                resolution.width <= capability.maxWidth &&
+                resolution.height <= capability.maxHeight &&
+                resolution.width >= capability.minWidth &&
+                resolution.height >= capability.minHeight;
 
             return {
                 name: resolution.name,
                 width: resolution.width,
                 height: resolution.height,
                 aspectRatio: resolution.aspectRatio || resolution.width / resolution.height,
-                supported: isWidthSupported && isHeightSupported && !!matchedResolution,
+                supported: isSupported,
             };
         });
 

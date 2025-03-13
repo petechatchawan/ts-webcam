@@ -448,6 +448,68 @@ webcam.stop();  // reset เฉพาะ operational state
 await webcam.start();  // เริ่มกล้องใหม่โดยใช้ config เดิม
 ```
 
+### Device Capabilities and Resolution Support
+
+The library provides methods to check device capabilities and supported resolutions:
+
+```typescript
+// Check device capabilities
+const deviceId = "your-device-id";
+const capabilities = await webcam.checkDevicesCapabilitiesData(deviceId);
+console.log("Device capabilities:", capabilities);
+/* Output example:
+{
+    deviceId: "device-id-string",
+    maxWidth: 1280,
+    maxHeight: 720,
+    minWidth: 1,
+    minHeight: 1,
+    supportedResolutions: [...],
+    supportedFrameRates: [...],
+    hasZoom: true,
+    hasTorch: false,
+    hasFocus: true,
+    maxZoom: 10,
+    minZoom: 1,
+    supportedFocusModes: ["continuous", "manual"]
+}
+*/
+
+// Check if specific resolutions are supported
+const desiredResolutions = [
+    { name: "4K", width: 3840, height: 2160 },
+    { name: "HD", width: 1280, height: 720 },
+    { name: "VGA", width: 640, height: 480 }
+];
+
+const supportInfo = webcam.checkSupportedResolutions([capabilities], desiredResolutions);
+console.log("Support info:", supportInfo);
+/* Output example:
+{
+    resolutions: [
+        { name: "4K", width: 3840, height: 2160, aspectRatio: 1.778, supported: false },
+        { name: "HD", width: 1280, height: 720, aspectRatio: 1.778, supported: true },
+        { name: "VGA", width: 640, height: 480, aspectRatio: 1.333, supported: true }
+    ],
+    deviceInfo: {
+        deviceId: "device-id-string",
+        maxWidth: 1280,
+        maxHeight: 720,
+        minWidth: 1,
+        minHeight: 1
+    }
+}
+*/
+```
+
+**Notes:**
+
+- A resolution is considered supported if both its width and height are:
+    - Less than or equal to the device's maximum width/height
+    - Greater than or equal to the device's minimum width/height
+- The aspect ratio is calculated automatically if not provided
+- The device info includes the maximum and minimum dimensions supported by the device
+
 ## System Requirements
 
 - Modern browser with MediaDevices API support (Chrome, Firefox, Edge, Safari)
