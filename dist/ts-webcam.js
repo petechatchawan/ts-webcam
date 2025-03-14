@@ -30,7 +30,7 @@ var WebcamStatus;
 })(WebcamStatus || (exports.WebcamStatus = WebcamStatus = {}));
 class Webcam {
     constructor() {
-        // รวม state ทั้งหมดไว้ในที่เดียว
+        // Combine all states in one place
         this.state = {
             status: WebcamStatus.IDLE,
             config: null,
@@ -69,8 +69,8 @@ class Webcam {
             onStart: () => { },
             onError: () => { },
         };
-        // ไม่ต้องเรียก getAvailableDevices ตั้งแต่ constructor
-        // สร้าง canvas element สำหรับการถ่ายภาพ
+        // Don't call getAvailableDevices in constructor
+        // Create canvas element for image capture
         const canvas = document.createElement('canvas');
         this.state = {
             status: WebcamStatus.IDLE,
@@ -143,7 +143,7 @@ class Webcam {
                 return [...this.state.devices];
             }
             catch (error) {
-                this.handleError(new CameraError('device-list-error', 'ไม่สามารถดึงรายการอุปกรณ์ได้', error));
+                this.handleError(new CameraError('device-list-error', 'Failed to get device list', error));
                 return [];
             }
         });
@@ -153,7 +153,7 @@ class Webcam {
     }
     getVideoDevices() {
         return __awaiter(this, void 0, void 0, function* () {
-            // ถ้ายังไม่มีข้อมูลอุปกรณ์ ให้เรียก getAvailableDevices ก่อน
+            // If no device information, call getAvailableDevices first
             if (this.state.devices.length === 0) {
                 yield this.getAvailableDevices();
             }
@@ -162,7 +162,7 @@ class Webcam {
     }
     getAudioInputDevices() {
         return __awaiter(this, void 0, void 0, function* () {
-            // ถ้ายังไม่มีข้อมูลอุปกรณ์ ให้เรียก getAvailableDevices ก่อน
+            // If no device information, call getAvailableDevices first
             if (this.state.devices.length === 0) {
                 yield this.getAvailableDevices();
             }
@@ -171,7 +171,7 @@ class Webcam {
     }
     getAudioOutputDevices() {
         return __awaiter(this, void 0, void 0, function* () {
-            // ถ้ายังไม่มีข้อมูลอุปกรณ์ ให้เรียก getAvailableDevices ก่อน
+            // If no device information, call getAvailableDevices first
             if (this.state.devices.length === 0) {
                 yield this.getAvailableDevices();
             }
@@ -190,25 +190,25 @@ class Webcam {
         return (this.state.devices.find((device) => device.deviceId === this.state.config.device) || null);
     }
     setupChangeListeners() {
-        // ติดตามการเปลี่ยนแปลงอุปกรณ์
+        // Add device change listener
         if (!navigator.mediaDevices ||
             !navigator.mediaDevices.enumerateDevices) {
             throw new CameraError('no-media-devices-support', 'MediaDevices API is not supported in this browser');
         }
-        // อัปเดตรายการอุปกรณ์ครั้งแรก
+        // Update device list for the first time
         this.refreshDevices();
-        // ตั้งค่า device change listener
+        // Set device change listener
         this.deviceChangeListener = () => __awaiter(this, void 0, void 0, function* () {
             yield this.refreshDevices();
-            // ตรวจสอบว่าอุปกรณ์ปัจจุบันยังคงมีอยู่หรือไม่
+            // Check if current device still exists
             const currentDevice = this.getCurrentDevice();
             if (this.isActive() && !currentDevice) {
-                // ถ้าอุปกรณ์ปัจจุบันหายไป ให้หยุดการทำงาน
+                // If current device is gone, stop the operation
                 this.handleError(new CameraError('no-device', 'Current device is no longer available'));
                 this.stop();
             }
         });
-        // ตั้งค่า orientation change listener
+        // Set orientation change listener
         this.orientationChangeListener = () => {
             if (this.isActive()) {
                 if (screen.orientation) {
@@ -217,20 +217,20 @@ class Webcam {
                         .type;
                     const angle = screen.orientation.angle;
                     console.log(`Orientation type: ${orientation}, angle: ${angle}`);
-                    // เก็บค่า orientation ปัจจุบัน
+                    // Store current orientation
                     this.state.currentOrientation = orientation;
                     switch (orientation) {
                         case 'portrait-primary':
-                            console.log('Portrait (ปกติ)');
+                            console.log('Portrait (normal)');
                             break;
                         case 'portrait-secondary':
-                            console.log('Portrait (กลับหัว)');
+                            console.log('Portrait (flipped)');
                             break;
                         case 'landscape-primary':
-                            console.log('Landscape (ปกติ)');
+                            console.log('Landscape (normal)');
                             break;
                         case 'landscape-secondary':
-                            console.log('Landscape (กลับด้าน)');
+                            console.log('Landscape (flipped)');
                             break;
                         default:
                             console.log('Unknown orientation');
@@ -243,17 +243,17 @@ class Webcam {
                 }
             }
         };
-        // เพิ่ม listeners
+        // Add listeners
         navigator.mediaDevices.addEventListener('devicechange', this.deviceChangeListener);
         window.addEventListener('orientationchange', this.orientationChangeListener);
     }
     stopChangeListeners() {
-        // ลบ device change listener
+        // Remove device change listener
         if (this.deviceChangeListener) {
             navigator.mediaDevices.removeEventListener('devicechange', this.deviceChangeListener);
             this.deviceChangeListener = null;
         }
-        // ลบ orientation change listener
+        // Remove orientation change listener
         if (this.orientationChangeListener) {
             window.removeEventListener('orientationchange', this.orientationChangeListener);
             this.orientationChangeListener = null;
@@ -270,7 +270,7 @@ class Webcam {
         return this.state.lastError;
     }
     clearError() {
-        // ล้าง error และกลับไปที่สถานะ IDLE ถ้าไม่ได้ active อยู่
+        // Clear error and go back to IDLE state if not active
         this.state.lastError = null;
         if (!this.isActive()) {
             this.state.status = WebcamStatus.IDLE;
@@ -280,19 +280,19 @@ class Webcam {
         return Object.assign({}, this.state.capabilities);
     }
     getCurrentResolution() {
-        // ถ้าไม่มี stream หรือไม่มี config ้คืนค่า null
+        // If no stream or no config, return null
         if (!this.state.stream || !this.state.config)
             return null;
         const videoTrack = this.state.stream.getVideoTracks()[0];
         const settings = videoTrack.getSettings();
-        // หาชื่อ resolution ที่ตรงกับขนาดปัจจุบัน
+        // Find resolution name that matches current size
         const currentWidth = this.state.config.autoRotation
             ? settings.height || 0
             : settings.width || 0;
         const currentHeight = this.state.config.autoRotation
             ? settings.width || 0
             : settings.height || 0;
-        // หา resolution ที่ตรงกับขนาดปัจจุบันจากรายการที่กำหนดไว้
+        // Find resolution that matches current size from specified list
         const matchedResolution = this.state.config.resolution instanceof Array
             ? this.state.config.resolution.find((r) => r.width === currentWidth &&
                 r.height === currentHeight)
@@ -460,9 +460,9 @@ class Webcam {
     requestPermissions() {
         return __awaiter(this, void 0, void 0, function* () {
             var _a;
-            // ขอสิทธิ์กล้องก่อนเสมอ
+            // Request camera permission first
             const cameraPermission = yield this.requestMediaPermission('video');
-            // ขอสิทธิ์ไมโครโฟนเฉพาะเมื่อต้องการใช้งาน
+            // Request microphone permission only if needed
             let microphonePermission = 'prompt';
             if ((_a = this.state.config) === null || _a === void 0 ? void 0 : _a.audio) {
                 microphonePermission = yield this.requestMediaPermission('audio');
@@ -473,25 +473,25 @@ class Webcam {
             };
         });
     }
-    // เพิ่มเมธอดใหม่สำหรับตรวจสอบสถานะสิทธิ์ปัจจุบัน
+    // Add new method for checking current permission status
     getCurrentPermissions() {
         return Object.assign({}, this.state.currentPermission);
     }
-    // เพิ่มเมธอดสำหรับตรวจสอบว่าต้องขอสิทธิ์หรือไม่
+    // Add method for checking if permission is needed
     needsPermissionRequest() {
         var _a;
         return (this.state.currentPermission.camera === 'prompt' ||
             (!!((_a = this.state.config) === null || _a === void 0 ? void 0 : _a.audio) &&
                 this.state.currentPermission.microphone === 'prompt'));
     }
-    // เพิ่มเมธอดสำหรับตรวจสอบว่าถูกปฏิเสธสิทธิ์หรือไม่
+    // Add method for checking if permission is denied
     hasPermissionDenied() {
         var _a;
         return (this.state.currentPermission.camera === 'denied' ||
             (!!((_a = this.state.config) === null || _a === void 0 ? void 0 : _a.audio) &&
                 this.state.currentPermission.microphone === 'denied'));
     }
-    // เพิ่มฟังก์ชัน toggleMirrorMode
+    // Add method for toggling mirror mode
     toggleMirrorMode() {
         this.checkConfiguration();
         this.state.config.mirror = !this.state.config.mirror;
@@ -502,7 +502,7 @@ class Webcam {
                 : 'none';
         }
     }
-    // ฟังก์ชันสำหรับถ่ายภาพ
+    // Method for capturing image
     captureImage(config = {}) {
         this.checkConfiguration();
         if (!this.state.stream) {
@@ -510,7 +510,7 @@ class Webcam {
         }
         const videoTrack = this.state.stream.getVideoTracks()[0];
         const settings = videoTrack.getSettings();
-        // ใช้ canvas จาก state
+        // Use canvas from state
         const canvas = this.state.captureCanvas;
         const context = canvas.getContext('2d');
         if (!context) {
@@ -524,32 +524,32 @@ class Webcam {
             context.scale(-1, 1);
         }
         context.drawImage(this.state.config.previewElement, 0, 0, canvas.width, canvas.height);
-        // รีเซ็ต transform matrix
+        // Reset transform matrix
         if (this.state.config.mirror) {
             context.setTransform(1, 0, 0, 1, 0, 0);
         }
         const mediaType = config.mediaType || 'image/png';
         const quality = typeof config.quality === 'number'
-            ? Math.min(Math.max(config.quality, 0), 1) // ควบคุมค่าให้อยู่ระหว่าง 0-1
+            ? Math.min(Math.max(config.quality, 0), 1) // Constrain value between 0-1
             : mediaType === 'image/jpeg'
                 ? 0.92
-                : undefined; // ค่า default สำหรับ JPEG
+                : undefined; // Default value for JPEG
         return canvas.toDataURL(mediaType, quality);
     }
-    // เพิ่มฟังก์ชันตรวจสอบความสามารถของกล้อง
+    // Add method for checking device capabilities
     checkDevicesCapabilitiesData(deviceId) {
         return __awaiter(this, void 0, void 0, function* () {
             var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q;
             try {
-                // ขอสิทธิ์การใช้งานกล้องก่อน
+                // Request camera permission first
                 const stream = yield navigator.mediaDevices.getUserMedia({
                     video: { deviceId: { exact: deviceId } },
                 });
                 const videoTrack = stream.getVideoTracks()[0];
                 const capabilities = videoTrack.getCapabilities();
-                // เก็บข้อมูลความละเอียดที่รองรับ
+                // Store supported resolution information
                 const supportedResolutions = [];
-                // ตรวจสอบ width และ height ที่รองรับ
+                // Check width and height support
                 if (((_a = capabilities.width) === null || _a === void 0 ? void 0 : _a.max) &&
                     ((_b = capabilities.width) === null || _b === void 0 ? void 0 : _b.min) &&
                     ((_c = capabilities.width) === null || _c === void 0 ? void 0 : _c.step) &&
@@ -567,11 +567,11 @@ class Webcam {
                             capabilities.height.step) + 1,
                     }, (_, i) => capabilities.height.min +
                         i * capabilities.height.step);
-                    // สร้างรายการ resolution ที่เป็นไปได้
+                    // Create resolution list that is possible
                     for (const width of widths) {
                         for (const height of heights) {
                             const aspectRatio = width / height;
-                            // กรองเฉพาะ resolution ที่มี aspect ratio มาตรฐาน (เช่น 16:9, 4:3)
+                            // Filter out only standard aspect ratio resolutions (e.g. 16:9, 4:3)
                             if (Math.abs(aspectRatio - 16 / 9) < 0.1 ||
                                 Math.abs(aspectRatio - 4 / 3) < 0.1) {
                                 supportedResolutions.push({
@@ -583,7 +583,7 @@ class Webcam {
                         }
                     }
                 }
-                // เก็บข้อมูล frame rate ที่รองรับ
+                // Store frame rate information
                 const frameRates = [];
                 if (((_g = capabilities.frameRate) === null || _g === void 0 ? void 0 : _g.min) &&
                     ((_h = capabilities.frameRate) === null || _h === void 0 ? void 0 : _h.max) &&
@@ -593,7 +593,7 @@ class Webcam {
                         frameRates.push(fps);
                     }
                 }
-                // หยุดการใช้งานกล้อง
+                // Stop camera usage
                 stream.getTracks().forEach((track) => track.stop());
                 return {
                     deviceId,
@@ -616,11 +616,11 @@ class Webcam {
             }
         });
     }
-    // เพิ่มฟังก์ชันตรวจสอบ resolution ที่รองรับ
+    // Add method for checking resolution support
     checkSupportedResolutions(deviceCapabilities, desiredResolutions) {
-        // เลือกใช้ความสามารถของกล้องตัวแรก (หรือจะให้เลือกได้)
+        // Use first device capability (or can choose)
         const capability = deviceCapabilities[0];
-        // สร้างข้อมูลอุปกรณ์
+        // Create device information
         const deviceInfo = {
             deviceId: capability.deviceId,
             maxWidth: capability.maxWidth,
@@ -628,10 +628,10 @@ class Webcam {
             minWidth: capability.minWidth,
             minHeight: capability.minHeight,
         };
-        // ตรวจสอบแต่ละ resolution
+        // Check each resolution
         const resolutions = desiredResolutions.map((resolution) => {
-            // ตรวจสอบว่า resolution อยู่ในช่วงที่รองรับหรือไม่
-            // กล้องจะรองรับถ้า width และ height ไม่เกินค่าสูงสุดที่กล้องรองรับ
+            // Check if resolution is within supported range
+            // Camera will support if width and height are not exceeding maximum supported by camera
             const isSupported = resolution.width <= capability.maxWidth &&
                 resolution.height <= capability.maxHeight &&
                 resolution.width >= capability.minWidth &&
@@ -664,33 +664,33 @@ class Webcam {
     }
     openCamera() {
         return __awaiter(this, void 0, void 0, function* () {
-            // กรณีไม่ระบุ resolution - ใช้ resolution ที่กล้องรองรับ
+            // Case: No resolution specified - use supported resolution
             if (!this.state.config.resolution) {
                 try {
                     yield this.tryAnyResolution();
                     return;
                 }
                 catch (error) {
-                    throw new CameraError('camera-initialization-error', 'ไม่สามารถเปิดกล้องด้วย resolution ที่รองรับได้', error);
+                    throw new CameraError('camera-initialization-error', 'Failed to open camera with supported resolution', error);
                 }
             }
-            // กรณีระบุ resolution
+            // Case: Resolution specified
             const resolutions = this.state.config.resolution instanceof Array
                 ? this.state.config.resolution
                 : [this.state.config.resolution];
-            // กรณี allowAnyResolution = false
-            // ลองเปิดด้วย resolution แรกเท่านั้น ถ้าไม่ได้ให้ throw error ทันที
+            // Case: allowAnyResolution = false
+            // Try only first resolution, throw error immediately if fails
             if (!this.state.config.allowAnyResolution) {
                 try {
                     yield this.tryResolution(resolutions[0]);
                 }
                 catch (error) {
-                    throw new CameraError('camera-initialization-error', `ไม่สามารถเปิดกล้องด้วย resolution ที่กำหนด: ${resolutions[0].name}`, error);
+                    throw new CameraError('camera-initialization-error', `Failed to open camera with specified resolution: ${resolutions[0].name}`, error);
                 }
                 return;
             }
-            // กรณี allowAnyResolution = true
-            // 1. ลองเปิดด้วย resolution ที่กำหนดทั้งหมดตามลำดับ
+            // Case: allowAnyResolution = true
+            // 1. Try all specified resolutions in order
             let lastError = null;
             for (const resolution of resolutions) {
                 try {
@@ -699,16 +699,16 @@ class Webcam {
                 }
                 catch (error) {
                     lastError = error;
-                    console.log(`ไม่สามารถเปิดกล้องด้วย resolution: ${resolution.name}. Error:`, error);
+                    console.log(`Failed to open camera with resolution: ${resolution.name}. Error:`, error);
                 }
             }
-            // 2. ถ้าไม่สำเร็จ ลองเปิดด้วย resolution ที่กล้องรองรับ
+            // 2. If all fail, try any supported resolution
             try {
-                console.log('กำลังลองใช้ resolution ที่กล้องรองรับ...');
+                console.log('Attempting to use any supported resolution...');
                 yield this.tryAnyResolution();
             }
             catch (error) {
-                throw new CameraError('camera-initialization-error', 'ไม่สามารถเปิดกล้องด้วย resolution ใดๆ ได้', lastError || error);
+                throw new CameraError('camera-initialization-error', 'Failed to open camera with any resolution', lastError || error);
             }
         });
     }
@@ -730,13 +730,13 @@ class Webcam {
         return __awaiter(this, void 0, void 0, function* () {
             var _a, _b;
             console.log('Attempting to open camera with any supported resolution (ideal: 4K)');
-            // ขอข้อมูลความสามารถของกล้องก่อน
+            // Request device capability information first
             const devices = yield navigator.mediaDevices.enumerateDevices();
             const device = devices.find((d) => d.deviceId === this.state.config.device);
             if (!device) {
                 throw new CameraError('no-device', 'Selected device not found');
             }
-            // สร้าง constraints โดยระบุ ideal resolution เป็น 4K
+            // Create constraints specifying ideal resolution as 4K
             const constraints = {
                 audio: this.state.config.audio,
                 video: {
@@ -822,13 +822,13 @@ class Webcam {
     }
     handleError(error) {
         var _a, _b;
-        // เก็บ error และเปลี่ยนสถานะเป็น ERROR
+        // Store error and change state to ERROR
         this.state.status = WebcamStatus.ERROR;
         this.state.lastError =
             error instanceof CameraError
                 ? error
                 : new CameraError('unknown', error.message, error);
-        // เรียก callback onError ถ้ามี config
+        // Call callback onError if config exists
         (_b = (_a = this.state.config) === null || _a === void 0 ? void 0 : _a.onError) === null || _b === void 0 ? void 0 : _b.call(_a, this.state.lastError);
     }
     stopStream() {
@@ -842,7 +842,7 @@ class Webcam {
     }
     resetState() {
         this.stopChangeListeners();
-        // Reset เฉพาะ state ที่เกี่ยวข้อมูลพื้นฐานของระบบไว้
+        // Reset only basic system state
         this.state = Object.assign(Object.assign({}, this.state), { status: WebcamStatus.IDLE, stream: null, lastError: null, capabilities: {
                 zoom: false,
                 torch: false,
@@ -858,10 +858,10 @@ class Webcam {
     }
     validatePermissions(permissions) {
         if (permissions.camera === 'denied') {
-            throw new CameraError('permission-denied', 'กรุณาอนุญาตให้ใช้งานกล้อง');
+            throw new CameraError('permission-denied', 'Please allow camera access');
         }
         if (this.state.config.audio && permissions.microphone === 'denied') {
-            throw new CameraError('microphone-permission-denied', 'กรุณาอนุญาตให้ใช้งานไมโครโฟน');
+            throw new CameraError('microphone-permission-denied', 'Please allow microphone access');
         }
     }
 }

@@ -12,23 +12,23 @@ export interface Resolution {
     aspectRatio?: number;
 }
 export interface WebcamConfig {
-    /** เปิด/ปิดเสียง */
+    /** Enable/disable audio */
     audio?: boolean;
-    /** ID ของอุปกรณ์กล้อง (required) */
+    /** Camera device ID (required) */
     device: string;
-    /** ความละเอียดที่ต้องการใช้งาน (optional) */
+    /** Desired resolution(s) (optional) */
     resolution?: Resolution | Resolution[];
-    /** อนุญาตให้ใช้ resolution อื่นได้ถ้าเปิดด้วย resolution ที่กำหนดไม่ได้ */
+    /** Allow any resolution if specified resolution is not available */
     allowAnyResolution?: boolean;
-    /** กลับด้านการแสดงผล */
+    /** Mirror display */
     mirror?: boolean;
-    /** หมุนความละเอียดอัตโนมัติ (สลับ width/height) */
+    /** Auto-rotate resolution (swap width/height) */
     autoRotation?: boolean;
-    /** element สำหรับแสดงผลวิดีโอ */
+    /** Video preview element */
     previewElement?: HTMLVideoElement;
-    /** callback เมื่อเปิดกล้องสำเร็จ */
+    /** Callback when camera starts successfully */
     onStart?: () => void;
-    /** callback เมื่อเกิดข้อผิดพลาด */
+    /** Callback when error occurs */
     onError?: (error: CameraError) => void;
 }
 export interface WebcamCapabilities {
