@@ -2,6 +2,12 @@
 
 A TypeScript library for managing webcam access using the MediaDevices API. This library provides a simple, type-safe interface for initializing and controlling webcam streams in web applications.
 
+## Demo
+
+Try out the live demo [here](https://ts-webcam-demo.vercel.app/)
+
+View the demo project source code [here](https://github.com/petechatchawan/ts-webcam-demo.git)
+
 ## Features
 
 - Type-safe configuration with TypeScript interfaces
@@ -25,6 +31,8 @@ npm install ts-webcam
 
 ### Basic Example
 
+Here's how to use ts-webcam in your project:
+
 ```typescript
 import { Webcam, CameraError } from "ts-webcam";
 
@@ -32,13 +40,21 @@ import { Webcam, CameraError } from "ts-webcam";
 const webcam = new Webcam();
 
 // Get available video devices
-const videoDevices = webcam.getVideoDevices();
-const selectedDevice = videoDevices[0]; // หรือให้ผู้ใช้เลือก
+const videoDevices = await webcam.getVideoDevices();
+const selectedDevice = videoDevices[0]; // or let user select
+```
 
-// Setup configuration
+#### Configuration Options
+
+There are three ways to configure the webcam:
+
+##### Option 1: Auto Resolution
+
+Let the camera use its supported resolution:
+
+```typescript
 webcam.setupConfiguration({
   device: selectedDevice.id,
-  // แบบที่ 1: ไม่ระบุ resolution (จะใช้ resolution ที่กล้องรองรับ)
   previewElement: document.getElementById("preview") as HTMLVideoElement,
   onStart: () => console.log("Webcam started"),
   onError: (error: CameraError) => {
@@ -46,12 +62,16 @@ webcam.setupConfiguration({
     console.error("Error message:", error.message);
   },
 });
+```
 
-// แบบที่ 2: ระบุ resolution เดียว
+##### Option 2: Single Resolution
+
+Specify a single preferred resolution:
+
+```typescript
 webcam.setupConfiguration({
   device: selectedDevice.id,
-  resolution: { name: "HD", width: 1280, height: 720, aspectRatio: 16/9 },
-  // ถ้าเปิดไม่ได้ จะใช้ resolution ที่กล้องรองรับ
+  resolution: { name: "HD", width: 1280, height: 720 },
   previewElement: document.getElementById("preview") as HTMLVideoElement,
   onStart: () => console.log("Webcam started"),
   onError: (error: CameraError) => {
@@ -59,16 +79,20 @@ webcam.setupConfiguration({
     console.error("Error message:", error.message);
   },
 });
+```
 
-// แบบที่ 3: ระบุหลาย resolution เรียงตามลำดับความสำคัญ
+##### Option 3: Multiple Resolutions
+
+Specify multiple resolutions in priority order:
+
+```typescript
 webcam.setupConfiguration({
   device: selectedDevice.id,
   resolution: [
-    { name: "4K", width: 3840, height: 2160, aspectRatio: 16/9 },
-    { name: "HD", width: 1280, height: 720, aspectRatio: 16/9 },
-    { name: "VGA", width: 640, height: 480, aspectRatio: 4/3 },
+    { name: "4K", width: 3840, height: 2160 },
+    { name: "HD", width: 1280, height: 720 },
+    { name: "VGA", width: 640, height: 480 },
   ],
-  // ถ้าเปิดไม่ได้ทั้งหมด จะใช้ resolution ที่กล้องรองรับ
   previewElement: document.getElementById("preview") as HTMLVideoElement,
   onStart: () => console.log("Webcam started"),
   onError: (error: CameraError) => {
@@ -76,149 +100,32 @@ webcam.setupConfiguration({
     console.error("Error message:", error.message);
   },
 });
+```
 
-// Start the webcam with error handling
+#### Starting the Webcam
+
+After configuration, start the webcam with error handling:
+
+```typescript
 try {
   await webcam.start();
 } catch (error) {
   if (error instanceof CameraError) {
     switch (error.code) {
       case "permission-denied":
-        console.log("กรุณาอนุญาตให้ใช้งานกล้อง");
+        console.log("Please allow camera access");
         break;
       case "no-device":
-        console.log("ไม่พบอุปกรณ์กล้อง");
+        console.log("No camera device found");
         break;
       case "camera-already-in-use":
-        console.log("กล้องกำลังถูกใช้งานโดยแอพอื่น");
+        console.log("Camera is in use by another application");
         break;
       default:
-        console.log("เกิดข้อผิดพลาด:", error.message);
+        console.log("Error:", error.message);
     }
   }
 }
-```
-
-### Error Handling
-
-The library provides a comprehensive error handling system with specific error codes:
-
-```typescript
-// Get last error
-const error = webcam.getLastError();
-if (error) {
-  console.log("Error code:", error.code);
-  console.log("Error message:", error.message);
-  if (error.originalError) {
-    console.log("Original error:", error.originalError);
-  }
-}
-
-// Clear error and reset status
-webcam.clearError();
-```
-
-Error codes are categorized as follows:
-
-1. Permission-related errors:
-
-    - `no-permissions-api`: Browser does not support the Permissions API
-    - `permission-denied`: User denied camera access
-    - `microphone-permission-denied`: User denied microphone access
-
-2. Device and configuration errors:
-
-    - `configuration-error`: Camera constraints cannot be satisfied
-    - `no-device`: No camera device found
-    - `no-media-devices-support`: Browser does not support media devices
-    - `invalid-device-id`: Invalid device ID provided
-    - `no-resolutions`: No resolutions specified
-
-3. Camera initialization and operation errors:
-
-    - `camera-start-error`: Failed to start the camera
-    - `camera-initialization-error`: Failed to initialize the camera
-    - `no-stream`: No video stream available
-    - `camera-settings-error`: Failed to apply camera settings
-    - `camera-stop-error`: Failed to stop the camera
-    - `camera-already-in-use`: Camera is already in use by another application
-
-4. Camera functionality errors:
-    - `zoom-not-supported`: Zoom is not supported
-    - `torch-not-supported`: Torch is not supported
-    - `focus-not-supported`: Focus mode is not supported
-    - `device-list-error`: Failed to get device list
-
-### Device Management
-
-Device management in ts-webcam involves the following steps:
-
-1. Get available devices:
-
-```typescript
-// Get video devices
-const videoDevices = await webcam.getVideoDevices();
-const audioInputDevices = await webcam.getAudioInputDevices();
-const audioOutputDevices = await webcam.getAudioOutputDevices();
-
-// Get current active device
-const currentDevice = webcam.getCurrentDevice();
-
-// Refresh device list if needed
-await webcam.refreshDevices();
-```
-
-2. Track device changes:
-
-```typescript
-// Start tracking changes
-webcam.setupChangeListeners();
-
-// Stop tracking when no longer needed
-webcam.stopChangeListeners();
-```
-
-**Notes:**
-
-- Device list will have complete information (e.g., labels) only after permissions are granted
-- `setupChangeListeners()` will automatically call `refreshDevices()` on initialization
-- When devices change, the system will automatically call `refreshDevices()`
-- If the currently active device is removed, the system will stop and send an error
-
-Complete usage example:
-
-```typescript
-const webcam = new Webcam();
-
-async function initializeWebcam() {
-    try {
-        // 1. Request permissions
-        const permissions = await webcam.requestPermissions();
-        if (permissions.camera === 'granted') {
-            // 2. Get device list
-            const cameras = await webcam.getVideoDevices();
-
-            if (cameras.length > 0) {
-                // 3. Setup camera configuration
-                webcam.setupConfiguration({
-                    device: cameras[0].id,
-                    // ... other config options
-                });
-
-                // 4. Setup device change tracking
-                webcam.setupChangeListeners();
-
-                // 5. Start the camera
-                await webcam.start();
-            }
-        }
-    } catch (error) {
-        console.error('Error initializing webcam:', error);
-    }
-}
-
-// Start initialization
-initializeWebcam();
 ```
 
 ### Permission Management
@@ -350,6 +257,128 @@ return (
 );
 ```
 
+### Error Handling
+
+The library provides a comprehensive error handling system with specific error codes:
+
+```typescript
+// Get last error
+const error = webcam.getLastError();
+if (error) {
+  console.log("Error code:", error.code);
+  console.log("Error message:", error.message);
+  if (error.originalError) {
+    console.log("Original error:", error.originalError);
+  }
+}
+
+// Clear error and reset status
+webcam.clearError();
+```
+
+Error codes are categorized as follows:
+
+1. Permission-related errors:
+
+    - `no-permissions-api`: Browser does not support the Permissions API
+    - `permission-denied`: User denied camera access
+    - `microphone-permission-denied`: User denied microphone access
+
+2. Device and configuration errors:
+
+    - `configuration-error`: Camera constraints cannot be satisfied
+    - `no-device`: No camera device found
+    - `no-media-devices-support`: Browser does not support media devices
+    - `invalid-device-id`: Invalid device ID provided
+    - `no-resolutions`: No resolutions specified
+
+3. Camera initialization and operation errors:
+
+    - `camera-start-error`: Failed to start the camera
+    - `camera-initialization-error`: Failed to initialize the camera
+    - `no-stream`: No video stream available
+    - `camera-settings-error`: Failed to apply camera settings
+    - `camera-stop-error`: Failed to stop the camera
+    - `camera-already-in-use`: Camera is already in use by another application
+
+4. Camera functionality errors:
+    - `zoom-not-supported`: Zoom is not supported
+    - `torch-not-supported`: Torch is not supported
+    - `focus-not-supported`: Focus mode is not supported
+    - `device-list-error`: Failed to get device list
+
+### Device Management
+
+Device management in ts-webcam involves the following steps:
+
+1. Get available devices:
+
+```typescript
+// Get video devices
+const videoDevices = await webcam.getVideoDevices();
+const audioInputDevices = await webcam.getAudioInputDevices();
+const audioOutputDevices = await webcam.getAudioOutputDevices();
+
+// Get current active device
+const currentDevice = webcam.getCurrentDevice();
+
+// Refresh device list if needed
+await webcam.refreshDevices();
+```
+
+2. Track device changes:
+
+```typescript
+// Start tracking changes
+webcam.setupChangeListeners();
+
+// Stop tracking when no longer needed
+webcam.stopChangeListeners();
+```
+
+**Notes:**
+
+- Device list will have complete information (e.g., labels) only after permissions are granted
+- `setupChangeListeners()` will automatically call `refreshDevices()` on initialization
+- When devices change, the system will automatically call `refreshDevices()`
+- If the currently active device is removed, the system will stop and send an error
+
+Complete usage example:
+
+```typescript
+const webcam = new Webcam();
+
+async function initializeWebcam() {
+    try {
+        // 1. Request permissions
+        const permissions = await webcam.requestPermissions();
+        if (permissions.camera === 'granted') {
+            // 2. Get device list
+            const cameras = await webcam.getVideoDevices();
+
+            if (cameras.length > 0) {
+                // 3. Setup camera configuration
+                webcam.setupConfiguration({
+                    device: cameras[0].id,
+                    // ... other config options
+                });
+
+                // 4. Setup device change tracking
+                webcam.setupChangeListeners();
+
+                // 5. Start the camera
+                await webcam.start();
+            }
+        }
+    } catch (error) {
+        console.error('Error initializing webcam:', error);
+    }
+}
+
+// Start initialization
+initializeWebcam();
+```
+
 ### Advanced Camera Controls
 
 ```typescript
@@ -425,27 +454,27 @@ if (resolution) {
 
 ### State Management
 
-การจัดการ state ใน ts-webcam แบ่งออกเป็น 2 ประเภท:
+State management in ts-webcam is divided into two types:
 
-1. State การทำงานปัจจุบัน (Operational State):
+1. Operational State:
 
-    - `status`: สถานะการทำงานของกล้อง
-    - `stream`: MediaStream ปัจจุบัน
-    - `lastError`: ข้อผิดพลาดล่าสุด
-    - `capabilities`: ความสามารถของกล้องที่ใช้งานอยู่
+    - `status`: Current camera status
+    - `stream`: Current MediaStream
+    - `lastError`: Latest error
+    - `capabilities`: Current camera capabilities
 
-2. ข้อมูลพื้นฐานของระบบ (System Data):
-    - `config`: การตั้งค่าปัจจุบัน
-    - `devices`: รายการอุปกรณ์ที่มี
-    - `currentOrientation`: การวางแนวของอุปกรณ์
-    - `currentPermission`: สถานะสิทธิ์การใช้งาน
+2. System Data:
+    - `config`: Current configuration
+    - `devices`: Available device list
+    - `currentOrientation`: Device orientation
+    - `currentPermission`: Permission status
 
-เมื่อเรียกใช้ `stop()` จะ reset เฉพาะ state การทำงานปัจจุบันเท่านั้น โดยจะคงค่าข้อมูลพื้นฐานของระบบไว้ เพื่อให้สามารถเริ่มกล้องใหม่ได้โดยใช้การตั้งค่าเดิม
+When calling `stop()`, only the operational state is reset while system data is preserved, allowing the camera to be restarted with the same configuration.
 
 ```typescript
-// ตัวอย่างการหยุดและเริ่มกล้องใหม่
-webcam.stop();  // reset เฉพาะ operational state
-await webcam.start();  // เริ่มกล้องใหม่โดยใช้ config เดิม
+// Example of stopping and restarting camera
+webcam.stop();  // resets only operational state
+await webcam.start();  // restarts camera with existing config
 ```
 
 ### Device Capabilities and Resolution Support

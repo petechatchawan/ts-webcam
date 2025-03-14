@@ -1,6 +1,6 @@
 {
   "name": "ts-webcam",
-  "version": "1.2.4",
+  "version": "1.2.6",
   "description": "A TypeScript library for managing webcam access using the MediaDevices API",
   "main": "dist/ts-webcam.js",
   "types": "dist/ts-webcam.d.ts",
@@ -11,10 +11,14 @@
     "prepare": "npm run build"
   },
   "keywords": [
+    "angular",
+    "react",
     "webcam",
     "typescript",
     "mediadevices",
-    "browser"
+    "browser",
+    "smartphone",
+    "tablet"
   ],
   "author": "",
   "license": "MIT",
@@ -27,12 +31,12 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/yourusername/ts-webcam.git"
+    "url": "git+https://github.com/petechatchawan/ts-webcam.git"
   },
   "bugs": {
-    "url": "https://github.com/yourusername/ts-webcam/issues"
+    "url": "https://github.com/petechatchawan/ts-webcam/issues"
   },
-  "homepage": "https://github.com/yourusername/ts-webcam#readme",
+  "homepage": "https://github.com/petechatchawan/ts-webcam#readme",
   "dependencies": {
     "prettier": "^3.5.3"
   }
