@@ -41,10 +41,9 @@ export class CameraError extends Error {
 
 // ===== Interfaces =====
 export interface Resolution {
-    name: string;
+    key: string;
     width: number;
     height: number;
-    aspectRatio?: number;
 }
 
 export interface WebcamConfig {
@@ -68,17 +67,31 @@ export interface WebcamConfig {
     onError?: (error: CameraError) => void;
 }
 
-export interface WebcamCapabilities {
-    zoom: boolean;
-    torch: boolean;
-    focusMode: boolean;
-    currentZoom: number;
-    minZoom: number;
-    maxZoom: number;
-    torchActive: boolean;
-    focusModeActive: boolean;
-    currentFocusMode: string;
-    supportedFocusModes: string[];
+/**
+ * อินเตอร์เฟซสำหรับจัดการคุณสมบัติของกล้อง
+ * ใช้สำหรับตรวจสอบและควบคุมฟีเจอร์ต่างๆ ของกล้อง เช่น การซูม ไฟฉาย และโหมดโฟกัส
+ */
+export interface CameraFeatures {
+    /** กล้องรองรับการซูมหรือไม่ */
+    hasZoomSupport: boolean;
+    /** กล้องมีไฟฉายหรือไม่ */
+    hasTorchSupport: boolean;
+    /** กล้องรองรับการปรับโฟกัสหรือไม่ */
+    hasFocusSupport: boolean;
+    /** ค่าซูมปัจจุบัน (เท่า) */
+    currentZoomLevel: number;
+    /** ค่าซูมต่ำสุดที่รองรับ (เท่า) */
+    minZoomLevel: number;
+    /** ค่าซูมสูงสุดที่รองรับ (เท่า) */
+    maxZoomLevel: number;
+    /** สถานะไฟฉาย (เปิด/ปิด) */
+    isTorchActive: boolean;
+    /** สถานะการใช้งานโฟกัส */
+    isFocusActive: boolean;
+    /** โหมดโฟกัสที่กำลังใช้งาน เช่น 'auto', 'continuous', 'manual' */
+    activeFocusMode: string;
+    /** รายการโหมดโฟกัสที่รองรับทั้งหมด */
+    availableFocusModes: string[];
 }
 
 // ===== MediaDevices API Extensions =====
@@ -135,7 +148,7 @@ export interface WebcamState {
     lastError: CameraError | null;
     devices: MediaDeviceInfo[];
     captureCanvas?: HTMLCanvasElement;
-    capabilities: WebcamCapabilities;
+    capabilities: CameraFeatures;
     currentOrientation?: OrientationType;
     currentPermission: {
         camera: PermissionState;
@@ -180,16 +193,16 @@ export class Webcam {
         lastError: null,
         devices: [],
         capabilities: {
-            zoom: false,
-            torch: false,
-            focusMode: false,
-            currentZoom: 1,
-            minZoom: 1,
-            maxZoom: 1,
-            torchActive: false,
-            focusModeActive: false,
-            currentFocusMode: 'none',
-            supportedFocusModes: [],
+            hasZoomSupport: false,
+            hasTorchSupport: false,
+            hasFocusSupport: false,
+            currentZoomLevel: 1,
+            minZoomLevel: 1,
+            maxZoomLevel: 1,
+            isTorchActive: false,
+            isFocusActive: false,
+            activeFocusMode: 'none',
+            availableFocusModes: [],
         },
         currentOrientation: 'portrait-primary',
         currentPermission: {
@@ -225,16 +238,16 @@ export class Webcam {
             lastError: null,
             devices: [],
             capabilities: {
-                zoom: false,
-                torch: false,
-                focusMode: false,
-                currentZoom: 1,
-                minZoom: 1,
-                maxZoom: 1,
-                torchActive: false,
-                focusModeActive: false,
-                currentFocusMode: 'none',
-                supportedFocusModes: [],
+                hasZoomSupport: false,
+                hasTorchSupport: false,
+                hasFocusSupport: false,
+                currentZoomLevel: 1,
+                minZoomLevel: 1,
+                maxZoomLevel: 1,
+                isTorchActive: false,
+                isFocusActive: false,
+                activeFocusMode: 'none',
+                availableFocusModes: [],
             },
             captureCanvas: canvas,
             currentOrientation: 'portrait-primary',
@@ -518,7 +531,7 @@ export class Webcam {
         }
     }
 
-    public getCapabilities(): WebcamCapabilities {
+    public getCapabilities(): CameraFeatures {
         return { ...this.state.capabilities };
     }
 
@@ -548,15 +561,14 @@ export class Webcam {
                 : this.state.configuration.resolution;
 
         return {
-            name: matchedResolution?.name || `${currentWidth}x${currentHeight}`,
+            key: matchedResolution?.key || `${currentWidth}x${currentHeight}`,
             width: currentWidth,
             height: currentHeight,
-            aspectRatio: settings.aspectRatio,
         };
     }
 
     public async setZoom(zoomLevel: number): Promise<void> {
-        if (!this.state.stream || !this.state.capabilities.zoom) {
+        if (!this.state.stream || !this.state.capabilities.hasZoomSupport) {
             throw new CameraError(
                 'zoom-not-supported',
                 'Zoom is not supported or camera is not active',
@@ -584,7 +596,7 @@ export class Webcam {
                     { zoom: zoomLevel } as ExtendedMediaTrackConstraintSet,
                 ],
             });
-            this.state.capabilities.currentZoom = zoomLevel;
+            this.state.capabilities.currentZoomLevel = zoomLevel;
         } catch (error) {
             throw new CameraError(
                 'camera-settings-error',
@@ -600,7 +612,7 @@ export class Webcam {
      * @throws CameraError if torch is not supported or camera is not active
      */
     public async setTorch(active: boolean): Promise<void> {
-        if (!this.state.stream || !this.state.capabilities.torch) {
+        if (!this.state.stream || !this.state.capabilities.hasTorchSupport) {
             throw new CameraError(
                 'torch-not-supported',
                 'Torch is not supported or camera is not active',
@@ -624,7 +636,7 @@ export class Webcam {
                     { torch: active } as ExtendedMediaTrackConstraintSet,
                 ],
             });
-            this.state.capabilities.torchActive = active;
+            this.state.capabilities.isTorchActive = active;
         } catch (error) {
             throw new CameraError(
                 'camera-settings-error',
@@ -640,7 +652,7 @@ export class Webcam {
      * @throws CameraError if focus mode is not supported or camera is not active
      */
     public async setFocusMode(mode: string): Promise<void> {
-        if (!this.state.stream || !this.state.capabilities.focusMode) {
+        if (!this.state.stream || !this.state.capabilities.hasFocusSupport) {
             throw new CameraError(
                 'focus-not-supported',
                 'Focus mode is not supported or camera is not active',
@@ -663,8 +675,8 @@ export class Webcam {
                     { focusMode: mode } as ExtendedMediaTrackConstraintSet,
                 ],
             });
-            this.state.capabilities.currentFocusMode = mode;
-            this.state.capabilities.focusModeActive = true;
+            this.state.capabilities.activeFocusMode = mode;
+            this.state.capabilities.isFocusActive = true;
         } catch (error) {
             throw new CameraError(
                 'camera-settings-error',
@@ -1092,10 +1104,9 @@ export class Webcam {
         desiredResolutions: Resolution[],
     ): {
         resolutions: {
-            name: string;
+            key: string;
             width: number;
             height: number;
-            aspectRatio: number;
             supported: boolean;
         }[];
         deviceInfo: {
@@ -1121,7 +1132,6 @@ export class Webcam {
         // Check each resolution
         const resolutions = desiredResolutions.map((resolution) => {
             // Check if resolution is within supported range
-            // Camera will support if width and height are not exceeding maximum supported by camera
             const isSupported =
                 resolution.width <= capability.maxWidth &&
                 resolution.height <= capability.maxHeight &&
@@ -1129,12 +1139,9 @@ export class Webcam {
                 resolution.height >= capability.minHeight;
 
             return {
-                name: resolution.name,
+                key: resolution.key,
                 width: resolution.width,
                 height: resolution.height,
-                aspectRatio:
-                    resolution.aspectRatio ||
-                    resolution.width / resolution.height,
                 supported: isSupported,
             };
         });
@@ -1180,14 +1187,13 @@ export class Webcam {
                 : [this.state.configuration!.resolution];
 
         // Case: allowAnyResolution = false
-        // Try only first resolution, throw error immediately if fails
         if (!this.state.configuration!.allowAnyResolution) {
             try {
                 await this.tryResolution(resolutions[0]);
             } catch (error) {
                 throw new CameraError(
                     'camera-initialization-error',
-                    `Failed to open camera with specified resolution: ${resolutions[0].name}`,
+                    `Failed to open camera with specified resolution: ${resolutions[0].key}`,
                     error as Error,
                 );
             }
@@ -1195,7 +1201,6 @@ export class Webcam {
         }
 
         // Case: allowAnyResolution = true
-        // 1. Try all specified resolutions in order
         let lastError: Error | null = null;
         for (const resolution of resolutions) {
             try {
@@ -1204,7 +1209,7 @@ export class Webcam {
             } catch (error) {
                 lastError = error as Error;
                 console.log(
-                    `Failed to open camera with resolution: ${resolution.name}. Error:`,
+                    `Failed to open camera with resolution: ${resolution.key}. Error:`,
                     error,
                 );
             }
@@ -1225,7 +1230,7 @@ export class Webcam {
 
     private async tryResolution(resolution: Resolution): Promise<void> {
         console.log(
-            `Attempting to open camera with resolution: ${resolution.name} (${resolution.width}x${resolution.height})`,
+            `Attempting to open camera with resolution: ${resolution.key} (${resolution.width}x${resolution.height})`,
         );
 
         const constraints = this.buildConstraints(resolution);
@@ -1236,7 +1241,7 @@ export class Webcam {
         await this.setupPreviewElement();
 
         console.log(
-            `Successfully opened camera with resolution: ${resolution.name}`,
+            `Successfully opened camera with resolution: ${resolution.key}`,
         );
         this.state.status = WebcamStatus.READY;
         this.state.configuration?.onStart?.();
@@ -1311,16 +1316,16 @@ export class Webcam {
         const settings = videoTrack.getSettings() as ExtendedMediaTrackSettings;
 
         this.state.capabilities = {
-            zoom: !!capabilities.zoom,
-            torch: !!capabilities.torch,
-            focusMode: !!capabilities.focusMode,
-            currentZoom: settings.zoom || 1,
-            minZoom: capabilities.zoom?.min || 1,
-            maxZoom: capabilities.zoom?.max || 1,
-            torchActive: settings.torch || false,
-            focusModeActive: !!settings.focusMode,
-            currentFocusMode: settings.focusMode || 'none',
-            supportedFocusModes: capabilities.focusMode || [],
+            hasZoomSupport: !!capabilities.zoom,
+            hasTorchSupport: !!capabilities.torch,
+            hasFocusSupport: !!capabilities.focusMode,
+            currentZoomLevel: settings.zoom || 1,
+            minZoomLevel: capabilities.zoom?.min || 1,
+            maxZoomLevel: capabilities.zoom?.max || 1,
+            isTorchActive: settings.torch || false,
+            isFocusActive: !!settings.focusMode,
+            activeFocusMode: settings.focusMode || 'none',
+            availableFocusModes: capabilities.focusMode || [],
         };
     }
 
@@ -1335,10 +1340,6 @@ export class Webcam {
         } else {
             videoConstraints.width = { exact: resolution.width };
             videoConstraints.height = { exact: resolution.height };
-        }
-
-        if (resolution.aspectRatio) {
-            videoConstraints.aspectRatio = { exact: resolution.aspectRatio };
         }
 
         return {
@@ -1391,16 +1392,16 @@ export class Webcam {
             stream: null,
             lastError: null,
             capabilities: {
-                zoom: false,
-                torch: false,
-                focusMode: false,
-                currentZoom: 1,
-                minZoom: 1,
-                maxZoom: 1,
-                torchActive: false,
-                focusModeActive: false,
-                currentFocusMode: 'none',
-                supportedFocusModes: [],
+                hasZoomSupport: false,
+                hasTorchSupport: false,
+                hasFocusSupport: false,
+                currentZoomLevel: 1,
+                minZoomLevel: 1,
+                maxZoomLevel: 1,
+                isTorchActive: false,
+                isFocusActive: false,
+                activeFocusMode: 'none',
+                availableFocusModes: [],
             },
             // Keep basic system state
             // config: this.state.config,  // Keep config for starting new camera
@@ -1429,5 +1430,56 @@ export class Webcam {
                 'Please allow microphone access',
             );
         }
+    }
+
+    /**
+     * สร้าง Resolution ใหม่พร้อม Key
+     * @param width ความกว้าง
+     * @param height ความสูง
+     * @returns Resolution object
+     */
+    public createResolution(width: number, height: number): Resolution {
+        const key = `${width}x${height}`; // สร้างคีย์จากความกว้างและความสูง
+        return { key, width, height };
+    }
+
+    /**
+     * ตรวจสอบว่ากล้องรองรับการซูมหรือไม่
+     * @returns true ถ้ากล้องรองรับการซูม, false ถ้าไม่รองรับ
+     */
+    public isZoomSupported(): boolean {
+        return this.state.capabilities.hasZoomSupport;
+    }
+
+    /**
+     * ตรวจสอบว่ากล้องรองรับไฟฉายหรือไม่
+     * @returns true ถ้ากล้องรองรับไฟฉาย, false ถ้าไม่รองรับ
+     */
+    public isTorchSupported(): boolean {
+        return this.state.capabilities.hasTorchSupport;
+    }
+
+    /**
+     * ตรวจสอบว่ากล้องรองรับการโฟกัสหรือไม่
+     * @returns true ถ้ากล้องรองรับการโฟกัส, false ถ้าไม่รองรับ
+     */
+    public isFocusSupported(): boolean {
+        return this.state.capabilities.hasFocusSupport;
+    }
+
+    /**
+     * สลับการเปิด/ปิดไฟฉาย
+     * @returns สถานะไฟฉายหลังจากสลับ (true = เปิด, false = ปิด)
+     * @throws CameraError ถ้าไม่รองรับไฟฉายหรือกล้องไม่ทำงาน
+     */
+    public async toggleTorch(): Promise<boolean> {
+        // สลับสถานะไฟฉายเป็นตรงข้ามกับสถานะปัจจุบัน
+        const newState = !this.state.capabilities.isTorchActive;
+
+        // เรียกใช้ setTorch เพื่อเปลี่ยนสถานะ
+        await this.setTorch(newState);
+
+        // ส่งคืนสถานะใหม่
+        return newState;
     }
 }
