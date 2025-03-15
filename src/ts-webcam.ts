@@ -39,7 +39,6 @@ export class CameraError extends Error {
     }
 }
 
-// ===== Interfaces =====
 export interface Resolution {
     key: string;
     width: number;
@@ -50,7 +49,7 @@ export interface WebcamConfig {
     /** Enable/disable audio */
     audio?: boolean;
     /** Camera device ID (required) */
-    device: string;
+    device: MediaDeviceInfo;
     /** Desired resolution(s) (optional) */
     resolution?: Resolution | Resolution[];
     /** Allow any resolution if specified resolution is not available */
@@ -73,17 +72,17 @@ export interface WebcamConfig {
  */
 export interface CameraFeatures {
     /** กล้องรองรับการซูมหรือไม่ */
-    hasZoomSupport: boolean;
+    hasZoom: boolean;
     /** กล้องมีไฟฉายหรือไม่ */
-    hasTorchSupport: boolean;
+    hasTorch: boolean;
     /** กล้องรองรับการปรับโฟกัสหรือไม่ */
-    hasFocusSupport: boolean;
+    hasFocus: boolean;
     /** ค่าซูมปัจจุบัน (เท่า) */
-    currentZoomLevel: number;
+    currentZoom: number;
     /** ค่าซูมต่ำสุดที่รองรับ (เท่า) */
-    minZoomLevel: number;
+    minZoom: number;
     /** ค่าซูมสูงสุดที่รองรับ (เท่า) */
-    maxZoomLevel: number;
+    maxZoom: number;
     /** สถานะไฟฉาย (เปิด/ปิด) */
     isTorchActive: boolean;
     /** สถานะการใช้งานโฟกัส */
@@ -140,14 +139,21 @@ export enum WebcamStatus {
     ERROR = 'error',
 }
 
+export type OrientationType =
+    | 'portrait-primary'
+    | 'portrait-secondary'
+    | 'landscape-primary'
+    | 'landscape-secondary'
+    | 'unknown';
+
 // ===== State Interface =====
 export interface WebcamState {
     status: WebcamStatus;
     configuration: WebcamConfig | null;
     stream: MediaStream | null;
     lastError: CameraError | null;
-    devices: MediaDeviceInfo[];
     captureCanvas?: HTMLCanvasElement;
+    devices: MediaDeviceInfo[];
     capabilities: CameraFeatures;
     currentOrientation?: OrientationType;
     currentPermission: {
@@ -155,14 +161,6 @@ export interface WebcamState {
         microphone: PermissionState;
     };
 }
-
-// Add type for orientation
-export type OrientationType =
-    | 'portrait-primary'
-    | 'portrait-secondary'
-    | 'landscape-primary'
-    | 'landscape-secondary'
-    | 'unknown';
 
 export interface DeviceCapabilitiesData {
     deviceId: string;
@@ -193,23 +191,23 @@ export class Webcam {
         lastError: null,
         devices: [],
         capabilities: {
-            hasZoomSupport: false,
-            hasTorchSupport: false,
-            hasFocusSupport: false,
-            currentZoomLevel: 1,
-            minZoomLevel: 1,
-            maxZoomLevel: 1,
+            hasZoom: false,
+            hasTorch: false,
+            hasFocus: false,
+            currentZoom: 1,
+            minZoom: 1,
+            maxZoom: 1,
             isTorchActive: false,
             isFocusActive: false,
             activeFocusMode: 'none',
             availableFocusModes: [],
         },
+        captureCanvas: document.createElement('canvas'),
         currentOrientation: 'portrait-primary',
         currentPermission: {
             camera: 'prompt',
             microphone: 'prompt',
         },
-        captureCanvas: document.createElement('canvas'),
     };
 
     private deviceChangeListener: (() => void) | null = null;
@@ -218,7 +216,7 @@ export class Webcam {
     // Default values
     private readonly defaultConfiguration: WebcamConfig = {
         audio: false,
-        device: '',
+        device: null as unknown as MediaDeviceInfo,
         allowAnyResolution: false,
         mirror: false,
         autoRotation: true,
@@ -238,12 +236,12 @@ export class Webcam {
             lastError: null,
             devices: [],
             capabilities: {
-                hasZoomSupport: false,
-                hasTorchSupport: false,
-                hasFocusSupport: false,
-                currentZoomLevel: 1,
-                minZoomLevel: 1,
-                maxZoomLevel: 1,
+                hasZoom: false,
+                hasTorch: false,
+                hasFocus: false,
+                currentZoom: 1,
+                minZoom: 1,
+                maxZoom: 1,
                 isTorchActive: false,
                 isFocusActive: false,
                 activeFocusMode: 'none',
@@ -297,6 +295,41 @@ export class Webcam {
 
     public isActive(): boolean {
         return this.state.stream !== null && this.state.stream.active;
+    }
+
+    /**
+     * ตรวจสอบว่าวิดีโอพร้อมแสดงผลหรือไม่
+     * @returns Promise ที่คืนค่า true ถ้าวิดีโอพร้อมแสดงผล
+     */
+    public async previewIsReady(): Promise<boolean> {
+        const video = this.state.configuration?.previewElement;
+
+        // ตรวจสอบว่า video ไม่เป็น null
+        if (!video) {
+            return false; // คืนค่า false ถ้า video เป็น null
+        }
+
+        // ถ้าวิดีโอพร้อมอยู่แล้ว
+        if (video.readyState >= 2) {
+            return true;
+        }
+
+        // ตั้ง event listener สำหรับ canplay
+        const onCanPlay = () => {
+            video.removeEventListener('canplay', onCanPlay);
+            return true;
+        };
+
+        // ตั้ง event listener สำหรับ error
+        const onError = () => {
+            video.removeEventListener('error', onError);
+            return false;
+        };
+
+        video.addEventListener('canplay', onCanPlay);
+        video.addEventListener('error', onError);
+
+        return false; // คืนค่า false ถ้าวิดีโอยังไม่พร้อมแสดงผล
     }
 
     /**
@@ -399,12 +432,7 @@ export class Webcam {
 
     public getCurrentDevice(): MediaDeviceInfo | null {
         if (!this.state.configuration?.device) return null;
-        return (
-            this.state.devices.find(
-                (device) =>
-                    device.deviceId === this.state.configuration!.device,
-            ) || null
-        );
+        return this.state.configuration.device;
     }
 
     public setupChangeListeners(): void {
@@ -568,7 +596,7 @@ export class Webcam {
     }
 
     public async setZoom(zoomLevel: number): Promise<void> {
-        if (!this.state.stream || !this.state.capabilities.hasZoomSupport) {
+        if (!this.state.stream || !this.state.capabilities.hasZoom) {
             throw new CameraError(
                 'zoom-not-supported',
                 'Zoom is not supported or camera is not active',
@@ -596,7 +624,7 @@ export class Webcam {
                     { zoom: zoomLevel } as ExtendedMediaTrackConstraintSet,
                 ],
             });
-            this.state.capabilities.currentZoomLevel = zoomLevel;
+            this.state.capabilities.currentZoom = zoomLevel;
         } catch (error) {
             throw new CameraError(
                 'camera-settings-error',
@@ -612,7 +640,7 @@ export class Webcam {
      * @throws CameraError if torch is not supported or camera is not active
      */
     public async setTorch(active: boolean): Promise<void> {
-        if (!this.state.stream || !this.state.capabilities.hasTorchSupport) {
+        if (!this.state.stream || !this.state.capabilities.hasTorch) {
             throw new CameraError(
                 'torch-not-supported',
                 'Torch is not supported or camera is not active',
@@ -652,7 +680,7 @@ export class Webcam {
      * @throws CameraError if focus mode is not supported or camera is not active
      */
     public async setFocusMode(mode: string): Promise<void> {
-        if (!this.state.stream || !this.state.capabilities.hasFocusSupport) {
+        if (!this.state.stream || !this.state.capabilities.hasFocus) {
             throw new CameraError(
                 'focus-not-supported',
                 'Focus mode is not supported or camera is not active',
@@ -743,11 +771,8 @@ export class Webcam {
      * @param deviceId ID of the camera device to use
      * @returns Current configuration after update
      */
-    public updateDevice(deviceId: string): WebcamConfig {
-        return this.updateConfiguration(
-            { device: deviceId },
-            { restart: true },
-        );
+    public updateDevice(device: MediaDeviceInfo): WebcamConfig {
+        return this.updateConfiguration({ device }, { restart: true });
     }
 
     /**
@@ -1253,12 +1278,7 @@ export class Webcam {
         );
 
         // Request device capability information first
-        const devices = await navigator.mediaDevices.enumerateDevices();
-        const device = devices.find(
-            (d) => d.deviceId === this.state.configuration!.device,
-        );
-
-        if (!device) {
+        if (!this.state.configuration!.device) {
             throw new CameraError('no-device', 'Selected device not found');
         }
 
@@ -1266,7 +1286,7 @@ export class Webcam {
         const constraints: MediaStreamConstraints = {
             audio: this.state.configuration!.audio,
             video: {
-                deviceId: { exact: this.state.configuration!.device },
+                deviceId: { exact: this.state.configuration!.device.deviceId },
                 width: { ideal: 3840 },
                 height: { ideal: 2160 },
             },
@@ -1316,12 +1336,12 @@ export class Webcam {
         const settings = videoTrack.getSettings() as ExtendedMediaTrackSettings;
 
         this.state.capabilities = {
-            hasZoomSupport: !!capabilities.zoom,
-            hasTorchSupport: !!capabilities.torch,
-            hasFocusSupport: !!capabilities.focusMode,
-            currentZoomLevel: settings.zoom || 1,
-            minZoomLevel: capabilities.zoom?.min || 1,
-            maxZoomLevel: capabilities.zoom?.max || 1,
+            hasZoom: !!capabilities.zoom,
+            hasTorch: !!capabilities.torch,
+            hasFocus: !!capabilities.focusMode,
+            currentZoom: settings.zoom || 1,
+            minZoom: capabilities.zoom?.min || 1,
+            maxZoom: capabilities.zoom?.max || 1,
             isTorchActive: settings.torch || false,
             isFocusActive: !!settings.focusMode,
             activeFocusMode: settings.focusMode || 'none',
@@ -1331,7 +1351,7 @@ export class Webcam {
 
     private buildConstraints(resolution: Resolution): MediaStreamConstraints {
         const videoConstraints: MediaTrackConstraints = {
-            deviceId: { exact: this.state.configuration!.device },
+            deviceId: { exact: this.state.configuration!.device.deviceId },
         };
 
         if (this.state.configuration!.autoRotation) {
@@ -1392,12 +1412,12 @@ export class Webcam {
             stream: null,
             lastError: null,
             capabilities: {
-                hasZoomSupport: false,
-                hasTorchSupport: false,
-                hasFocusSupport: false,
-                currentZoomLevel: 1,
-                minZoomLevel: 1,
-                maxZoomLevel: 1,
+                hasZoom: false,
+                hasTorch: false,
+                hasFocus: false,
+                currentZoom: 1,
+                minZoom: 1,
+                maxZoom: 1,
                 isTorchActive: false,
                 isFocusActive: false,
                 activeFocusMode: 'none',
@@ -1448,7 +1468,7 @@ export class Webcam {
      * @returns true ถ้ากล้องรองรับการซูม, false ถ้าไม่รองรับ
      */
     public isZoomSupported(): boolean {
-        return this.state.capabilities.hasZoomSupport;
+        return this.state.capabilities.hasZoom;
     }
 
     /**
@@ -1456,7 +1476,7 @@ export class Webcam {
      * @returns true ถ้ากล้องรองรับไฟฉาย, false ถ้าไม่รองรับ
      */
     public isTorchSupported(): boolean {
-        return this.state.capabilities.hasTorchSupport;
+        return this.state.capabilities.hasTorch;
     }
 
     /**
@@ -1464,7 +1484,7 @@ export class Webcam {
      * @returns true ถ้ากล้องรองรับการโฟกัส, false ถ้าไม่รองรับ
      */
     public isFocusSupported(): boolean {
-        return this.state.capabilities.hasFocusSupport;
+        return this.state.capabilities.hasFocus;
     }
 
     /**
@@ -1483,3 +1503,8 @@ export class Webcam {
         return newState;
     }
 }
+
+// เพิ่ม default export สำหรับ Webcam class
+export default Webcam;
+
+// ไม่ต้องเพิ่ม named exports เพราะมีการ export ไว้แล้วที่ interface และ type declarations

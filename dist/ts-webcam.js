@@ -1,4 +1,3 @@
-"use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -8,10 +7,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.Webcam = exports.WebcamStatus = exports.CameraError = void 0;
 // ===== Error Class =====
-class CameraError extends Error {
+export class CameraError extends Error {
     constructor(code, message, originalError) {
         super(message);
         this.code = code;
@@ -19,49 +16,48 @@ class CameraError extends Error {
         this.name = 'CameraError';
     }
 }
-exports.CameraError = CameraError;
 // ===== Enums =====
-var WebcamStatus;
+export var WebcamStatus;
 (function (WebcamStatus) {
     WebcamStatus["IDLE"] = "idle";
     WebcamStatus["INITIALIZING"] = "initializing";
     WebcamStatus["READY"] = "ready";
     WebcamStatus["ERROR"] = "error";
-})(WebcamStatus || (exports.WebcamStatus = WebcamStatus = {}));
-class Webcam {
+})(WebcamStatus || (WebcamStatus = {}));
+export class Webcam {
     constructor() {
         // Combine all states in one place
         this.state = {
             status: WebcamStatus.IDLE,
-            config: null,
+            configuration: null,
             stream: null,
             lastError: null,
             devices: [],
             capabilities: {
-                zoom: false,
-                torch: false,
-                focusMode: false,
+                hasZoom: false,
+                hasTorch: false,
+                hasFocus: false,
                 currentZoom: 1,
                 minZoom: 1,
                 maxZoom: 1,
-                torchActive: false,
-                focusModeActive: false,
-                currentFocusMode: 'none',
-                supportedFocusModes: [],
+                isTorchActive: false,
+                isFocusActive: false,
+                activeFocusMode: 'none',
+                availableFocusModes: [],
             },
+            captureCanvas: document.createElement('canvas'),
             currentOrientation: 'portrait-primary',
             currentPermission: {
                 camera: 'prompt',
                 microphone: 'prompt',
             },
-            captureCanvas: document.createElement('canvas'),
         };
         this.deviceChangeListener = null;
         this.orientationChangeListener = null;
         // Default values
-        this.defaultConfig = {
+        this.defaultConfiguration = {
             audio: false,
-            device: '',
+            device: null,
             allowAnyResolution: false,
             mirror: false,
             autoRotation: true,
@@ -74,21 +70,21 @@ class Webcam {
         const canvas = document.createElement('canvas');
         this.state = {
             status: WebcamStatus.IDLE,
-            config: null,
+            configuration: null,
             stream: null,
             lastError: null,
             devices: [],
             capabilities: {
-                zoom: false,
-                torch: false,
-                focusMode: false,
+                hasZoom: false,
+                hasTorch: false,
+                hasFocus: false,
                 currentZoom: 1,
                 minZoom: 1,
                 maxZoom: 1,
-                torchActive: false,
-                focusModeActive: false,
-                currentFocusMode: 'none',
-                supportedFocusModes: [],
+                isTorchActive: false,
+                isFocusActive: false,
+                activeFocusMode: 'none',
+                availableFocusModes: [],
             },
             captureCanvas: canvas,
             currentOrientation: 'portrait-primary',
@@ -98,12 +94,11 @@ class Webcam {
             },
         };
     }
-    // Public API methods
-    setupConfiguration(config) {
-        if (!config.device) {
+    setupConfiguration(configuration) {
+        if (!configuration.device) {
             throw new CameraError('invalid-device-id', 'Device ID is required');
         }
-        this.state.config = Object.assign(Object.assign({}, this.defaultConfig), config);
+        this.state.configuration = Object.assign(Object.assign({}, this.defaultConfiguration), configuration);
     }
     start() {
         return __awaiter(this, void 0, void 0, function* () {
@@ -129,6 +124,69 @@ class Webcam {
     }
     isActive() {
         return this.state.stream !== null && this.state.stream.active;
+    }
+    /**
+     * ตรวจสอบว่าวิดีโอพร้อมแสดงผลหรือไม่
+     * @returns Promise ที่คืนค่า true ถ้าวิดีโอพร้อมแสดงผล
+     */
+    previewIsReady() {
+        return __awaiter(this, void 0, void 0, function* () {
+            var _a;
+            const video = (_a = this.state.configuration) === null || _a === void 0 ? void 0 : _a.previewElement;
+            // ตรวจสอบว่า video ไม่เป็น null
+            if (!video) {
+                return false; // คืนค่า false ถ้า video เป็น null
+            }
+            // ถ้าวิดีโอพร้อมอยู่แล้ว
+            if (video.readyState >= 2) {
+                return true;
+            }
+            // ตั้ง event listener สำหรับ canplay
+            const onCanPlay = () => {
+                video.removeEventListener('canplay', onCanPlay);
+                return true;
+            };
+            // ตั้ง event listener สำหรับ error
+            const onError = () => {
+                video.removeEventListener('error', onError);
+                return false;
+            };
+            video.addEventListener('canplay', onCanPlay);
+            video.addEventListener('error', onError);
+            return false; // คืนค่า false ถ้าวิดีโอยังไม่พร้อมแสดงผล
+        });
+    }
+    /**
+     * ดึงค่า audio ปัจจุบัน
+     * @returns ค่า audio ปัจจุบัน หรือ false ถ้าไม่มีการตั้งค่า
+     */
+    isAudioEnabled() {
+        var _a;
+        return ((_a = this.state.configuration) === null || _a === void 0 ? void 0 : _a.audio) || false;
+    }
+    /**
+     * ดึงค่า mirror mode ปัจจุบัน
+     * @returns ค่า mirror ปัจจุบัน หรือ false ถ้าไม่มีการตั้งค่า
+     */
+    isMirror() {
+        var _a;
+        return ((_a = this.state.configuration) === null || _a === void 0 ? void 0 : _a.mirror) || false;
+    }
+    /**
+     * ดึงค่า autoRotation ปัจจุบัน
+     * @returns ค่า autoRotation ปัจจุบัน หรือ false ถ้าไม่มีการตั้งค่า
+     */
+    isAutoRotation() {
+        var _a;
+        return ((_a = this.state.configuration) === null || _a === void 0 ? void 0 : _a.autoRotation) || false;
+    }
+    /**
+     * ดึงค่า allowAnyResolution ปัจจุบัน
+     * @returns ค่า allowAnyResolution ปัจจุบัน หรือ false ถ้าไม่มีการตั้งค่า
+     */
+    isAllowAnyResolution() {
+        var _a;
+        return ((_a = this.state.configuration) === null || _a === void 0 ? void 0 : _a.allowAnyResolution) || false;
     }
     // Device management
     getAvailableDevices() {
@@ -185,9 +243,9 @@ class Webcam {
     }
     getCurrentDevice() {
         var _a;
-        if (!((_a = this.state.config) === null || _a === void 0 ? void 0 : _a.device))
+        if (!((_a = this.state.configuration) === null || _a === void 0 ? void 0 : _a.device))
             return null;
-        return (this.state.devices.find((device) => device.deviceId === this.state.config.device) || null);
+        return this.state.configuration.device;
     }
     setupChangeListeners() {
         // Add device change listener
@@ -260,10 +318,10 @@ class Webcam {
         }
     }
     // State and capabilities
-    getState() {
+    getWebcamState() {
         return Object.assign({}, this.state);
     }
-    getStatus() {
+    getWebcamStatus() {
         return this.state.status;
     }
     getLastError() {
@@ -280,34 +338,32 @@ class Webcam {
         return Object.assign({}, this.state.capabilities);
     }
     getCurrentResolution() {
-        // If no stream or no config, return null
-        if (!this.state.stream || !this.state.config)
+        // If no stream or no configuration, return null
+        if (!this.state.stream || !this.state.configuration)
             return null;
         const videoTrack = this.state.stream.getVideoTracks()[0];
         const settings = videoTrack.getSettings();
         // Find resolution name that matches current size
-        const currentWidth = this.state.config.autoRotation
+        const currentWidth = this.state.configuration.autoRotation
             ? settings.height || 0
             : settings.width || 0;
-        const currentHeight = this.state.config.autoRotation
+        const currentHeight = this.state.configuration.autoRotation
             ? settings.width || 0
             : settings.height || 0;
         // Find resolution that matches current size from specified list
-        const matchedResolution = this.state.config.resolution instanceof Array
-            ? this.state.config.resolution.find((r) => r.width === currentWidth &&
+        const matchedResolution = this.state.configuration.resolution instanceof Array
+            ? this.state.configuration.resolution.find((r) => r.width === currentWidth &&
                 r.height === currentHeight)
-            : this.state.config.resolution;
+            : this.state.configuration.resolution;
         return {
-            name: (matchedResolution === null || matchedResolution === void 0 ? void 0 : matchedResolution.name) || `${currentWidth}x${currentHeight}`,
+            key: (matchedResolution === null || matchedResolution === void 0 ? void 0 : matchedResolution.key) || `${currentWidth}x${currentHeight}`,
             width: currentWidth,
             height: currentHeight,
-            aspectRatio: settings.aspectRatio,
         };
     }
-    // Camera controls
     setZoom(zoomLevel) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (!this.state.stream || !this.state.capabilities.zoom) {
+            if (!this.state.stream || !this.state.capabilities.hasZoom) {
                 throw new CameraError('zoom-not-supported', 'Zoom is not supported or camera is not active');
             }
             const videoTrack = this.state.stream.getVideoTracks()[0];
@@ -329,9 +385,14 @@ class Webcam {
             }
         });
     }
+    /**
+     * Set the torch mode for the camera
+     * @param active Whether to activate or deactivate the torch
+     * @throws CameraError if torch is not supported or camera is not active
+     */
     setTorch(active) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (!this.state.stream || !this.state.capabilities.torch) {
+            if (!this.state.stream || !this.state.capabilities.hasTorch) {
                 throw new CameraError('torch-not-supported', 'Torch is not supported or camera is not active');
             }
             const videoTrack = this.state.stream.getVideoTracks()[0];
@@ -345,16 +406,21 @@ class Webcam {
                         { torch: active },
                     ],
                 });
-                this.state.capabilities.torchActive = active;
+                this.state.capabilities.isTorchActive = active;
             }
             catch (error) {
                 throw new CameraError('camera-settings-error', 'Failed to toggle torch', error);
             }
         });
     }
+    /**
+     * Set the focus mode for the camera
+     * @param mode The focus mode to set
+     * @throws CameraError if focus mode is not supported or camera is not active
+     */
     setFocusMode(mode) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (!this.state.stream || !this.state.capabilities.focusMode) {
+            if (!this.state.stream || !this.state.capabilities.hasFocus) {
                 throw new CameraError('focus-not-supported', 'Focus mode is not supported or camera is not active');
             }
             const videoTrack = this.state.stream.getVideoTracks()[0];
@@ -368,24 +434,96 @@ class Webcam {
                         { focusMode: mode },
                     ],
                 });
-                this.state.capabilities.currentFocusMode = mode;
-                this.state.capabilities.focusModeActive = true;
+                this.state.capabilities.activeFocusMode = mode;
+                this.state.capabilities.isFocusActive = true;
             }
             catch (error) {
                 throw new CameraError('camera-settings-error', 'Failed to set focus mode', error);
             }
         });
     }
-    updateConfig(newConfig) {
+    /**
+     * Update webcam configuration
+     * @param configuration Configuration to update
+     * @param options Additional options for updating
+     * @returns Current configuration after update
+     */
+    updateConfiguration(configuration, options = { restart: true }) {
         this.checkConfiguration();
         const wasActive = this.isActive();
-        if (wasActive) {
+        if (wasActive && options.restart) {
             this.stop();
         }
-        this.state.config = Object.assign(Object.assign({}, this.state.config), newConfig);
-        if (wasActive) {
+        // update configuration
+        this.state.configuration = Object.assign(Object.assign({}, this.state.configuration), configuration);
+        // Update preview element CSS if mirror mode is changed
+        if ('mirror' in configuration &&
+            this.state.configuration.previewElement) {
+            this.state.configuration.previewElement.style.transform = this
+                .state.configuration.mirror
+                ? 'scaleX(-1)'
+                : 'none';
+        }
+        if (wasActive && options.restart) {
             this.start().catch(this.handleError);
         }
+        return Object.assign({}, this.state.configuration);
+    }
+    /**
+     * Update resolution configuration
+     * @param resolution Single resolution or array of resolutions in priority order
+     * @returns Current configuration after update
+     */
+    updateResolution(resolution) {
+        return this.updateConfiguration({ resolution }, { restart: true });
+    }
+    /**
+     * Update device configuration
+     * @param deviceId ID of the camera device to use
+     * @returns Current configuration after update
+     */
+    updateDevice(device) {
+        return this.updateConfiguration({ device }, { restart: true });
+    }
+    /**
+     * toggle boolean setting
+     * @param setting setting to toggle ('mirror', 'autoRotation', 'allowAnyResolution', 'audio')
+     * @returns Promise that returns the current value after toggling
+     * @throws CameraError if microphone permission is denied
+     */
+    toggle(setting) {
+        return __awaiter(this, void 0, void 0, function* () {
+            this.checkConfiguration();
+            const newValue = !this.state.configuration[setting];
+            // if audio, check permission before
+            if (setting === 'audio' && newValue) {
+                // check microphone permission
+                const micPermission = yield this.checkMicrophonePermission();
+                // if never requested permission, request permission before
+                if (micPermission === 'prompt') {
+                    const permission = yield this.requestMediaPermission('audio');
+                    if (permission === 'denied') {
+                        throw new CameraError('microphone-permission-denied', 'ไม่ได้รับอนุญาตให้ใช้ไมโครโฟน');
+                    }
+                }
+                // if denied, throw error
+                else if (micPermission === 'denied') {
+                    throw new CameraError('microphone-permission-denied', 'ไม่ได้รับอนุญาตให้ใช้ไมโครโฟน');
+                }
+            }
+            // update configuration
+            const shouldRestart = setting === 'audio';
+            this.updateConfiguration({ [setting]: newValue }, { restart: shouldRestart });
+            return newValue;
+        });
+    }
+    /**
+     * Get current configuration
+     * @returns Copy of current configuration
+     */
+    getConfiguration() {
+        this.checkConfiguration();
+        return Object.assign({}, this.state.configuration);
     }
     // Permission management
     checkCameraPermission() {
@@ -464,7 +602,7 @@ class Webcam {
             const cameraPermission = yield this.requestMediaPermission('video');
             // Request microphone permission only if needed
             let microphonePermission = 'prompt';
-            if ((_a = this.state.config) === null || _a === void 0 ? void 0 : _a.audio) {
+            if ((_a = this.state.configuration) === null || _a === void 0 ? void 0 : _a.audio) {
                 microphonePermission = yield this.requestMediaPermission('audio');
             }
             return {
@@ -481,26 +619,15 @@ class Webcam {
     needsPermissionRequest() {
         var _a;
         return (this.state.currentPermission.camera === 'prompt' ||
-            (!!((_a = this.state.config) === null || _a === void 0 ? void 0 : _a.audio) &&
+            (!!((_a = this.state.configuration) === null || _a === void 0 ? void 0 : _a.audio) &&
                 this.state.currentPermission.microphone === 'prompt'));
     }
     // Add method for checking if permission is denied
     hasPermissionDenied() {
         var _a;
         return (this.state.currentPermission.camera === 'denied' ||
-            (!!((_a = this.state.config) === null || _a === void 0 ? void 0 : _a.audio) &&
+            (!!((_a = this.state.configuration) === null || _a === void 0 ? void 0 : _a.audio) &&
                 this.state.currentPermission.microphone === 'denied'));
-    }
-    // Add method for toggling mirror mode
-    toggleMirrorMode() {
-        this.checkConfiguration();
-        this.state.config.mirror = !this.state.config.mirror;
-        if (this.state.config.previewElement) {
-            this.state.config.previewElement.style.transform = this.state
-                .config.mirror
-                ? 'scaleX(-1)'
-                : 'none';
-        }
     }
     // Method for capturing image
     captureImage(config = {}) {
@@ -519,13 +646,13 @@ class Webcam {
         const scale = config.scale || 1;
         canvas.width = (settings.width || 640) * scale;
         canvas.height = (settings.height || 480) * scale;
-        if (this.state.config.mirror) {
+        if (this.state.configuration.mirror) {
             context.translate(canvas.width, 0);
             context.scale(-1, 1);
         }
-        context.drawImage(this.state.config.previewElement, 0, 0, canvas.width, canvas.height);
+        context.drawImage(this.state.configuration.previewElement, 0, 0, canvas.width, canvas.height);
         // Reset transform matrix
-        if (this.state.config.mirror) {
+        if (this.state.configuration.mirror) {
             context.setTransform(1, 0, 0, 1, 0, 0);
         }
         const mediaType = config.mediaType || 'image/png';
@@ -631,17 +758,14 @@ class Webcam {
         // Check each resolution
         const resolutions = desiredResolutions.map((resolution) => {
             // Check if resolution is within supported range
-            // Camera will support if width and height are not exceeding maximum supported by camera
             const isSupported = resolution.width <= capability.maxWidth &&
                 resolution.height <= capability.maxHeight &&
                 resolution.width >= capability.minWidth &&
                 resolution.height >= capability.minHeight;
             return {
-                name: resolution.name,
+                key: resolution.key,
                 width: resolution.width,
                 height: resolution.height,
-                aspectRatio: resolution.aspectRatio ||
-                    resolution.width / resolution.height,
                 supported: isSupported,
             };
         });
@@ -665,7 +789,7 @@ class Webcam {
     openCamera() {
         return __awaiter(this, void 0, void 0, function* () {
             // Case: No resolution specified - use supported resolution
-            if (!this.state.config.resolution) {
+            if (!this.state.configuration.resolution) {
                 try {
                     yield this.tryAnyResolution();
                     return;
@@ -675,22 +799,20 @@ class Webcam {
                 }
             }
             // Case: Resolution specified
-            const resolutions = this.state.config.resolution instanceof Array
-                ? this.state.config.resolution
-                : [this.state.config.resolution];
+            const resolutions = this.state.configuration.resolution instanceof Array
+                ? this.state.configuration.resolution
+                : [this.state.configuration.resolution];
             // Case: allowAnyResolution = false
-            // Try only first resolution, throw error immediately if fails
-            if (!this.state.config.allowAnyResolution) {
+            if (!this.state.configuration.allowAnyResolution) {
                 try {
                     yield this.tryResolution(resolutions[0]);
                 }
                 catch (error) {
-                    throw new CameraError('camera-initialization-error', `Failed to open camera with specified resolution: ${resolutions[0].name}`, error);
+                    throw new CameraError('camera-initialization-error', `Failed to open camera with specified resolution: ${resolutions[0].key}`, error);
                 }
                 return;
             }
             // Case: allowAnyResolution = true
-            // 1. Try all specified resolutions in order
             let lastError = null;
             for (const resolution of resolutions) {
                 try {
@@ -699,7 +821,7 @@ class Webcam {
                 }
                 catch (error) {
                     lastError = error;
-                    console.log(`Failed to open camera with resolution: ${resolution.name}. Error:`, error);
+                    console.log(`Failed to open camera with resolution: ${resolution.key}. Error:`, error);
                 }
             }
             // 2. If all fail, try any supported resolution
@@ -715,15 +837,15 @@ class Webcam {
     tryResolution(resolution) {
         return __awaiter(this, void 0, void 0, function* () {
             var _a, _b;
-            console.log(`Attempting to open camera with resolution: ${resolution.name} (${resolution.width}x${resolution.height})`);
+            console.log(`Attempting to open camera with resolution: ${resolution.key} (${resolution.width}x${resolution.height})`);
             const constraints = this.buildConstraints(resolution);
             this.state.stream =
                 yield navigator.mediaDevices.getUserMedia(constraints);
             yield this.updateCapabilities();
             yield this.setupPreviewElement();
-            console.log(`Successfully opened camera with resolution: ${resolution.name}`);
+            console.log(`Successfully opened camera with resolution: ${resolution.key}`);
             this.state.status = WebcamStatus.READY;
-            (_b = (_a = this.state.config) === null || _a === void 0 ? void 0 : _a.onStart) === null || _b === void 0 ? void 0 : _b.call(_a);
+            (_b = (_a = this.state.configuration) === null || _a === void 0 ? void 0 : _a.onStart) === null || _b === void 0 ? void 0 : _b.call(_a);
         });
     }
     tryAnyResolution() {
@@ -731,16 +853,14 @@ class Webcam {
             var _a, _b;
             console.log('Attempting to open camera with any supported resolution (ideal: 4K)');
             // Request device capability information first
-            const devices = yield navigator.mediaDevices.enumerateDevices();
-            const device = devices.find((d) => d.deviceId === this.state.config.device);
-            if (!device) {
+            if (!this.state.configuration.device) {
                 throw new CameraError('no-device', 'Selected device not found');
             }
             // Create constraints specifying ideal resolution as 4K
             const constraints = {
-                audio: this.state.config.audio,
+                audio: this.state.configuration.audio,
                 video: {
-                    deviceId: { exact: this.state.config.device },
+                    deviceId: { exact: this.state.configuration.device.deviceId },
                     width: { ideal: 3840 },
                     height: { ideal: 2160 },
                 },
@@ -754,7 +874,7 @@ class Webcam {
                 const settings = videoTrack.getSettings();
                 console.log(`Opened camera with resolution: ${settings.width}x${settings.height}`);
                 this.state.status = WebcamStatus.READY;
-                (_b = (_a = this.state.config) === null || _a === void 0 ? void 0 : _a.onStart) === null || _b === void 0 ? void 0 : _b.call(_a);
+                (_b = (_a = this.state.configuration) === null || _a === void 0 ? void 0 : _a.onStart) === null || _b === void 0 ? void 0 : _b.call(_a);
             }
             catch (error) {
                 throw new CameraError('camera-initialization-error', 'Failed to initialize camera with any resolution', error);
@@ -763,13 +883,14 @@ class Webcam {
     }
     setupPreviewElement() {
         return __awaiter(this, void 0, void 0, function* () {
-            if (this.state.config.previewElement && this.state.stream) {
-                this.state.config.previewElement.srcObject = this.state.stream;
-                this.state.config.previewElement.style.transform = this.state
-                    .config.mirror
+            if (this.state.configuration.previewElement && this.state.stream) {
+                this.state.configuration.previewElement.srcObject =
+                    this.state.stream;
+                this.state.configuration.previewElement.style.transform = this
+                    .state.configuration.mirror
                     ? 'scaleX(-1)'
                     : 'none';
-                yield this.state.config.previewElement.play();
+                yield this.state.configuration.previewElement.play();
             }
         });
     }
@@ -782,24 +903,24 @@ class Webcam {
             const capabilities = videoTrack.getCapabilities();
             const settings = videoTrack.getSettings();
             this.state.capabilities = {
-                zoom: !!capabilities.zoom,
-                torch: !!capabilities.torch,
-                focusMode: !!capabilities.focusMode,
+                hasZoom: !!capabilities.zoom,
+                hasTorch: !!capabilities.torch,
+                hasFocus: !!capabilities.focusMode,
                 currentZoom: settings.zoom || 1,
                 minZoom: ((_a = capabilities.zoom) === null || _a === void 0 ? void 0 : _a.min) || 1,
                 maxZoom: ((_b = capabilities.zoom) === null || _b === void 0 ? void 0 : _b.max) || 1,
-                torchActive: settings.torch || false,
-                focusModeActive: !!settings.focusMode,
-                currentFocusMode: settings.focusMode || 'none',
-                supportedFocusModes: capabilities.focusMode || [],
+                isTorchActive: settings.torch || false,
+                isFocusActive: !!settings.focusMode,
+                activeFocusMode: settings.focusMode || 'none',
+                availableFocusModes: capabilities.focusMode || [],
             };
         });
     }
     buildConstraints(resolution) {
         const videoConstraints = {
-            deviceId: { exact: this.state.config.device },
+            deviceId: { exact: this.state.configuration.device.deviceId },
         };
-        if (this.state.config.autoRotation) {
+        if (this.state.configuration.autoRotation) {
             videoConstraints.width = { exact: resolution.height };
             videoConstraints.height = { exact: resolution.width };
         }
@@ -807,16 +928,13 @@ class Webcam {
             videoConstraints.width = { exact: resolution.width };
             videoConstraints.height = { exact: resolution.height };
         }
-        if (resolution.aspectRatio) {
-            videoConstraints.aspectRatio = { exact: resolution.aspectRatio };
-        }
         return {
             video: videoConstraints,
-            audio: this.state.config.audio,
+            audio: this.state.configuration.audio,
         };
     }
     checkConfiguration() {
-        if (!this.state.config) {
+        if (!this.state.configuration) {
             throw new CameraError('configuration-error', 'Please call setupConfiguration() before using webcam');
         }
     }
@@ -828,41 +946,90 @@ class Webcam {
             error instanceof CameraError
                 ? error
                 : new CameraError('unknown', error.message, error);
-        // Call callback onError if config exists
-        (_b = (_a = this.state.config) === null || _a === void 0 ? void 0 : _a.onError) === null || _b === void 0 ? void 0 : _b.call(_a, this.state.lastError);
+        // Call callback onError if configuration exists
+        (_b = (_a = this.state.configuration) === null || _a === void 0 ? void 0 : _a.onError) === null || _b === void 0 ? void 0 : _b.call(_a, this.state.lastError);
     }
     stopStream() {
         if (this.state.stream) {
             this.state.stream.getTracks().forEach((track) => track.stop());
             this.state.stream = null;
         }
-        if (this.state.config.previewElement) {
-            this.state.config.previewElement.srcObject = null;
+        if (this.state.configuration.previewElement) {
+            this.state.configuration.previewElement.srcObject = null;
         }
     }
     resetState() {
         this.stopChangeListeners();
         // Reset only basic system state
         this.state = Object.assign(Object.assign({}, this.state), { status: WebcamStatus.IDLE, stream: null, lastError: null, capabilities: {
-                zoom: false,
-                torch: false,
-                focusMode: false,
+                hasZoom: false,
+                hasTorch: false,
+                hasFocus: false,
                 currentZoom: 1,
                 minZoom: 1,
                 maxZoom: 1,
-                torchActive: false,
-                focusModeActive: false,
-                currentFocusMode: 'none',
-                supportedFocusModes: [],
+                isTorchActive: false,
+                isFocusActive: false,
+                activeFocusMode: 'none',
+                availableFocusModes: [],
             } });
     }
     validatePermissions(permissions) {
         if (permissions.camera === 'denied') {
             throw new CameraError('permission-denied', 'Please allow camera access');
         }
-        if (this.state.config.audio && permissions.microphone === 'denied') {
+        if (this.state.configuration.audio &&
+            permissions.microphone === 'denied') {
             throw new CameraError('microphone-permission-denied', 'Please allow microphone access');
         }
     }
+    /**
+     * สร้าง Resolution ใหม่พร้อม Key
+     * @param width ความกว้าง
+     * @param height ความสูง
+     * @returns Resolution object
+     */
+    createResolution(width, height) {
+        const key = `${width}x${height}`; // สร้างคีย์จากความกว้างและความสูง
+        return { key, width, height };
+    }
+    /**
+     * ตรวจสอบว่ากล้องรองรับการซูมหรือไม่
+     * @returns true ถ้ากล้องรองรับการซูม, false ถ้าไม่รองรับ
+     */
+    isZoomSupported() {
+        return this.state.capabilities.hasZoom;
+    }
+    /**
+     * ตรวจสอบว่ากล้องรองรับไฟฉายหรือไม่
+     * @returns true ถ้ากล้องรองรับไฟฉาย, false ถ้าไม่รองรับ
+     */
+    isTorchSupported() {
+        return this.state.capabilities.hasTorch;
+    }
+    /**
+     * ตรวจสอบว่ากล้องรองรับการโฟกัสหรือไม่
+     * @returns true ถ้ากล้องรองรับการโฟกัส, false ถ้าไม่รองรับ
+     */
+    isFocusSupported() {
+        return this.state.capabilities.hasFocus;
+    }
+    /**
+     * สลับการเปิด/ปิดไฟฉาย
+     * @returns สถานะไฟฉายหลังจากสลับ (true = เปิด, false = ปิด)
+     * @throws CameraError ถ้าไม่รองรับไฟฉายหรือกล้องไม่ทำงาน
+     */
+    toggleTorch() {
+        return __awaiter(this, void 0, void 0, function* () {
+            // สลับสถานะไฟฉายเป็นตรงข้ามกับสถานะปัจจุบัน
+            const newState = !this.state.capabilities.isTorchActive;
+            // เรียกใช้ setTorch เพื่อเปลี่ยนสถานะ
+            yield this.setTorch(newState);
+            // ส่งคืนสถานะใหม่
+            return newState;
+        });
+    }
 }
-exports.Webcam = Webcam;
+// เพิ่ม default export สำหรับ Webcam class
+export default Webcam;
+// ไม่ต้องเพิ่ม named exports เพราะมีการ export ไว้แล้วที่ interface และ type declarations

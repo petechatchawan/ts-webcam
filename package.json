@@ -1,14 +1,17 @@
 {
   "name": "ts-webcam",
-  "version": "1.2.7",
+  "version": "1.2.9",
+  "type": "module",
   "description": "A TypeScript library for managing webcam access using the MediaDevices API",
   "main": "dist/ts-webcam.js",
+  "module": "dist/ts-webcam.js",
   "types": "dist/ts-webcam.d.ts",
   "scripts": {
     "build": "tsc",
     "test": "echo \"Error: no test specified\" && exit 1",
     "format": "prettier --write \"src/**/*.ts\"",
-    "prepare": "npm run build"
+    "prepare": "npm run build",
+    "clean": "rm -rf dist"
   },
   "keywords": [
     "angular",
