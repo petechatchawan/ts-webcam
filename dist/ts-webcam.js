@@ -1014,6 +1014,21 @@ export class Webcam {
     isFocusSupported() {
         return this.state.capabilities.hasFocus;
     }
+    getCurrentZoom() {
+        return this.state.capabilities.currentZoom;
+    }
+    getMinZoom() {
+        return this.state.capabilities.minZoom;
+    }
+    getMaxZoom() {
+        return this.state.capabilities.maxZoom;
+    }
+    isTorchActive() {
+        return this.state.capabilities.isTorchActive;
+    }
+    isFocusActive() {
+        return this.state.capabilities.isFocusActive;
+    }
     /**
      * สลับการเปิด/ปิดไฟฉาย
      * @returns สถานะไฟฉายหลังจากสลับ (true = เปิด, false = ปิด)

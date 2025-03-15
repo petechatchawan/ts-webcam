@@ -260,6 +260,11 @@ export declare class Webcam {
      * @returns true ถ้ากล้องรองรับการโฟกัส, false ถ้าไม่รองรับ
      */
     isFocusSupported(): boolean;
+    getCurrentZoom(): number;
+    getMinZoom(): number;
+    getMaxZoom(): number;
+    isTorchActive(): boolean;
+    isFocusActive(): boolean;
     /**
      * สลับการเปิด/ปิดไฟฉาย
      * @returns สถานะไฟฉายหลังจากสลับ (true = เปิด, false = ปิด)

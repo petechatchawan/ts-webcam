@@ -1487,6 +1487,26 @@ export class Webcam {
         return this.state.capabilities.hasFocus;
     }
 
+    public getCurrentZoom(): number {
+        return this.state.capabilities.currentZoom;
+    }
+
+    public getMinZoom(): number {
+        return this.state.capabilities.minZoom;
+    }
+
+    public getMaxZoom(): number {
+        return this.state.capabilities.maxZoom;
+    }
+
+    public isTorchActive(): boolean {
+        return this.state.capabilities.isTorchActive;
+    }
+
+    public isFocusActive(): boolean {
+        return this.state.capabilities.isFocusActive;
+    }
+
     /**
      * สลับการเปิด/ปิดไฟฉาย
      * @returns สถานะไฟฉายหลังจากสลับ (true = เปิด, false = ปิด)
