@@ -352,7 +352,7 @@ export class Webcam {
      * Get current autoRotation status
      * @returns Current autoRotation status or false if not set
      */
-    public isAutoRotation(): boolean {
+    public isAutoRotationEnabled(): boolean {
         return this.state.configuration?.autoRotation || false;
     }
 
@@ -570,26 +570,16 @@ export class Webcam {
         const videoTrack = this.state.stream.getVideoTracks()[0];
         const settings = videoTrack.getSettings();
 
-        // Find resolution name that matches current size
-        const currentWidth = this.state.configuration.autoRotation
-            ? settings.height || 0
-            : settings.width || 0;
-        const currentHeight = this.state.configuration.autoRotation
-            ? settings.width || 0
-            : settings.height || 0;
+        const currentWidth = settings.width || 0;
+        const currentHeight = settings.height || 0;
 
-        // Find resolution that matches current size from specified list
-        const matchedResolution =
-            this.state.configuration.resolution instanceof Array
-                ? this.state.configuration.resolution.find(
-                      (r: Resolution) =>
-                          r.width === currentWidth &&
-                          r.height === currentHeight,
-                  )
-                : this.state.configuration.resolution;
+        console.log('Settings:', settings);
+        console.log('Auto Rotation:', this.state.configuration.autoRotation);
+        console.log('Current Width:', currentWidth);
+        console.log('Current Height:', currentHeight);
 
         return {
-            key: matchedResolution?.key || `${currentWidth}x${currentHeight}`,
+            key: `${currentWidth}x${currentHeight}`,
             width: currentWidth,
             height: currentHeight,
         };
