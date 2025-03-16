@@ -259,80 +259,40 @@ export class Webcam {
         };
     }
 
-    public setupConfiguration(configuration: WebcamConfig): void {
-        if (!configuration.device) {
-            throw new CameraError('invalid-device-id', 'Device ID is required');
-        }
-
-        this.state.configuration = {
-            ...this.defaultConfiguration,
-            ...configuration,
-        };
+    public getWebcamState(): WebcamState {
+        return { ...this.state };
     }
 
-    public async start(): Promise<void> {
-        this.checkConfiguration();
-        try {
-            await this.initializeWebcam();
-        } catch (error) {
-            if (error instanceof CameraError) {
-                this.handleError(error);
-            } else {
-                this.handleError(
-                    new CameraError(
-                        'camera-start-error',
-                        'Failed to start camera',
-                        error as Error,
-                    ),
-                );
-            }
-            throw this.state.lastError;
-        }
+    public getWebcamStatus(): WebcamStatus {
+        return this.state.status;
     }
 
-    public stop(): void {
-        this.checkConfiguration();
-        this.stopStream();
-        this.resetState();
+    public getCapabilities(): CameraFeatures {
+        return { ...this.state.capabilities };
+    }
+
+    public getLastError(): CameraError | null {
+        return this.state.lastError;
+    }
+
+    public setResolutions(resolutions: Resolution[]): void {
+        this.state.resolutions = resolutions;
+    }
+
+    public getResolutions(): Resolution[] {
+        return this.state.resolutions;
+    }
+
+    public clearError(): void {
+        // Clear error and go back to IDLE state if not active
+        this.state.lastError = null;
+        if (!this.isActive()) {
+            this.state.status = WebcamStatus.IDLE;
+        }
     }
 
     public isActive(): boolean {
         return this.state.stream !== null && this.state.stream.active;
-    }
-
-    /**
-     * Check if video is ready for display
-     * @returns Promise that resolves to true if video is ready
-     */
-    public async previewIsReady(): Promise<boolean> {
-        const video = this.state.configuration?.previewElement;
-
-        // Check if video is not null
-        if (!video) {
-            return false; // Return false if video is null
-        }
-
-        // If video is already ready
-        if (video.readyState >= 2) {
-            return true;
-        }
-
-        // Set event listener for canplay
-        const onCanPlay = () => {
-            video.removeEventListener('canplay', onCanPlay);
-            return true;
-        };
-
-        // Set event listener for error
-        const onError = () => {
-            video.removeEventListener('error', onError);
-            return false;
-        };
-
-        video.addEventListener('canplay', onCanPlay);
-        video.addEventListener('error', onError);
-
-        return false; // Return false if video is not ready
     }
 
     /**
@@ -347,7 +307,7 @@ export class Webcam {
      * Get current mirror mode status
      * @returns Current mirror status or false if not set
      */
-    public isMirror(): boolean {
+    public isMirrorEnabled(): boolean {
         return this.state.configuration?.mirror || false;
     }
 
@@ -367,75 +327,68 @@ export class Webcam {
         return this.state.configuration?.allowAnyResolution || false;
     }
 
-    // Device management
-    private async getAvailableDevices(): Promise<MediaDeviceInfo[]> {
-        try {
-            if (
-                !navigator.mediaDevices ||
-                !navigator.mediaDevices.enumerateDevices
-            ) {
-                throw new CameraError(
-                    'no-media-devices-support',
-                    'MediaDevices API is not supported in this browser',
-                );
-            }
-
-            this.state.devices =
-                await navigator.mediaDevices.enumerateDevices();
-            return [...this.state.devices];
-        } catch (error) {
-            this.handleError(
-                new CameraError(
-                    'device-list-error',
-                    'Failed to get device list',
-                    error as Error,
-                ),
-            );
-            return [];
-        }
+    /**
+     * Check if camera supports zoom
+     * @returns true if camera supports zoom, false otherwise
+     */
+    public isZoomSupported(): boolean {
+        return this.state.capabilities.hasZoom;
     }
 
-    public getDeviceList(): MediaDeviceInfo[] {
-        return [...this.state.devices];
+    /**
+     * Check if camera supports torch/flashlight
+     * @returns true if camera supports torch, false otherwise
+     */
+    public isTorchSupported(): boolean {
+        return this.state.capabilities.hasTorch;
     }
 
-    public async getVideoDevices(): Promise<MediaDeviceInfo[]> {
-        // If no device information, call getAvailableDevices first
-        if (this.state.devices.length === 0) {
-            await this.getAvailableDevices();
-        }
-        return this.state.devices.filter(
-            (device) => device.kind === 'videoinput',
-        );
+    /**
+     * Check if camera supports focus
+     * @returns true if camera supports focus, false otherwise
+     */
+    public isFocusSupported(): boolean {
+        return this.state.capabilities.hasFocus;
     }
 
-    public async getAudioInputDevices(): Promise<MediaDeviceInfo[]> {
-        // If no device information, call getAvailableDevices first
-        if (this.state.devices.length === 0) {
-            await this.getAvailableDevices();
-        }
-        return this.state.devices.filter(
-            (device) => device.kind === 'audioinput',
-        );
+    /**
+     * Get current zoom level
+     * @returns Current zoom level or 1 if not available
+     */
+    public getCurrentZoom(): number {
+        return this.state.capabilities.currentZoom;
     }
 
-    public async getAudioOutputDevices(): Promise<MediaDeviceInfo[]> {
-        // If no device information, call getAvailableDevices first
-        if (this.state.devices.length === 0) {
-            await this.getAvailableDevices();
-        }
-        return this.state.devices.filter(
-            (device) => device.kind === 'audiooutput',
-        );
+    /**
+     * Get minimum supported zoom level
+     * @returns Minimum zoom level or 1 if not available
+     */
+    public getMinZoom(): number {
+        return this.state.capabilities.minZoom;
     }
 
-    public async refreshDevices(): Promise<void> {
-        await this.getAvailableDevices();
+    /**
+     * Get maximum supported zoom level
+     * @returns Maximum zoom level or 1 if not available
+     */
+    public getMaxZoom(): number {
+        return this.state.capabilities.maxZoom;
     }
 
-    public getCurrentDevice(): MediaDeviceInfo | null {
-        if (!this.state.configuration?.device) return null;
-        return this.state.configuration.device;
+    /**
+     * Check if torch/flashlight is currently active
+     * @returns true if torch is active, false otherwise
+     */
+    public isTorchActive(): boolean {
+        return this.state.capabilities.isTorchActive;
+    }
+
+    /**
+     * Check if focus is currently active
+     * @returns true if focus is active, false otherwise
+     */
+    public isFocusActive(): boolean {
+        return this.state.capabilities.isFocusActive;
     }
 
     public setupChangeListeners(): void {
@@ -541,31 +494,88 @@ export class Webcam {
         }
     }
 
-    // State and capabilities
-    public getWebcamState(): WebcamState {
-        return { ...this.state };
-    }
+    /**
+     * Get available devices
+     * @returns Promise that resolves to an array of MediaDeviceInfo objects
+     */
+    private async getAvailableDevices(): Promise<MediaDeviceInfo[]> {
+        try {
+            if (
+                !navigator.mediaDevices ||
+                !navigator.mediaDevices.enumerateDevices
+            ) {
+                throw new CameraError(
+                    'no-media-devices-support',
+                    'MediaDevices API is not supported in this browser',
+                );
+            }
 
-    public getWebcamStatus(): WebcamStatus {
-        return this.state.status;
-    }
-
-    public getLastError(): CameraError | null {
-        return this.state.lastError;
-    }
-
-    public clearError(): void {
-        // Clear error and go back to IDLE state if not active
-        this.state.lastError = null;
-        if (!this.isActive()) {
-            this.state.status = WebcamStatus.IDLE;
+            this.state.devices =
+                await navigator.mediaDevices.enumerateDevices();
+            return [...this.state.devices];
+        } catch (error) {
+            this.handleError(
+                new CameraError(
+                    'device-list-error',
+                    'Failed to get device list',
+                    error as Error,
+                ),
+            );
+            return [];
         }
     }
 
-    public getCapabilities(): CameraFeatures {
-        return { ...this.state.capabilities };
+    public getDeviceList(): MediaDeviceInfo[] {
+        return [...this.state.devices];
     }
 
+    public async getVideoDevices(): Promise<MediaDeviceInfo[]> {
+        // If no device information, call getAvailableDevices first
+        if (this.state.devices.length === 0) {
+            await this.getAvailableDevices();
+        }
+        return this.state.devices.filter(
+            (device) => device.kind === 'videoinput',
+        );
+    }
+
+    public async getAudioInputDevices(): Promise<MediaDeviceInfo[]> {
+        // If no device information, call getAvailableDevices first
+        if (this.state.devices.length === 0) {
+            await this.getAvailableDevices();
+        }
+        return this.state.devices.filter(
+            (device) => device.kind === 'audioinput',
+        );
+    }
+
+    public async getAudioOutputDevices(): Promise<MediaDeviceInfo[]> {
+        // If no device information, call getAvailableDevices first
+        if (this.state.devices.length === 0) {
+            await this.getAvailableDevices();
+        }
+        return this.state.devices.filter(
+            (device) => device.kind === 'audiooutput',
+        );
+    }
+
+    public async refreshDevices(): Promise<void> {
+        await this.getAvailableDevices();
+    }
+
+    /**
+     * Get current device
+     * @returns Current device or null if no device
+     */
+    public getCurrentDevice(): MediaDeviceInfo | null {
+        if (!this.state.configuration?.device) return null;
+        return this.state.configuration.device;
+    }
+
+    /**
+     * Get current resolution from active video track
+     * @returns Resolution object with current width, height and key, or null if no stream
+     */
     public getCurrentResolution(): Resolution | null {
         // If no stream or no configuration, return null
         if (!this.state.stream || !this.state.configuration) return null;
@@ -575,20 +585,105 @@ export class Webcam {
 
         const currentWidth = settings.width || 0;
         const currentHeight = settings.height || 0;
-
-        console.log('Settings:', settings);
-        console.log('Auto Rotation:', this.state.configuration.autoRotation);
-        console.log('Current Width:', currentWidth);
-        console.log('Current Height:', currentHeight);
+        const resolutionKey = `${currentWidth}x${currentHeight}`;
 
         return {
-            key: `${currentWidth}x${currentHeight}`,
+            key: resolutionKey,
             width: currentWidth,
             height: currentHeight,
         };
     }
 
+    /**
+     * Setup configuration for the webcam
+     * @param configuration - Configuration object
+     */
+    public setupConfiguration(configuration: WebcamConfig): void {
+        if (!configuration.device) {
+            throw new CameraError('invalid-device-id', 'Device ID is required');
+        }
+
+        this.state.configuration = {
+            ...this.defaultConfiguration,
+            ...configuration,
+        };
+    }
+
+    /**
+     * Start the webcam
+     * @returns Promise that resolves when the webcam is started
+     */
+    public async start(): Promise<void> {
+        this.checkConfiguration();
+        try {
+            await this.initializeWebcam();
+        } catch (error) {
+            if (error instanceof CameraError) {
+                this.handleError(error);
+            } else {
+                this.handleError(
+                    new CameraError(
+                        'camera-start-error',
+                        'Failed to start camera',
+                        error as Error,
+                    ),
+                );
+            }
+            throw this.state.lastError;
+        }
+    }
+
+    /**
+     * Stop the webcam
+     */
+    public stop(): void {
+        this.checkConfiguration();
+        this.stopStream();
+        this.resetState();
+    }
+
+    /**
+     * Check if video is ready for display
+     * @returns Promise that resolves to true if video is ready
+     */
+    public async previewIsReady(): Promise<boolean> {
+        const video = this.state.configuration?.previewElement;
+
+        // Check if video is not null
+        if (!video) {
+            return false; // Return false if video is null
+        }
+
+        // If video is already ready
+        if (video.readyState >= 2) {
+            return true;
+        }
+
+        // Set event listener for canplay
+        const onCanPlay = () => {
+            video.removeEventListener('canplay', onCanPlay);
+            return true;
+        };
+
+        // Set event listener for error
+        const onError = () => {
+            video.removeEventListener('error', onError);
+            return false;
+        };
+
+        video.addEventListener('canplay', onCanPlay);
+        video.addEventListener('error', onError);
+
+        return false;
+    }
+
+    /**
+     * Set the zoom level for the camera
+     * @param zoomLevel Zoom level to set (will be constrained to min/max range)
+     * @throws CameraError if zoom is not supported or camera is not active
+     */
     public async setZoom(zoomLevel: number): Promise<void> {
+        // Check if camera is active and zoom is supported
         if (!this.state.stream || !this.state.capabilities.hasZoom) {
             throw new CameraError(
                 'zoom-not-supported',
@@ -596,10 +691,12 @@ export class Webcam {
             );
         }
 
+        // Get video track and check capabilities
         const videoTrack = this.state.stream.getVideoTracks()[0];
         const capabilities =
             videoTrack.getCapabilities() as ExtendedMediaTrackCapabilities;
 
+        // Verify zoom capability is available
         if (!capabilities.zoom) {
             throw new CameraError(
                 'zoom-not-supported',
@@ -608,16 +705,23 @@ export class Webcam {
         }
 
         try {
-            zoomLevel = Math.min(
+            // Constrain zoom level to valid range
+            const constrainedZoomLevel = Math.min(
                 Math.max(zoomLevel, capabilities.zoom.min),
                 capabilities.zoom.max,
             );
+
+            // Apply zoom constraint
             await videoTrack.applyConstraints({
                 advanced: [
-                    { zoom: zoomLevel } as ExtendedMediaTrackConstraintSet,
+                    {
+                        zoom: constrainedZoomLevel,
+                    } as ExtendedMediaTrackConstraintSet,
                 ],
             });
-            this.state.capabilities.currentZoom = zoomLevel;
+
+            // Update internal state
+            this.state.capabilities.currentZoom = constrainedZoomLevel;
         } catch (error) {
             throw new CameraError(
                 'camera-settings-error',
@@ -629,10 +733,11 @@ export class Webcam {
 
     /**
      * Set the torch mode for the camera
-     * @param active Whether to activate or deactivate the torch
+     * @param active Whether to activate (true) or deactivate (false) the torch
      * @throws CameraError if torch is not supported or camera is not active
      */
     public async setTorch(active: boolean): Promise<void> {
+        // Check if camera is active and torch is supported
         if (!this.state.stream || !this.state.capabilities.hasTorch) {
             throw new CameraError(
                 'torch-not-supported',
@@ -640,10 +745,12 @@ export class Webcam {
             );
         }
 
+        // Get video track and check capabilities
         const videoTrack = this.state.stream.getVideoTracks()[0];
         const capabilities =
             videoTrack.getCapabilities() as ExtendedMediaTrackCapabilities;
 
+        // Verify torch capability is available
         if (!capabilities.torch) {
             throw new CameraError(
                 'torch-not-supported',
@@ -652,16 +759,19 @@ export class Webcam {
         }
 
         try {
+            // Apply torch constraint
             await videoTrack.applyConstraints({
                 advanced: [
                     { torch: active } as ExtendedMediaTrackConstraintSet,
                 ],
             });
+
+            // Update internal state
             this.state.capabilities.isTorchActive = active;
         } catch (error) {
             throw new CameraError(
                 'camera-settings-error',
-                'Failed to toggle torch',
+                'Failed to set torch mode',
                 error as Error,
             );
         }
@@ -669,33 +779,39 @@ export class Webcam {
 
     /**
      * Set the focus mode for the camera
-     * @param mode The focus mode to set
+     * @param mode The focus mode to set (e.g., 'auto', 'continuous', 'manual')
      * @throws CameraError if focus mode is not supported or camera is not active
      */
     public async setFocusMode(mode: string): Promise<void> {
+        // Check if camera is active and focus is supported
         if (!this.state.stream || !this.state.capabilities.hasFocus) {
             throw new CameraError(
                 'focus-not-supported',
                 'Focus mode is not supported or camera is not active',
             );
         }
-
+        // Get video track and check capabilities
         const videoTrack = this.state.stream.getVideoTracks()[0];
         const capabilities =
             videoTrack.getCapabilities() as ExtendedMediaTrackCapabilities;
+
+        // Verify requested focus mode is supported
         if (!capabilities.focusMode || !capabilities.focusMode.includes(mode)) {
             throw new CameraError(
                 'focus-not-supported',
-                `Focus mode ${mode} is not supported by this device`,
+                `Focus mode '${mode}' is not supported by this device`,
             );
         }
 
         try {
+            // Apply focus mode constraint
             await videoTrack.applyConstraints({
                 advanced: [
                     { focusMode: mode } as ExtendedMediaTrackConstraintSet,
                 ],
             });
+
+            // Update internal state
             this.state.capabilities.activeFocusMode = mode;
             this.state.capabilities.isFocusActive = true;
         } catch (error) {
@@ -705,6 +821,41 @@ export class Webcam {
                 error as Error,
             );
         }
+    }
+
+    /**
+     * Toggle torch/flashlight on/off
+     * @returns New torch state after toggle (true = on, false = off)
+     * @throws CameraError if torch is not supported or camera is not active
+     */
+    public async toggleTorch(): Promise<boolean> {
+        // Check if torch is supported
+        if (!this.isTorchSupported()) {
+            throw new CameraError(
+                'torch-not-supported',
+                'Torch is not supported by this device',
+            );
+        }
+
+        // Toggle torch state to opposite of current state
+        const newTorchState = !this.state.capabilities.isTorchActive;
+
+        // Apply the new torch state
+        await this.setTorch(newTorchState);
+
+        // Return the new state
+        return newTorchState;
+    }
+
+    /**
+     * Create a new Resolution object with key
+     * @param width Width in pixels
+     * @param height Height in pixels
+     * @returns Resolution object with key in format "widthxheight"
+     */
+    public createResolution(width: number, height: number): Resolution {
+        const resolutionKey = `${width}x${height}`;
+        return { key: resolutionKey, width, height };
     }
 
     /**
@@ -753,29 +904,26 @@ export class Webcam {
         return { ...this.state.configuration };
     }
 
+    /**
+     * Adjust resolution dimensions for rotation
+     * Swaps width and height for all resolutions in the state
+     * and updates their keys accordingly
+     */
     private getAdjustedResolutionRotation(): void {
         const currentResolutions = this.getResolutions();
-        if (!currentResolutions) return;
+        if (!currentResolutions || currentResolutions.length === 0) return;
 
         currentResolutions.forEach((resolution) => {
-            // สลับ width และ height
+            // Swap width and height
             const tempWidth = resolution.width;
             resolution.width = resolution.height;
             resolution.height = tempWidth;
 
-            // อัปเดต key ใหม่
+            // Update key with new dimensions
             resolution.key = `${resolution.width}x${resolution.height}`;
         });
 
         this.state.resolutions = currentResolutions;
-    }
-
-    public setResolutions(resolutions: Resolution[]): void {
-        this.state.resolutions = resolutions;
-    }
-
-    public getResolutions(): Resolution[] {
-        return this.state.resolutions;
     }
 
     /**
@@ -805,10 +953,9 @@ export class Webcam {
      * @throws CameraError if microphone permission is denied
      */
     public async toggle(
-        setting: 'mirror' | 'autoRotation' | 'allowAnyResolution' | 'audio',
+        setting: 'audio' | 'autoRotation' | 'allowAnyResolution' | 'mirror',
     ): Promise<boolean> {
         this.checkConfiguration();
-
         const newValue = !this.state.configuration![setting];
 
         // if audio, check permission before
@@ -1213,10 +1360,17 @@ export class Webcam {
         await this.openCamera();
     }
 
+    /**
+     * Open camera with appropriate resolution based on configuration
+     * Handles different scenarios:
+     * 1. No resolution specified + allowAnyResolution = true
+     * 2. Resolution specified + allowAnyResolution = false
+     * 3. Resolution specified + allowAnyResolution = true
+     * @throws CameraError if camera cannot be opened
+     */
     private async openCamera(): Promise<void> {
-        // Case: No resolution specified
+        // Case 1: No resolution specified
         if (!this.state.configuration!.resolution) {
-            // Check if allowAnyResolution is true
             if (!this.state.configuration!.allowAnyResolution) {
                 throw new CameraError(
                     'configuration-error',
@@ -1236,13 +1390,12 @@ export class Webcam {
             }
         }
 
-        // Case: Resolution specified
-        const resolutions =
-            this.state.configuration!.resolution instanceof Array
-                ? this.state.configuration!.resolution
-                : [this.state.configuration!.resolution];
+        // Get resolutions from configuration
+        const resolutions = Array.isArray(this.state.configuration!.resolution)
+            ? this.state.configuration!.resolution
+            : [this.state.configuration!.resolution];
 
-        // Case: allowAnyResolution = false
+        // Case 2: Resolution specified + allowAnyResolution = false
         if (!this.state.configuration!.allowAnyResolution) {
             try {
                 await this.tryResolution(resolutions[0]);
@@ -1256,24 +1409,26 @@ export class Webcam {
             return;
         }
 
-        // Case: allowAnyResolution = true
+        // Case 3: Resolution specified + allowAnyResolution = true
+        // Try each resolution in order
         let lastError: Error | null = null;
         for (const resolution of resolutions) {
             try {
                 await this.tryResolution(resolution);
-                return;
+                return; // Success, exit function
             } catch (error) {
                 lastError = error as Error;
                 console.log(
-                    `Failed to open camera with resolution: ${resolution.key}. Error:`,
-                    error,
+                    `Failed to open camera with resolution: ${resolution.key}. Trying next...`,
                 );
             }
         }
 
-        // 2. If all fail, try any supported resolution
+        // If all specified resolutions fail, try any supported resolution
         try {
-            console.log('Attempting to use any supported resolution...');
+            console.log(
+                'All specified resolutions failed. Trying any supported resolution...',
+            );
             await this.tryAnyResolution();
         } catch (error) {
             throw new CameraError(
@@ -1284,38 +1439,62 @@ export class Webcam {
         }
     }
 
+    /**
+     * Try to open camera with specific resolution
+     * @param resolution Resolution to try
+     * @throws CameraError if camera cannot be opened with specified resolution
+     */
     private async tryResolution(resolution: Resolution): Promise<void> {
+        const resolutionString = `${resolution.width}x${resolution.height}`;
         console.log(
-            `Attempting to open camera with resolution: ${resolution.key} (${resolution.width}x${resolution.height})`,
+            `Attempting to open camera with resolution: ${resolution.key} (${resolutionString})`,
         );
 
+        // Build constraints based on resolution
         const constraints = this.buildConstraints(resolution);
-        console.log('constraints', constraints);
+        console.log('Using constraints:', constraints);
 
-        this.state.stream =
-            await navigator.mediaDevices.getUserMedia(constraints);
+        try {
+            // Request camera access with constraints
+            this.state.stream =
+                await navigator.mediaDevices.getUserMedia(constraints);
 
-        await this.updateCapabilities();
-        await this.setupPreviewElement();
+            // Update capabilities and setup preview
+            await this.updateCapabilities();
+            await this.setupPreviewElement();
 
-        console.log(
-            `Successfully opened camera with resolution: ${resolution.key}`,
-        );
-        this.state.status = WebcamStatus.READY;
-        this.state.configuration?.onStart?.();
+            console.log(
+                `Successfully opened camera with resolution: ${resolution.key}`,
+            );
+
+            // Update status and call onStart callback
+            this.state.status = WebcamStatus.READY;
+            this.state.configuration?.onStart?.();
+        } catch (error) {
+            console.error(
+                `Failed to open camera with resolution: ${resolution.key}`,
+                error,
+            );
+            throw error;
+        }
     }
 
+    /**
+     * Try to open camera with any supported resolution
+     * Uses 4K as ideal resolution but allows browser to choose best available
+     * @throws CameraError if camera cannot be opened with any resolution
+     */
     private async tryAnyResolution(): Promise<void> {
         console.log(
             'Attempting to open camera with any supported resolution (ideal: 4K)',
         );
 
-        // Request device capability information first
+        // Check if device is available
         if (!this.state.configuration!.device) {
             throw new CameraError('no-device', 'Selected device not found');
         }
 
-        // Create constraints specifying ideal resolution as 4K
+        // Create constraints with ideal resolution as 4K
         const constraints: MediaStreamConstraints = {
             audio: this.state.configuration!.audio,
             video: {
@@ -1326,20 +1505,28 @@ export class Webcam {
         };
 
         try {
+            // Request camera access with constraints
             this.state.stream =
                 await navigator.mediaDevices.getUserMedia(constraints);
+
+            // Update capabilities and setup preview
             await this.updateCapabilities();
             await this.setupPreviewElement();
 
+            // Log actual resolution obtained
             const videoTrack = this.state.stream.getVideoTracks()[0];
             const settings = videoTrack.getSettings();
-            console.log(
-                `Opened camera with resolution: ${settings.width}x${settings.height}`,
-            );
+            const actualResolution = `${settings.width}x${settings.height}`;
+            console.log(`Opened camera with resolution: ${actualResolution}`);
 
+            // Update status and call onStart callback
             this.state.status = WebcamStatus.READY;
             this.state.configuration?.onStart?.();
         } catch (error) {
+            console.error(
+                'Failed to initialize camera with any resolution',
+                error,
+            );
             throw new CameraError(
                 'camera-initialization-error',
                 'Failed to initialize camera with any resolution',
@@ -1382,13 +1569,20 @@ export class Webcam {
         };
     }
 
+    /**
+     * Build media constraints for getUserMedia based on resolution
+     * @param resolution Resolution to use for constraints
+     * @returns MediaStreamConstraints object
+     */
     private buildConstraints(resolution: Resolution): MediaStreamConstraints {
+        // Create video constraints with device ID
         const videoConstraints: MediaTrackConstraints = {
             deviceId: { exact: this.state.configuration!.device.deviceId },
             width: { exact: resolution.width },
             height: { exact: resolution.height },
         };
 
+        // Create complete constraints object
         return {
             video: videoConstraints,
             audio: this.state.configuration!.audio,
@@ -1450,11 +1644,6 @@ export class Webcam {
                 activeFocusMode: 'none',
                 availableFocusModes: [],
             },
-            // Keep basic system state
-            // config: this.state.config,  // Keep config for starting new camera
-            // devices: [...this.state.devices],
-            // currentOrientation: this.state.currentOrientation,
-            // currentPermission: { ...this.state.currentPermission },
         };
     }
 
@@ -1478,78 +1667,6 @@ export class Webcam {
             );
         }
     }
-
-    /**
-     * Create a new Resolution with Key
-     * @param width Width
-     * @param height Height
-     * @returns Resolution object
-     */
-    public createResolution(width: number, height: number): Resolution {
-        const key = `${width}x${height}`; // Create key from width and height
-        return { key, width, height };
-    }
-
-    /**
-     * Check if camera supports zoom
-     * @returns true if camera supports zoom, false otherwise
-     */
-    public isZoomSupported(): boolean {
-        return this.state.capabilities.hasZoom;
-    }
-
-    /**
-     * Check if camera supports torch/flashlight
-     * @returns true if camera supports torch, false otherwise
-     */
-    public isTorchSupported(): boolean {
-        return this.state.capabilities.hasTorch;
-    }
-
-    /**
-     * Check if camera supports focus
-     * @returns true if camera supports focus, false otherwise
-     */
-    public isFocusSupported(): boolean {
-        return this.state.capabilities.hasFocus;
-    }
-
-    public getCurrentZoom(): number {
-        return this.state.capabilities.currentZoom;
-    }
-
-    public getMinZoom(): number {
-        return this.state.capabilities.minZoom;
-    }
-
-    public getMaxZoom(): number {
-        return this.state.capabilities.maxZoom;
-    }
-
-    public isTorchActive(): boolean {
-        return this.state.capabilities.isTorchActive;
-    }
-
-    public isFocusActive(): boolean {
-        return this.state.capabilities.isFocusActive;
-    }
-
-    /**
-     * Toggle torch/flashlight on/off
-     * @returns New torch state after toggle (true = on, false = off)
-     * @throws CameraError if torch is not supported or camera is not active
-     */
-    public async toggleTorch(): Promise<boolean> {
-        // Toggle torch state to opposite of current state
-        const newState = !this.state.capabilities.isTorchActive;
-
-        // Call setTorch to change state
-        await this.setTorch(newState);
-
-        // Return new state
-        return newState;
-    }
 }
 
-// เพิ่ม default export สำหรับ Webcam class
 export default Webcam;
