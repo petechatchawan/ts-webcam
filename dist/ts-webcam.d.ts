@@ -31,29 +31,29 @@ export interface WebcamConfig {
     onError?: (error: CameraError) => void;
 }
 /**
- * อินเตอร์เฟซสำหรับจัดการคุณสมบัติของกล้อง
- * ใช้สำหรับตรวจสอบและควบคุมฟีเจอร์ต่างๆ ของกล้อง เช่น การซูม ไฟฉาย และโหมดโฟกัส
+ * Interface for managing camera features
+ * Used for checking and controlling various camera features such as zoom, torch, and focus mode
  */
 export interface CameraFeatures {
-    /** กล้องรองรับการซูมหรือไม่ */
+    /** Whether the camera supports zoom */
     hasZoom: boolean;
-    /** กล้องมีไฟฉายหรือไม่ */
+    /** Whether the camera has a torch/flashlight */
     hasTorch: boolean;
-    /** กล้องรองรับการปรับโฟกัสหรือไม่ */
+    /** Whether the camera supports focus adjustment */
     hasFocus: boolean;
-    /** ค่าซูมปัจจุบัน (เท่า) */
+    /** Current zoom level (multiplier) */
     currentZoom: number;
-    /** ค่าซูมต่ำสุดที่รองรับ (เท่า) */
+    /** Minimum supported zoom level */
     minZoom: number;
-    /** ค่าซูมสูงสุดที่รองรับ (เท่า) */
+    /** Maximum supported zoom level */
     maxZoom: number;
-    /** สถานะไฟฉาย (เปิด/ปิด) */
+    /** Torch/flashlight status (on/off) */
     isTorchActive: boolean;
-    /** สถานะการใช้งานโฟกัส */
+    /** Focus status */
     isFocusActive: boolean;
-    /** โหมดโฟกัสที่กำลังใช้งาน เช่น 'auto', 'continuous', 'manual' */
+    /** Current active focus mode e.g. 'auto', 'continuous', 'manual' */
     activeFocusMode: string;
-    /** รายการโหมดโฟกัสที่รองรับทั้งหมด */
+    /** List of all supported focus modes */
     availableFocusModes: string[];
 }
 export declare enum WebcamStatus {
@@ -70,6 +70,7 @@ export interface WebcamState {
     lastError: CameraError | null;
     captureCanvas?: HTMLCanvasElement;
     devices: MediaDeviceInfo[];
+    resolutions: Resolution[];
     capabilities: CameraFeatures;
     currentOrientation?: OrientationType;
     currentPermission: {
@@ -83,18 +84,13 @@ export interface DeviceCapabilitiesData {
     maxHeight: number;
     minWidth: number;
     minHeight: number;
-    supportedResolutions: {
-        width: number;
-        height: number;
-        aspectRatio: number;
-    }[];
-    supportedFrameRates: number[];
     hasZoom: boolean;
     hasTorch: boolean;
     hasFocus: boolean;
     maxZoom?: number;
     minZoom?: number;
     supportedFocusModes?: string[];
+    supportedFrameRates: number[];
 }
 export declare class Webcam {
     private state;
@@ -102,63 +98,151 @@ export declare class Webcam {
     private orientationChangeListener;
     private readonly defaultConfiguration;
     constructor();
-    setupConfiguration(configuration: WebcamConfig): void;
-    start(): Promise<void>;
-    stop(): void;
+    getWebcamState(): WebcamState;
+    getWebcamStatus(): WebcamStatus;
+    getCapabilities(): CameraFeatures;
+    getLastError(): CameraError | null;
+    setResolutions(resolutions: Resolution[]): void;
+    getResolutions(): Resolution[];
+    clearError(): void;
     isActive(): boolean;
     /**
-     * ตรวจสอบว่าวิดีโอพร้อมแสดงผลหรือไม่
-     * @returns Promise ที่คืนค่า true ถ้าวิดีโอพร้อมแสดงผล
-     */
-    previewIsReady(): Promise<boolean>;
-    /**
-     * ดึงค่า audio ปัจจุบัน
-     * @returns ค่า audio ปัจจุบัน หรือ false ถ้าไม่มีการตั้งค่า
+     * Get current audio status
+     * @returns Current audio status or false if not set
      */
     isAudioEnabled(): boolean;
     /**
-     * ดึงค่า mirror mode ปัจจุบัน
-     * @returns ค่า mirror ปัจจุบัน หรือ false ถ้าไม่มีการตั้งค่า
+     * Get current mirror mode status
+     * @returns Current mirror status or false if not set
      */
-    isMirror(): boolean;
+    isMirrorEnabled(): boolean;
     /**
-     * ดึงค่า autoRotation ปัจจุบัน
-     * @returns ค่า autoRotation ปัจจุบัน หรือ false ถ้าไม่มีการตั้งค่า
+     * Get current autoRotation status
+     * @returns Current autoRotation status or false if not set
      */
-    isAutoRotation(): boolean;
+    isAutoRotationEnabled(): boolean;
     /**
-     * ดึงค่า allowAnyResolution ปัจจุบัน
-     * @returns ค่า allowAnyResolution ปัจจุบัน หรือ false ถ้าไม่มีการตั้งค่า
+     * Get current allowAnyResolution status
+     * @returns Current allowAnyResolution status or false if not set
      */
     isAllowAnyResolution(): boolean;
+    /**
+     * Check if camera supports zoom
+     * @returns true if camera supports zoom, false otherwise
+     */
+    isZoomSupported(): boolean;
+    /**
+     * Check if camera supports torch/flashlight
+     * @returns true if camera supports torch, false otherwise
+     */
+    isTorchSupported(): boolean;
+    /**
+     * Check if camera supports focus
+     * @returns true if camera supports focus, false otherwise
+     */
+    isFocusSupported(): boolean;
+    /**
+     * Get current zoom level
+     * @returns Current zoom level or 1 if not available
+     */
+    getCurrentZoom(): number;
+    /**
+     * Get minimum supported zoom level
+     * @returns Minimum zoom level or 1 if not available
+     */
+    getMinZoom(): number;
+    /**
+     * Get maximum supported zoom level
+     * @returns Maximum zoom level or 1 if not available
+     */
+    getMaxZoom(): number;
+    /**
+     * Check if torch/flashlight is currently active
+     * @returns true if torch is active, false otherwise
+     */
+    isTorchActive(): boolean;
+    /**
+     * Check if focus is currently active
+     * @returns true if focus is active, false otherwise
+     */
+    isFocusActive(): boolean;
+    setupChangeListeners(): void;
+    stopChangeListeners(): void;
+    /**
+     * Get available devices
+     * @returns Promise that resolves to an array of MediaDeviceInfo objects
+     */
     private getAvailableDevices;
     getDeviceList(): MediaDeviceInfo[];
     getVideoDevices(): Promise<MediaDeviceInfo[]>;
     getAudioInputDevices(): Promise<MediaDeviceInfo[]>;
     getAudioOutputDevices(): Promise<MediaDeviceInfo[]>;
     refreshDevices(): Promise<void>;
+    /**
+     * Get current device
+     * @returns Current device or null if no device
+     */
     getCurrentDevice(): MediaDeviceInfo | null;
-    setupChangeListeners(): void;
-    stopChangeListeners(): void;
-    getWebcamState(): WebcamState;
-    getWebcamStatus(): WebcamStatus;
-    getLastError(): CameraError | null;
-    clearError(): void;
-    getCapabilities(): CameraFeatures;
+    /**
+     * Get current resolution from active video track
+     * @returns Resolution object with current width, height and key, or null if no stream
+     */
     getCurrentResolution(): Resolution | null;
+    /**
+     * Setup configuration for the webcam
+     * @param configuration - Configuration object
+     */
+    setupConfiguration(configuration: WebcamConfig): void;
+    /**
+     * Start the webcam
+     * @returns Promise that resolves when the webcam is started
+     */
+    start(): Promise<void>;
+    /**
+     * Stop the webcam
+     */
+    stop(): void;
+    /**
+     * Check if video is ready for display
+     * @returns Promise that resolves to true if video is ready
+     */
+    previewIsReady(): Promise<boolean>;
+    /**
+     * Set the zoom level for the camera
+     * @param zoomLevel Zoom level to set (will be constrained to min/max range)
+     * @throws CameraError if zoom is not supported or camera is not active
+     */
     setZoom(zoomLevel: number): Promise<void>;
     /**
      * Set the torch mode for the camera
-     * @param active Whether to activate or deactivate the torch
+     * @param active Whether to activate (true) or deactivate (false) the torch
      * @throws CameraError if torch is not supported or camera is not active
      */
     setTorch(active: boolean): Promise<void>;
     /**
      * Set the focus mode for the camera
-     * @param mode The focus mode to set
+     * @param mode The focus mode to set (e.g., 'auto', 'continuous', 'manual')
      * @throws CameraError if focus mode is not supported or camera is not active
      */
     setFocusMode(mode: string): Promise<void>;
+    /**
+     * Toggle torch/flashlight on/off
+     * @returns New torch state after toggle (true = on, false = off)
+     * @throws CameraError if torch is not supported or camera is not active
+     */
+    toggleTorch(): Promise<boolean>;
+    /**
+     * Toggle mirror mode
+     * @returns New mirror state after toggle (true = on, false = off)
+     */
+    toggleMirror(): boolean;
+    /**
+     * Create a new Resolution object with key
+     * @param width Width in pixels
+     * @param height Height in pixels
+     * @returns Resolution object with key in format "widthxheight"
+     */
+    createResolution(width: number, height: number): Resolution;
     /**
      * Update webcam configuration
      * @param configuration Configuration to update
@@ -168,6 +252,12 @@ export declare class Webcam {
     updateConfiguration(configuration: Partial<WebcamConfig>, options?: {
         restart?: boolean;
     }): WebcamConfig;
+    /**
+     * Adjust resolution dimensions for rotation
+     * Swaps width and height for all resolutions in the state
+     * and updates their keys accordingly
+     */
+    private getAdjustedResolutionRotation;
     /**
      * Update resolution configuration
      * @param resolution Single resolution or array of resolutions in priority order
@@ -186,7 +276,7 @@ export declare class Webcam {
      * @returns Promise that returns the current value after toggling
      * @throws CameraError if microphone permission is denied
      */
-    toggle(setting: 'mirror' | 'autoRotation' | 'allowAnyResolution' | 'audio'): Promise<boolean>;
+    toggle(setting: 'audio' | 'autoRotation' | 'allowAnyResolution'): Promise<boolean>;
     /**
      * Get current configuration
      * @returns Copy of current configuration
@@ -227,49 +317,39 @@ export declare class Webcam {
         };
     };
     private initializeWebcam;
+    /**
+     * Open camera with appropriate resolution based on configuration
+     * Handles different scenarios:
+     * 1. No resolution specified + allowAnyResolution = true
+     * 2. Resolution specified
+     * 3. Allow any resolution
+     * @throws CameraError if camera cannot be opened
+     */
     private openCamera;
+    /**
+     * Try to open camera with specific resolution
+     * @param resolution Resolution to try
+     * @throws CameraError if camera cannot be opened with specified resolution
+     */
     private tryResolution;
+    /**
+     * Try to open camera with any supported resolution
+     * Uses 4K as ideal resolution but allows browser to choose best available
+     * @throws CameraError if camera cannot be opened with any resolution
+     */
     private tryAnyResolution;
     private setupPreviewElement;
     private updateCapabilities;
+    /**
+     * Build media constraints for getUserMedia based on resolution
+     * @param resolution Resolution to use for constraints
+     * @returns MediaStreamConstraints object
+     */
     private buildConstraints;
     private checkConfiguration;
     private handleError;
     private stopStream;
     private resetState;
     private validatePermissions;
-    /**
-     * สร้าง Resolution ใหม่พร้อม Key
-     * @param width ความกว้าง
-     * @param height ความสูง
-     * @returns Resolution object
-     */
-    createResolution(width: number, height: number): Resolution;
-    /**
-     * ตรวจสอบว่ากล้องรองรับการซูมหรือไม่
-     * @returns true ถ้ากล้องรองรับการซูม, false ถ้าไม่รองรับ
-     */
-    isZoomSupported(): boolean;
-    /**
-     * ตรวจสอบว่ากล้องรองรับไฟฉายหรือไม่
-     * @returns true ถ้ากล้องรองรับไฟฉาย, false ถ้าไม่รองรับ
-     */
-    isTorchSupported(): boolean;
-    /**
-     * ตรวจสอบว่ากล้องรองรับการโฟกัสหรือไม่
-     * @returns true ถ้ากล้องรองรับการโฟกัส, false ถ้าไม่รองรับ
-     */
-    isFocusSupported(): boolean;
-    getCurrentZoom(): number;
-    getMinZoom(): number;
-    getMaxZoom(): number;
-    isTorchActive(): boolean;
-    isFocusActive(): boolean;
-    /**
-     * สลับการเปิด/ปิดไฟฉาย
-     * @returns สถานะไฟฉายหลังจากสลับ (true = เปิด, false = ปิด)
-     * @throws CameraError ถ้าไม่รองรับไฟฉายหรือกล้องไม่ทำงาน
-     */
-    toggleTorch(): Promise<boolean>;
 }
 export default Webcam;

@@ -1346,8 +1346,8 @@ export class Webcam {
      * Open camera with appropriate resolution based on configuration
      * Handles different scenarios:
      * 1. No resolution specified + allowAnyResolution = true
-     * 2. Resolution specified + allowAnyResolution = false
-     * 3. Resolution specified + allowAnyResolution = true
+     * 2. Resolution specified
+     * 3. Allow any resolution
      * @throws CameraError if camera cannot be opened
      */
     private async openCamera(): Promise<void> {
@@ -1377,22 +1377,7 @@ export class Webcam {
             ? this.state.configuration!.resolution
             : [this.state.configuration!.resolution];
 
-        // Case 2: Resolution specified + allowAnyResolution = false
-        if (!this.state.configuration!.allowAnyResolution) {
-            try {
-                await this.tryResolution(resolutions[0]);
-            } catch (error) {
-                throw new CameraError(
-                    'camera-initialization-error',
-                    `Failed to open camera with specified resolution: ${resolutions[0].key}`,
-                    error as Error,
-                );
-            }
-            return;
-        }
-
-        // Case 3: Resolution specified + allowAnyResolution = true
-        // Try each resolution in order
+        // Case 2: Try specified resolutions
         let lastError: Error | null = null;
         for (const resolution of resolutions) {
             try {
@@ -1406,17 +1391,26 @@ export class Webcam {
             }
         }
 
-        // If all specified resolutions fail, try any supported resolution
-        try {
-            console.log(
-                'All specified resolutions failed. Trying any supported resolution...',
-            );
-            await this.tryAnyResolution();
-        } catch (error) {
+        // Case 3: All specified resolutions failed
+        if (this.state.configuration!.allowAnyResolution) {
+            try {
+                console.log(
+                    'All specified resolutions failed. Trying any supported resolution...',
+                );
+                await this.tryAnyResolution();
+            } catch (error) {
+                throw new CameraError(
+                    'camera-initialization-error',
+                    'Failed to open camera with any resolution',
+                    lastError || (error as Error),
+                );
+            }
+        } else {
+            // If allowAnyResolution is false, throw error immediately
             throw new CameraError(
                 'camera-initialization-error',
-                'Failed to open camera with any resolution',
-                lastError || (error as Error),
+                'Failed to open camera with specified resolutions and allowAnyResolution is false',
+                lastError || undefined,
             );
         }
     }
