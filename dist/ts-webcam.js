@@ -587,7 +587,6 @@ export class Webcam {
      * @returns Current configuration after update
      */
     updateConfiguration(configuration, options = { restart: true }) {
-        var _a;
         this.checkConfiguration();
         const wasActive = this.isActive();
         if (wasActive && options.restart) {
@@ -603,10 +602,6 @@ export class Webcam {
                 ? 'scaleX(-1)'
                 : 'none';
         }
-        // Update resolution if autoRotation is enabled
-        if ((_a = this.state.configuration) === null || _a === void 0 ? void 0 : _a.autoRotation) {
-            this.getAdjustedResolutionRotation();
-        }
         if (wasActive && options.restart) {
             this.start().catch(this.handleError);
         }
@@ -616,20 +611,41 @@ export class Webcam {
      * Adjust resolution dimensions for rotation
      * Swaps width and height for all resolutions in the state
      * and updates their keys accordingly
+     * @returns Promise that resolves when resolution adjustment is complete
      */
     getAdjustedResolutionRotation() {
-        const currentResolutions = this.getResolutions();
-        if (!currentResolutions || currentResolutions.length === 0)
-            return;
-        currentResolutions.forEach((resolution) => {
-            // Swap width and height
-            const tempWidth = resolution.width;
-            resolution.width = resolution.height;
-            resolution.height = tempWidth;
-            // Update key with new dimensions
-            resolution.key = `${resolution.width}x${resolution.height}`;
+        return __awaiter(this, void 0, void 0, function* () {
+            return new Promise((resolve) => {
+                const currentResolutions = this.getResolutions();
+                if (!currentResolutions || currentResolutions.length === 0) {
+                    resolve();
+                    return;
+                }
+                try {
+                    // สร้าง array ใหม่เพื่อเก็บ resolutions ที่ปรับแล้ว
+                    const adjustedResolutions = currentResolutions.map((resolution) => {
+                        // สร้าง object ใหม่เพื่อไม่ให้กระทบกับ original object
+                        const adjustedResolution = Object.assign({}, resolution);
+                        // Swap width and height
+                        const tempWidth = adjustedResolution.width;
+                        adjustedResolution.width = adjustedResolution.height;
+                        adjustedResolution.height = tempWidth;
+                        // Update key with new dimensions
+                        adjustedResolution.key = `${adjustedResolution.width}x${adjustedResolution.height}`;
+                        return adjustedResolution;
+                    });
+                    // อัพเดท state ด้วย resolutions ที่ปรับแล้ว
+                    this.state.resolutions = adjustedResolutions;
+                    console.log('Resolution rotation adjustment completed');
+                    resolve();
+                }
+                catch (error) {
+                    console.error('Error adjusting resolutions:', error);
+                    // ถึงแม้จะมี error ก็ให้ resolve เพื่อให้โปรแกรมทำงานต่อได้
+                    resolve();
+                }
+            });
         });
-        this.state.resolutions = currentResolutions;
     }
     /**
      * Update resolution configuration
@@ -672,6 +688,10 @@ export class Webcam {
                 else if (micPermission === 'denied') {
                     throw new CameraError('microphone-permission-denied', 'Please allow microphone access');
                 }
+            }
+            // Update resolution if autoRotation is enabled
+            if (setting === 'autoRotation') {
+                yield this.getAdjustedResolutionRotation();
             }
             // update configuration
             const shouldRestart = setting === 'audio' || setting === 'autoRotation';

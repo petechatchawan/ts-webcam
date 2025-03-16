@@ -256,6 +256,7 @@ export declare class Webcam {
      * Adjust resolution dimensions for rotation
      * Swaps width and height for all resolutions in the state
      * and updates their keys accordingly
+     * @returns Promise that resolves when resolution adjustment is complete
      */
     private getAdjustedResolutionRotation;
     /**
