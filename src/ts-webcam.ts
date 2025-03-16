@@ -813,7 +813,7 @@ export class Webcam {
         }
 
         // update configuration
-        const shouldRestart = setting === 'audio';
+        const shouldRestart = setting === 'audio' || setting === 'autoRotation';
         this.updateConfiguration(
             { [setting]: newValue },
             { restart: shouldRestart },
