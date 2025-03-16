@@ -154,6 +154,7 @@ export interface WebcamState {
     lastError: CameraError | null;
     captureCanvas?: HTMLCanvasElement;
     devices: MediaDeviceInfo[];
+    resolutions: Resolution[];
     capabilities: CameraFeatures;
     currentOrientation?: OrientationType;
     currentPermission: {
@@ -190,6 +191,7 @@ export class Webcam {
         stream: null,
         lastError: null,
         devices: [],
+        resolutions: [],
         capabilities: {
             hasZoom: false,
             hasTorch: false,
@@ -235,6 +237,7 @@ export class Webcam {
             stream: null,
             lastError: null,
             devices: [],
+            resolutions: [],
             capabilities: {
                 hasZoom: false,
                 hasTorch: false,
@@ -721,7 +724,7 @@ export class Webcam {
             this.stop();
         }
 
-        // update configuration
+        // Update configuration
         this.state.configuration = {
             ...this.state.configuration!,
             ...configuration,
@@ -738,11 +741,41 @@ export class Webcam {
                 : 'none';
         }
 
+        // Update resolution if autoRotation is enabled
+        if (this.state.configuration?.autoRotation) {
+            this.getAdjustedResolutionRotation();
+        }
+
         if (wasActive && options.restart) {
             this.start().catch(this.handleError);
         }
 
         return { ...this.state.configuration };
+    }
+
+    private getAdjustedResolutionRotation(): void {
+        const currentResolutions = this.getResolutions();
+        if (!currentResolutions) return;
+
+        currentResolutions.forEach((resolution) => {
+            // สลับ width และ height
+            const tempWidth = resolution.width;
+            resolution.width = resolution.height;
+            resolution.height = tempWidth;
+
+            // อัปเดต key ใหม่
+            resolution.key = `${resolution.width}x${resolution.height}`;
+        });
+
+        this.state.resolutions = currentResolutions;
+    }
+
+    public setResolutions(resolutions: Resolution[]): void {
+        this.state.resolutions = resolutions;
+    }
+
+    public getResolutions(): Resolution[] {
+        return this.state.resolutions;
     }
 
     /**
@@ -1352,16 +1385,9 @@ export class Webcam {
     private buildConstraints(resolution: Resolution): MediaStreamConstraints {
         const videoConstraints: MediaTrackConstraints = {
             deviceId: { exact: this.state.configuration!.device.deviceId },
+            width: { exact: resolution.width },
+            height: { exact: resolution.height },
         };
-
-        console.log('is autoRotation', this.state.configuration!.autoRotation);
-        if (this.state.configuration!.autoRotation) {
-            videoConstraints.width = { exact: resolution.height };
-            videoConstraints.height = { exact: resolution.width };
-        } else {
-            videoConstraints.width = { exact: resolution.width };
-            videoConstraints.height = { exact: resolution.height };
-        }
 
         return {
             video: videoConstraints,
@@ -1527,5 +1553,3 @@ export class Webcam {
 
 // เพิ่ม default export สำหรับ Webcam class
 export default Webcam;
-
-// ไม่ต้องเพิ่ม named exports เพราะมีการ export ไว้แล้วที่ interface และ type declarations
