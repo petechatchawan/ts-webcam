@@ -169,18 +169,13 @@ export interface DeviceCapabilitiesData {
     maxHeight: number;
     minWidth: number;
     minHeight: number;
-    supportedResolutions: {
-        width: number;
-        height: number;
-        aspectRatio: number;
-    }[];
-    supportedFrameRates: number[];
     hasZoom: boolean;
     hasTorch: boolean;
     hasFocus: boolean;
     maxZoom?: number;
     minZoom?: number;
     supportedFocusModes?: string[];
+    supportedFrameRates: number[];
 }
 
 export class Webcam {
@@ -848,6 +843,19 @@ export class Webcam {
     }
 
     /**
+     * Toggle mirror mode
+     * @returns New mirror state after toggle (true = on, false = off)
+     */
+    public toggleMirror(): boolean {
+        this.checkConfiguration();
+        const newValue = !this.state.configuration!['mirror'];
+
+        this.updateConfiguration({ mirror: newValue }, { restart: false });
+
+        return newValue;
+    }
+
+    /**
      * Create a new Resolution object with key
      * @param width Width in pixels
      * @param height Height in pixels
@@ -953,7 +961,7 @@ export class Webcam {
      * @throws CameraError if microphone permission is denied
      */
     public async toggle(
-        setting: 'audio' | 'autoRotation' | 'allowAnyResolution' | 'mirror',
+        setting: 'audio' | 'autoRotation' | 'allowAnyResolution',
     ): Promise<boolean> {
         this.checkConfiguration();
         const newValue = !this.state.configuration![setting];
@@ -1192,13 +1200,6 @@ export class Webcam {
             const capabilities =
                 videoTrack.getCapabilities() as ExtendedMediaTrackCapabilities;
 
-            // Store supported resolution information
-            const supportedResolutions: {
-                width: number;
-                height: number;
-                aspectRatio: number;
-            }[] = [];
-
             // Check width and height support
             if (
                 capabilities.width?.max &&
@@ -1233,24 +1234,6 @@ export class Webcam {
                         capabilities.height!.min +
                         i * capabilities.height!.step,
                 );
-
-                // Create resolution list that is possible
-                for (const width of widths) {
-                    for (const height of heights) {
-                        const aspectRatio = width / height;
-                        // Filter out only standard aspect ratio resolutions (e.g. 16:9, 4:3)
-                        if (
-                            Math.abs(aspectRatio - 16 / 9) < 0.1 ||
-                            Math.abs(aspectRatio - 4 / 3) < 0.1
-                        ) {
-                            supportedResolutions.push({
-                                width,
-                                height,
-                                aspectRatio,
-                            });
-                        }
-                    }
-                }
             }
 
             // Store frame rate information
@@ -1275,7 +1258,6 @@ export class Webcam {
                 maxHeight: capabilities.height?.max || 0,
                 minWidth: capabilities.width?.min || 0,
                 minHeight: capabilities.height?.min || 0,
-                supportedResolutions,
                 supportedFrameRates: frameRates,
                 hasZoom: !!capabilities.zoom,
                 hasTorch: !!capabilities.torch,

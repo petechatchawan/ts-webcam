@@ -135,17 +135,24 @@ Permission management for camera and microphone consists of 4 main parts:
 1. Check permission status:
 
 ```typescript
+// Check if permission request is needed
+const isNeeded = webcam.needsPermissionRequest();
+// Output example: { camera: true, microphone: true }
+
 // Check camera permission status
 const cameraStatus = await webcam.checkCameraPermission();
-console.log("Camera permission status:", cameraStatus); // 'granted' | 'denied' | 'prompt'
+console.log("Camera permission status:", cameraStatus);
+// Output example: 'granted' | 'denied' | 'prompt'
 
 // Check microphone permission status
 const micStatus = await webcam.checkMicrophonePermission();
-console.log("Microphone permission status:", micStatus); // 'granted' | 'denied' | 'prompt'
+console.log("Microphone permission status:", micStatus);
+// Output example: 'granted' | 'denied' | 'prompt'
 
 // Get all current permissions
 const currentPermissions = webcam.getCurrentPermissions();
 console.log("Current permissions:", currentPermissions);
+// Output example: { camera: 'granted', microphone: 'granted' }
 ```
 
 2. Request permissions:
@@ -153,8 +160,13 @@ console.log("Current permissions:", currentPermissions);
 ```typescript
 try {
   // Check if permission request is needed
-  if (webcam.needsPermissionRequest()) {
+  const isNeeded = webcam.needsPermissionRequest();
+  // Output example: { camera: true, microphone: true }
+  if (isNeeded.camera || isNeeded.microphone) {
     const permissions = await webcam.requestPermissions();
+    console.log("Permissions:", permissions);
+    // if use audio please set configuration with audio: true
+    // Output example: { camera: 'granted', microphone: 'granted' }
 
     if (permissions.camera === "granted") {
       console.log("Camera permission granted");
@@ -218,44 +230,6 @@ webcam.setupConfiguration({
     - `granted`: Permission has been granted
     - `denied`: Permission has been denied
     - `prompt`: Permission has not been requested or needs to be requested again
-
-#### Example usage with UI:
-
-```typescript
-// Check permission status when component loads
-useEffect(() => {
-  const checkPermissions = async () => {
-    await webcam.checkCameraPermission();
-    await webcam.checkMicrophonePermission();
-    const permissions = webcam.getCurrentPermissions();
-
-    // Update UI based on permission status
-    if (webcam.hasPermissionDenied()) {
-      setShowSettingsButton(true);
-    } else if (webcam.needsPermissionRequest()) {
-      setShowRequestButton(true);
-    }
-  };
-
-  checkPermissions();
-}, []);
-
-// Display buttons based on permission status
-return (
-  <div>
-    {webcam.needsPermissionRequest() && (
-      <button onClick={() => webcam.requestPermissions()}>
-        Request Camera Access
-      </button>
-    )}
-    {webcam.hasPermissionDenied() && (
-      <button onClick={() => openBrowserSettings()}>
-        Open Permission Settings
-      </button>
-    )}
-  </div>
-);
-```
 
 ### Error Handling
 
@@ -359,7 +333,7 @@ async function initializeWebcam() {
             if (cameras.length > 0) {
                 // 3. Setup camera configuration
                 webcam.setupConfiguration({
-                    device: cameras[0].id,
+                    device: cameras[0],
                     // ... other config options
                 });
 
@@ -386,7 +360,7 @@ initializeWebcam();
 const capabilities = webcam.getCapabilities();
 
 // Zoom control
-if (capabilities.zoom) {
+if (webcam.isZoomSupported()) {
   try {
     await webcam.setZoom(2.0); // 2x zoom
   } catch (error) {
@@ -396,15 +370,8 @@ if (capabilities.zoom) {
   }
 }
 
-// Capture image with options
-const image = webcam.captureImage({
-  scale: 1.0,           // Scale factor for the output image
-  mediaType: 'image/jpeg', // 'image/png' or 'image/jpeg'
-  quality: 0.8          // Image quality (0.0 - 1.0), applies to JPEG only
-});
-
 // Torch control
-if (capabilities.torch) {
+if (webcam.isTorchSupported()) {
   try {
     await webcam.setTorch(true);
   } catch (error) {
@@ -415,7 +382,7 @@ if (capabilities.torch) {
 }
 
 // Focus mode control
-if (capabilities.focusMode) {
+if (webcam.isFocusSupported()) {
   try {
     await webcam.setFocusMode("continuous");
   } catch (error) {
@@ -426,10 +393,10 @@ if (capabilities.focusMode) {
 }
 
 // Mirror mode toggle
-webcam.toggleMirrorMode(); // Toggle mirror mode
+webcam.toggleMirror(); // Toggle mirror mode
 
 // Check mirror status
-const isMirrored = webcam.getState().config.mirror;
+const isMirrored = webcam.isMirrorEnabled();
 console.log(`Mirror mode is ${isMirrored ? 'enabled' : 'disabled'}`);
 ```
 
@@ -452,29 +419,18 @@ if (resolution) {
 }
 ```
 
-### State Management
-
-State management in ts-webcam is divided into two types:
-
-1. Operational State:
-
-    - `status`: Current camera status
-    - `stream`: Current MediaStream
-    - `lastError`: Latest error
-    - `capabilities`: Current camera capabilities
-
-2. System Data:
-    - `config`: Current configuration
-    - `devices`: Available device list
-    - `currentOrientation`: Device orientation
-    - `currentPermission`: Permission status
-
-When calling `stop()`, only the operational state is reset while system data is preserved, allowing the camera to be restarted with the same configuration.
+### Capture Image
 
 ```typescript
-// Example of stopping and restarting camera
-webcam.stop();  // resets only operational state
-await webcam.start();  // restarts camera with existing config
+// Capture image with options
+const image = webcam.captureImage({
+  scale: 1.0,           // Scale factor for the output image
+  mediaType: 'image/jpeg', // 'image/png' or 'image/jpeg'
+  quality: 0.8          // Image quality (0.0 - 1.0), applies to JPEG only
+});
+
+// Output example:
+// 'data:image/jpeg;base64,...',
 ```
 
 ### Device Capabilities and Resolution Support
@@ -493,14 +449,13 @@ console.log("Device capabilities:", capabilities);
     maxHeight: 720,
     minWidth: 1,
     minHeight: 1,
-    supportedResolutions: [...],
-    supportedFrameRates: [...],
     hasZoom: true,
     hasTorch: false,
     hasFocus: true,
     maxZoom: 10,
     minZoom: 1,
     supportedFocusModes: ["continuous", "manual"]
+    supportedFrameRates: [...],
 }
 */
 
@@ -546,24 +501,24 @@ console.log("Support info:", supportInfo);
 
 ## Browser Compatibility
 
-The library is compatible with modern browsers that support the MediaDevices API:
+The library uses the MediaDevices API which has broad support across modern browsers. Here's the detailed compatibility breakdown:
 
-- Chrome 47+
-- Firefox 44+
-- Edge 12+
-- Safari 11+
-- Chrome for Android 47+
-- Safari on iOS 11+
+### Desktop Browsers
 
-## Best Practices
+- Chrome: 47+
+- Edge: 12+
+- Firefox: 44+
+- Safari: 11+
+- Opera: 34+
 
-1. Always check device availability before starting the webcam
-2. Handle permission denials gracefully using error codes
-3. Provide fallback resolutions for better compatibility
-4. Use the `allowAnyResolution` option if exact resolution is not critical
-5. Clean up resources by calling `stop()` when the webcam is no longer needed
-6. Always handle errors using the provided error codes
-7. Check capabilities before using advanced features
+### Mobile Browsers
+
+- Chrome for Android: 47+
+- Firefox for Android: 44+
+- Safari on iOS: 11+
+- Samsung Internet: 5.0+
+
+For the most up-to-date browser compatibility information, please refer to [MDN's MediaDevices compatibility table](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices#browser_compatibility).
 
 ## License
 
