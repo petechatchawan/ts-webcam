@@ -67,29 +67,29 @@ export interface WebcamConfig {
 }
 
 /**
- * อินเตอร์เฟซสำหรับจัดการคุณสมบัติของกล้อง
- * ใช้สำหรับตรวจสอบและควบคุมฟีเจอร์ต่างๆ ของกล้อง เช่น การซูม ไฟฉาย และโหมดโฟกัส
+ * Interface for managing camera features
+ * Used for checking and controlling various camera features such as zoom, torch, and focus mode
  */
 export interface CameraFeatures {
-    /** กล้องรองรับการซูมหรือไม่ */
+    /** Whether the camera supports zoom */
     hasZoom: boolean;
-    /** กล้องมีไฟฉายหรือไม่ */
+    /** Whether the camera has a torch/flashlight */
     hasTorch: boolean;
-    /** กล้องรองรับการปรับโฟกัสหรือไม่ */
+    /** Whether the camera supports focus adjustment */
     hasFocus: boolean;
-    /** ค่าซูมปัจจุบัน (เท่า) */
+    /** Current zoom level (multiplier) */
     currentZoom: number;
-    /** ค่าซูมต่ำสุดที่รองรับ (เท่า) */
+    /** Minimum supported zoom level */
     minZoom: number;
-    /** ค่าซูมสูงสุดที่รองรับ (เท่า) */
+    /** Maximum supported zoom level */
     maxZoom: number;
-    /** สถานะไฟฉาย (เปิด/ปิด) */
+    /** Torch/flashlight status (on/off) */
     isTorchActive: boolean;
-    /** สถานะการใช้งานโฟกัส */
+    /** Focus status */
     isFocusActive: boolean;
-    /** โหมดโฟกัสที่กำลังใช้งาน เช่น 'auto', 'continuous', 'manual' */
+    /** Current active focus mode e.g. 'auto', 'continuous', 'manual' */
     activeFocusMode: string;
-    /** รายการโหมดโฟกัสที่รองรับทั้งหมด */
+    /** List of all supported focus modes */
     availableFocusModes: string[];
 }
 
@@ -298,29 +298,29 @@ export class Webcam {
     }
 
     /**
-     * ตรวจสอบว่าวิดีโอพร้อมแสดงผลหรือไม่
-     * @returns Promise ที่คืนค่า true ถ้าวิดีโอพร้อมแสดงผล
+     * Check if video is ready for display
+     * @returns Promise that resolves to true if video is ready
      */
     public async previewIsReady(): Promise<boolean> {
         const video = this.state.configuration?.previewElement;
 
-        // ตรวจสอบว่า video ไม่เป็น null
+        // Check if video is not null
         if (!video) {
-            return false; // คืนค่า false ถ้า video เป็น null
+            return false; // Return false if video is null
         }
 
-        // ถ้าวิดีโอพร้อมอยู่แล้ว
+        // If video is already ready
         if (video.readyState >= 2) {
             return true;
         }
 
-        // ตั้ง event listener สำหรับ canplay
+        // Set event listener for canplay
         const onCanPlay = () => {
             video.removeEventListener('canplay', onCanPlay);
             return true;
         };
 
-        // ตั้ง event listener สำหรับ error
+        // Set event listener for error
         const onError = () => {
             video.removeEventListener('error', onError);
             return false;
@@ -329,36 +329,36 @@ export class Webcam {
         video.addEventListener('canplay', onCanPlay);
         video.addEventListener('error', onError);
 
-        return false; // คืนค่า false ถ้าวิดีโอยังไม่พร้อมแสดงผล
+        return false; // Return false if video is not ready
     }
 
     /**
-     * ดึงค่า audio ปัจจุบัน
-     * @returns ค่า audio ปัจจุบัน หรือ false ถ้าไม่มีการตั้งค่า
+     * Get current audio status
+     * @returns Current audio status or false if not set
      */
     public isAudioEnabled(): boolean {
         return this.state.configuration?.audio || false;
     }
 
     /**
-     * ดึงค่า mirror mode ปัจจุบัน
-     * @returns ค่า mirror ปัจจุบัน หรือ false ถ้าไม่มีการตั้งค่า
+     * Get current mirror mode status
+     * @returns Current mirror status or false if not set
      */
     public isMirror(): boolean {
         return this.state.configuration?.mirror || false;
     }
 
     /**
-     * ดึงค่า autoRotation ปัจจุบัน
-     * @returns ค่า autoRotation ปัจจุบัน หรือ false ถ้าไม่มีการตั้งค่า
+     * Get current autoRotation status
+     * @returns Current autoRotation status or false if not set
      */
     public isAutoRotation(): boolean {
         return this.state.configuration?.autoRotation || false;
     }
 
     /**
-     * ดึงค่า allowAnyResolution ปัจจุบัน
-     * @returns ค่า allowAnyResolution ปัจจุบัน หรือ false ถ้าไม่มีการตั้งค่า
+     * Get current allowAnyResolution status
+     * @returns Current allowAnyResolution status or false if not set
      */
     public isAllowAnyResolution(): boolean {
         return this.state.configuration?.allowAnyResolution || false;
@@ -799,7 +799,7 @@ export class Webcam {
                 if (permission === 'denied') {
                     throw new CameraError(
                         'microphone-permission-denied',
-                        'ไม่ได้รับอนุญาตให้ใช้ไมโครโฟน',
+                        'Please allow microphone access',
                     );
                 }
             }
@@ -807,7 +807,7 @@ export class Webcam {
             else if (micPermission === 'denied') {
                 throw new CameraError(
                     'microphone-permission-denied',
-                    'ไม่ได้รับอนุญาตให้ใช้ไมโครโฟน',
+                    'Please allow microphone access',
                 );
             }
         }
@@ -1191,8 +1191,16 @@ export class Webcam {
     }
 
     private async openCamera(): Promise<void> {
-        // Case: No resolution specified - use supported resolution
+        // Case: No resolution specified
         if (!this.state.configuration!.resolution) {
+            // Check if allowAnyResolution is true
+            if (!this.state.configuration!.allowAnyResolution) {
+                throw new CameraError(
+                    'configuration-error',
+                    'Please specify a resolution or set allowAnyResolution to true',
+                );
+            }
+
             try {
                 await this.tryAnyResolution();
                 return;
@@ -1259,6 +1267,8 @@ export class Webcam {
         );
 
         const constraints = this.buildConstraints(resolution);
+        console.log('constraints', constraints);
+
         this.state.stream =
             await navigator.mediaDevices.getUserMedia(constraints);
 
@@ -1354,6 +1364,7 @@ export class Webcam {
             deviceId: { exact: this.state.configuration!.device.deviceId },
         };
 
+        console.log('is autoRotation', this.state.configuration!.autoRotation);
         if (this.state.configuration!.autoRotation) {
             videoConstraints.width = { exact: resolution.height };
             videoConstraints.height = { exact: resolution.width };
@@ -1453,35 +1464,35 @@ export class Webcam {
     }
 
     /**
-     * สร้าง Resolution ใหม่พร้อม Key
-     * @param width ความกว้าง
-     * @param height ความสูง
+     * Create a new Resolution with Key
+     * @param width Width
+     * @param height Height
      * @returns Resolution object
      */
     public createResolution(width: number, height: number): Resolution {
-        const key = `${width}x${height}`; // สร้างคีย์จากความกว้างและความสูง
+        const key = `${width}x${height}`; // Create key from width and height
         return { key, width, height };
     }
 
     /**
-     * ตรวจสอบว่ากล้องรองรับการซูมหรือไม่
-     * @returns true ถ้ากล้องรองรับการซูม, false ถ้าไม่รองรับ
+     * Check if camera supports zoom
+     * @returns true if camera supports zoom, false otherwise
      */
     public isZoomSupported(): boolean {
         return this.state.capabilities.hasZoom;
     }
 
     /**
-     * ตรวจสอบว่ากล้องรองรับไฟฉายหรือไม่
-     * @returns true ถ้ากล้องรองรับไฟฉาย, false ถ้าไม่รองรับ
+     * Check if camera supports torch/flashlight
+     * @returns true if camera supports torch, false otherwise
      */
     public isTorchSupported(): boolean {
         return this.state.capabilities.hasTorch;
     }
 
     /**
-     * ตรวจสอบว่ากล้องรองรับการโฟกัสหรือไม่
-     * @returns true ถ้ากล้องรองรับการโฟกัส, false ถ้าไม่รองรับ
+     * Check if camera supports focus
+     * @returns true if camera supports focus, false otherwise
      */
     public isFocusSupported(): boolean {
         return this.state.capabilities.hasFocus;
@@ -1508,18 +1519,18 @@ export class Webcam {
     }
 
     /**
-     * สลับการเปิด/ปิดไฟฉาย
-     * @returns สถานะไฟฉายหลังจากสลับ (true = เปิด, false = ปิด)
-     * @throws CameraError ถ้าไม่รองรับไฟฉายหรือกล้องไม่ทำงาน
+     * Toggle torch/flashlight on/off
+     * @returns New torch state after toggle (true = on, false = off)
+     * @throws CameraError if torch is not supported or camera is not active
      */
     public async toggleTorch(): Promise<boolean> {
-        // สลับสถานะไฟฉายเป็นตรงข้ามกับสถานะปัจจุบัน
+        // Toggle torch state to opposite of current state
         const newState = !this.state.capabilities.isTorchActive;
 
-        // เรียกใช้ setTorch เพื่อเปลี่ยนสถานะ
+        // Call setTorch to change state
         await this.setTorch(newState);
 
-        // ส่งคืนสถานะใหม่
+        // Return new state
         return newState;
     }
 }
