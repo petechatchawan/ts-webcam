@@ -577,7 +577,7 @@ export class Webcam {
         };
     }
 
-    public setupChangeListeners(): void {
+    public async setupChangeListeners(): Promise<void> {
         // Add device change listener
         if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
             throw new WebcamError(
@@ -587,11 +587,11 @@ export class Webcam {
         }
 
         // Update device list for the first time
-        this.getAvailableDevices();
+        await this.refreshDevices();
 
         // Set device change listener
         this.deviceChangeListener = async () => {
-            await this.getAvailableDevices();
+            await this.refreshDevices();
 
             // Check if current device still exists
             const currentDevice = this.getCurrentDevice();
@@ -665,6 +665,11 @@ export class Webcam {
             );
             return [];
         }
+    }
+
+    public async refreshDevices(): Promise<void> {
+        // Refresh device list
+        await this.getAvailableDevices();
     }
 
     public async getVideoDevices(): Promise<MediaDeviceInfo[]> {
