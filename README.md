@@ -15,8 +15,8 @@ View the demo project source code [here](https://github.com/petechatchawan/ts-we
 - Mirror and auto-rotation capabilities
 - Customizable preview element integration
 - Event callbacks for start and error handling
-- Permission management for camera and microphone
-- Advanced camera capabilities (zoom, torch, focus mode)
+- Permission management for webcam and microphone
+- Advanced webcam capabilities (zoom, torch, focus mode)
 - Device change tracking
 - Comprehensive error handling with error codes
 - Detailed status tracking
@@ -34,7 +34,7 @@ npm install ts-webcam
 Here's how to use ts-webcam in your project:
 
 ```typescript
-import { Webcam, CameraError } from "ts-webcam";
+import { Webcam, WebcamError } from "ts-webcam";
 
 // Create Webcam instance
 const webcam = new Webcam();
@@ -50,14 +50,14 @@ There are three ways to configure the webcam:
 
 ##### Option 1: Auto Resolution
 
-Let the camera use its supported resolution:
+Let the webcam use its supported resolution:
 
 ```typescript
 webcam.setupConfiguration({
-  device: selectedDevice.id,
+  device: selectedDevice,
   previewElement: document.getElementById("preview") as HTMLVideoElement,
   onStart: () => console.log("Webcam started"),
-  onError: (error: CameraError) => {
+  onError: (error: WebcamError) => {
     console.error("Error code:", error.code);
     console.error("Error message:", error.message);
   },
@@ -70,11 +70,11 @@ Specify a single preferred resolution:
 
 ```typescript
 webcam.setupConfiguration({
-  device: selectedDevice.id,
-  resolution: { name: "HD", width: 1280, height: 720 },
+  device: selectedDevice,
+  resolution: this.webcam.createResolution('1080p-Landscape', 1920, 1080),
   previewElement: document.getElementById("preview") as HTMLVideoElement,
   onStart: () => console.log("Webcam started"),
-  onError: (error: CameraError) => {
+  onError: (error: WebcamError) => {
     console.error("Error code:", error.code);
     console.error("Error message:", error.message);
   },
@@ -87,15 +87,15 @@ Specify multiple resolutions in priority order:
 
 ```typescript
 webcam.setupConfiguration({
-  device: selectedDevice.id,
+  device: selectedDevice,
   resolution: [
-    { name: "4K", width: 3840, height: 2160 },
-    { name: "HD", width: 1280, height: 720 },
-    { name: "VGA", width: 640, height: 480 },
+    this.webcam.createResolution('1080p-Landscape', 1920, 1080),
+    this.webcam.createResolution('720p-Landscape', 1280, 720),
+    this.webcam.createResolution('480p-Landscape', 480, 360),
   ],
   previewElement: document.getElementById("preview") as HTMLVideoElement,
   onStart: () => console.log("Webcam started"),
-  onError: (error: CameraError) => {
+  onError: (error: WebcamError) => {
     console.error("Error code:", error.code);
     console.error("Error message:", error.message);
   },
@@ -110,16 +110,16 @@ After configuration, start the webcam with error handling:
 try {
   await webcam.start();
 } catch (error) {
-  if (error instanceof CameraError) {
+  if (error instanceof WebcamError) {
     switch (error.code) {
       case "permission-denied":
-        console.log("Please allow camera access");
+        console.log("Please allow webcam access");
         break;
       case "no-device":
-        console.log("No camera device found");
+        console.log("No webcam device found");
         break;
-      case "camera-already-in-use":
-        console.log("Camera is in use by another application");
+      case "webcam-already-in-use":
+        console.log("Webcam is in use by another application");
         break;
       default:
         console.log("Error:", error.message);
@@ -130,7 +130,7 @@ try {
 
 ### Permission Management
 
-Permission management for camera and microphone consists of 4 main parts:
+Permission management for webcam and microphone consists of 4 main parts:
 
 1. Check permission status:
 
@@ -255,27 +255,27 @@ Error codes are categorized as follows:
 1. Permission-related errors:
 
     - `no-permissions-api`: Browser does not support the Permissions API
-    - `permission-denied`: User denied camera access
+    - `permission-denied`: User denied webcam access
     - `microphone-permission-denied`: User denied microphone access
 
 2. Device and configuration errors:
 
-    - `configuration-error`: Camera constraints cannot be satisfied
-    - `no-device`: No camera device found
+    - `configuration-error`: Webcam constraints cannot be satisfied
+    - `no-device`: No webcam device found
     - `no-media-devices-support`: Browser does not support media devices
     - `invalid-device-id`: Invalid device ID provided
     - `no-resolutions`: No resolutions specified
 
-3. Camera initialization and operation errors:
+3. Webcam initialization and operation errors:
 
-    - `camera-start-error`: Failed to start the camera
-    - `camera-initialization-error`: Failed to initialize the camera
+    - `webcam-start-error`: Failed to start the webcam
+    - `webcam-initialization-error`: Failed to initialize the webcam
     - `no-stream`: No video stream available
-    - `camera-settings-error`: Failed to apply camera settings
-    - `camera-stop-error`: Failed to stop the camera
-    - `camera-already-in-use`: Camera is already in use by another application
+    - `webcam-settings-error`: Failed to apply webcam settings
+    - `webcam-stop-error`: Failed to stop the webcam
+    - `webcam-already-in-use`: Webcam is already in use by another application
 
-4. Camera functionality errors:
+4. Webcam functionality errors:
     - `zoom-not-supported`: Zoom is not supported
     - `torch-not-supported`: Torch is not supported
     - `focus-not-supported`: Focus mode is not supported
@@ -328,19 +328,19 @@ async function initializeWebcam() {
         const permissions = await webcam.requestPermissions();
         if (permissions.camera === 'granted') {
             // 2. Get device list
-            const cameras = await webcam.getVideoDevices();
+            const webcams = await webcam.getVideoDevices();
 
-            if (cameras.length > 0) {
-                // 3. Setup camera configuration
+            if (webcams.length > 0) {
+                // 3. Setup webcam configuration
                 webcam.setupConfiguration({
-                    device: cameras[0],
+                    device: webcams[0],
                     // ... other config options
                 });
 
                 // 4. Setup device change tracking
                 webcam.setupChangeListeners();
 
-                // 5. Start the camera
+                // 5. Start the webcam
                 await webcam.start();
             }
         }
@@ -353,10 +353,10 @@ async function initializeWebcam() {
 initializeWebcam();
 ```
 
-### Advanced Camera Controls
+### Advanced Webcam Controls
 
 ```typescript
-// Get camera capabilities
+// Get webcam capabilities
 const capabilities = webcam.getCapabilities();
 
 // Zoom control
@@ -364,7 +364,7 @@ if (webcam.isZoomSupported()) {
   try {
     await webcam.setZoom(2.0); // 2x zoom
   } catch (error) {
-    if (error instanceof CameraError && error.code === "zoom-not-supported") {
+    if (error instanceof WebcamError && error.code === "zoom-not-supported") {
       console.log("Zoom is not supported on this device");
     }
   }
@@ -375,7 +375,7 @@ if (webcam.isTorchSupported()) {
   try {
     await webcam.setTorch(true);
   } catch (error) {
-    if (error instanceof CameraError && error.code === "torch-not-supported") {
+    if (error instanceof WebcamError && error.code === "torch-not-supported") {
       console.log("Torch is not supported on this device");
     }
   }
@@ -386,7 +386,7 @@ if (webcam.isFocusSupported()) {
   try {
     await webcam.setFocusMode("continuous");
   } catch (error) {
-    if (error instanceof CameraError && error.code === "focus-not-supported") {
+    if (error instanceof WebcamError && error.code === "focus-not-supported") {
       console.log("Focus mode is not supported on this device");
     }
   }

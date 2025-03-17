@@ -5,6 +5,7 @@
       "name": "ts-webcam",
       "dependencies": {
         "prettier": "^3.5.3",
+        "ua-info": "^1.0.4",
       },
       "devDependencies": {
         "typescript": "^5.0.0",
@@ -15,5 +16,7 @@
     "prettier": ["prettier@3.5.3", "", { "bin": { "prettier": "bin/prettier.cjs" } }, "sha512-QQtaxnoDJeAkDvDKWCLiwIXkTgRhwYDEQCghU9Z6q03iyek/rxRh/2lC3HB7P8sWT2xC/y5JDctPLBIGzHKbhw=="],
 
     "typescript": ["typescript@5.8.2", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-aJn6wq13/afZp/jT9QZmwEjDqqvSGp1VT5GVg+f/t6/oVyrgXM6BY1h9BRh/O5p3PlUPAe+WuiEZOmb/49RqoQ=="],
+
+    "ua-info": ["ua-info@1.0.4", "", {}, "sha512-6CpEHeIWWcR0lpTtLfZSnAHrVHU+atzIYgFfacqJ+UT3IR7glq6vMxn4lkQv4rYoT0fvYkiSsb3JUkMlZN3Szg=="],
   }
 }
