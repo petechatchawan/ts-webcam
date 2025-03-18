@@ -5,7 +5,7 @@ export declare const DEFAULT_CONFIG: {
     audioEnabled: boolean;
     mirrorEnabled: boolean;
     allowAnyResolution: boolean;
-    allowResolutionSwap: boolean;
+    readonly allowResolutionSwap: boolean;
     onStartSuccess: () => void;
     onError: () => void;
 };

@@ -18,3 +18,7 @@ export declare function validatePermissions(permissions: {
  * Stop media stream
  */
 export declare function stopStream(stream: MediaStream | null, previewElement?: HTMLVideoElement): void;
+/**
+ * Detect if device is mobile or tablet
+ */
+export declare function shouldAutoSwapResolution(): boolean;

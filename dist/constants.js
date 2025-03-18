@@ -1,3 +1,4 @@
+import { shouldAutoSwapResolution } from './utils';
 /**
  * Default configuration values
  */
@@ -5,7 +6,9 @@ export const DEFAULT_CONFIG = {
     audioEnabled: false,
     mirrorEnabled: false,
     allowAnyResolution: true,
-    allowResolutionSwap: false,
+    get allowResolutionSwap() {
+        return shouldAutoSwapResolution();
+    },
     onStartSuccess: () => { },
     onError: () => { },
 };

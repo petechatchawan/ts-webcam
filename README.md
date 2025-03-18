@@ -4,7 +4,7 @@ A TypeScript library for managing webcam access using the MediaDevices API. This
 
 ## Demo
 
-Try out the live demo [here](https://ts-webcam-demo.vercel.app/)
+Try out the live demo [here](https://ts-webcam-demo.web.app/webcam)
 
 View the demo project source code [here](https://github.com/petechatchawan/ts-webcam-demo.git)
 
@@ -204,7 +204,7 @@ if (webcam.hasPermissionDenied()) {
 ```typescript
 webcam.setupConfiguration({
   // ...
-  onError: (error: CameraError) => {
+  onError: (error: WebcamError) => {
     switch (error.code) {
       case "permission-denied":
         console.log("Please allow camera access");
@@ -398,6 +398,28 @@ webcam.toggleMirror(); // Toggle mirror mode
 // Check mirror status
 const isMirrored = webcam.isMirrorEnabled();
 console.log(`Mirror mode is ${isMirrored ? 'enabled' : 'disabled'}`);
+
+// Toggle config about audio
+webcam.toggle('audioEnabled');
+// and get current audio status
+const isAudioEnabled = webcam.isAudioEnabled();
+console.log(`Audio is ${isAudioEnabled ? 'enabled' : 'disabled'}`);
+
+// Toggle config about allow any resolution
+webcam.toggle('allowAnyResolution');
+// and get current allow any resolution status
+const isAllowAnyResolution = webcam.isAllowAnyResolution();
+console.log(`Allow any resolution is ${isAllowAnyResolution ? 'enabled' : 'disabled'}`);
+
+// Toggle config about allow resolution swap
+webcam.toggle('allowResolutionSwap');
+// and get current allow resolution swap status
+const isAllowResolutionSwap = webcam.isAllowResolutionSwap();
+console.log(`Allow resolution swap is ${isAllowResolutionSwap ? 'enabled' : 'disabled'}`);
+
+
+
+
 ```
 
 ### Status Tracking
@@ -526,4 +548,4 @@ MIT License
 
 ## Support
 
-If you encounter any issues or would like to request new features, please create an issue at our [GitHub repository](https://github.com/yourusername/ts-webcam)
+If you encounter any issues or would like to request new features, please create an issue at our [GitHub repository](https://github.com/petechatchawan/ts-webcam)
