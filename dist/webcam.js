@@ -432,60 +432,62 @@ export class Webcam {
         };
     }
     setupChangeListeners() {
-        // Add device change listener
-        if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
-            throw new WebcamError('no-media-devices-support', 'MediaDevices API is not supported in this browser');
-        }
-        // Update device list for the first time
-        this.getAvailableDevices();
-        // Set device change listener
-        this.deviceChangeListener = () => __awaiter(this, void 0, void 0, function* () {
-            yield this.getAvailableDevices();
-            // Check if current device still exists
-            const currentDevice = this.getCurrentDevice();
-            if (this.isActive() && !currentDevice) {
-                // If current device is gone, stop the operation
-                this.handleError(new WebcamError('no-device', 'Current device is no longer available'));
-                this.stop();
+        return __awaiter(this, void 0, void 0, function* () {
+            // Add device change listener
+            if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
+                throw new WebcamError('no-media-devices-support', 'MediaDevices API is not supported in this browser');
             }
-        });
-        // Set orientation change listener
-        this.orientationChangeListener = () => {
-            if (this.isActive()) {
-                if (screen.orientation) {
-                    console.log('Screen orientation is supported');
-                    const orientation = screen.orientation.type;
-                    const angle = screen.orientation.angle;
-                    console.log(`Orientation type: ${orientation}, angle: ${angle}`);
-                    // Store current orientation
-                    this.state.currentOrientation = orientation;
-                    switch (orientation) {
-                        case 'portrait-primary':
-                            console.log('Portrait (normal)');
-                            break;
-                        case 'portrait-secondary':
-                            console.log('Portrait (flipped)');
-                            break;
-                        case 'landscape-primary':
-                            console.log('Landscape (normal)');
-                            break;
-                        case 'landscape-secondary':
-                            console.log('Landscape (flipped)');
-                            break;
-                        default:
-                            console.log('Unknown orientation');
-                            this.state.currentOrientation = 'unknown';
+            // Update device list for the first time
+            yield this.refreshDevices();
+            // Set device change listener
+            this.deviceChangeListener = () => __awaiter(this, void 0, void 0, function* () {
+                yield this.refreshDevices();
+                // Check if current device still exists
+                const currentDevice = this.getCurrentDevice();
+                if (this.isActive() && !currentDevice) {
+                    // If current device is gone, stop the operation
+                    this.handleError(new WebcamError('no-device', 'Current device is no longer available'));
+                    this.stop();
+                }
+            });
+            // Set orientation change listener
+            this.orientationChangeListener = () => {
+                if (this.isActive()) {
+                    if (screen.orientation) {
+                        console.log('Screen orientation is supported');
+                        const orientation = screen.orientation.type;
+                        const angle = screen.orientation.angle;
+                        console.log(`Orientation type: ${orientation}, angle: ${angle}`);
+                        // Store current orientation
+                        this.state.currentOrientation = orientation;
+                        switch (orientation) {
+                            case 'portrait-primary':
+                                console.log('Portrait (normal)');
+                                break;
+                            case 'portrait-secondary':
+                                console.log('Portrait (flipped)');
+                                break;
+                            case 'landscape-primary':
+                                console.log('Landscape (normal)');
+                                break;
+                            case 'landscape-secondary':
+                                console.log('Landscape (flipped)');
+                                break;
+                            default:
+                                console.log('Unknown orientation');
+                                this.state.currentOrientation = 'unknown';
+                        }
+                    }
+                    else {
+                        console.log('screen.orientation is not supported');
+                        this.state.currentOrientation = 'unknown';
                     }
                 }
-                else {
-                    console.log('screen.orientation is not supported');
-                    this.state.currentOrientation = 'unknown';
-                }
-            }
-        };
-        // Add listeners
-        navigator.mediaDevices.addEventListener('devicechange', this.deviceChangeListener);
-        window.addEventListener('orientationchange', this.orientationChangeListener);
+            };
+            // Add listeners
+            navigator.mediaDevices.addEventListener('devicechange', this.deviceChangeListener);
+            window.addEventListener('orientationchange', this.orientationChangeListener);
+        });
     }
     getAvailableDevices() {
         return __awaiter(this, void 0, void 0, function* () {
@@ -502,6 +504,12 @@ export class Webcam {
                 this.handleError(new WebcamError('device-list-error', 'Failed to get device list', error));
                 return [];
             }
+        });
+    }
+    refreshDevices() {
+        return __awaiter(this, void 0, void 0, function* () {
+            // Refresh device list
+            yield this.getAvailableDevices();
         });
     }
     getVideoDevices() {

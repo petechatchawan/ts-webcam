@@ -76,8 +76,9 @@ export declare class Webcam {
             minHeight: number;
         };
     };
-    setupChangeListeners(): void;
+    setupChangeListeners(): Promise<void>;
     private getAvailableDevices;
+    refreshDevices(): Promise<void>;
     getVideoDevices(): Promise<MediaDeviceInfo[]>;
     getAudioInputDevices(): Promise<MediaDeviceInfo[]>;
     getAudioOutputDevices(): Promise<MediaDeviceInfo[]>;
