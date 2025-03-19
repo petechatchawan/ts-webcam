@@ -8,10 +8,10 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 import { UAInfo } from 'ua-info';
-import { WebcamStatus } from './types';
+import { DEFAULT_CAPABILITIES, DEFAULT_CONFIG, DEFAULT_STATE } from './constants';
 import { WebcamError } from './errors';
-import { DEFAULT_CONFIG, DEFAULT_CAPABILITIES, DEFAULT_STATE, } from './constants';
-import { createResolution, buildConstraints, validatePermissions, stopStream } from './utils';
+import { WebcamStatus } from './types';
+import { buildConstraints, createResolution, stopStream, validatePermissions } from './utils';
 export class Webcam {
     constructor() {
         this.deviceChangeListener = null;
@@ -224,7 +224,7 @@ export class Webcam {
             this.stop();
         }
         this.state.config = Object.assign(Object.assign({}, this.state.config), configuration);
-        if ('mirror' in configuration && this.state.config.previewElement) {
+        if ('mirrorEnabled' in configuration && this.state.config.previewElement) {
             this.state.config.previewElement.style.transform = this.state.config.mirrorEnabled
                 ? 'scaleX(-1)'
                 : 'none';

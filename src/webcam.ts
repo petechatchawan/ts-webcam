@@ -1,23 +1,18 @@
 import { UAInfo } from 'ua-info';
-import { WebcamStatus, PermissionStatus, DeviceOrientation } from './types';
+import { DEFAULT_CAPABILITIES, DEFAULT_CONFIG, DEFAULT_STATE } from './constants';
 import { WebcamError } from './errors';
 import {
-    WebcamConfig,
-    WebcamState,
-    WebcamCapabilities,
     DeviceCapabilities,
     ExtendedMediaTrackCapabilities,
-    ExtendedMediaTrackSettings,
     ExtendedMediaTrackConstraintSet,
+    ExtendedMediaTrackSettings,
     Resolution,
+    WebcamCapabilities,
+    WebcamConfig,
+    WebcamState,
 } from './interfaces';
-import {
-    DEFAULT_CONFIG,
-    DEFAULT_CAPABILITIES,
-    DEFAULT_PERMISSIONS,
-    DEFAULT_STATE,
-} from './constants';
-import { createResolution, buildConstraints, validatePermissions, stopStream } from './utils';
+import { PermissionStatus, WebcamStatus } from './types';
+import { buildConstraints, createResolution, stopStream, validatePermissions } from './utils';
 
 export class Webcam {
     private state: WebcamState;
@@ -305,7 +300,7 @@ export class Webcam {
             ...configuration,
         };
 
-        if ('mirror' in configuration && this.state.config!.previewElement) {
+        if ('mirrorEnabled' in configuration && this.state.config!.previewElement) {
             this.state.config!.previewElement.style.transform = this.state.config!.mirrorEnabled
                 ? 'scaleX(-1)'
                 : 'none';

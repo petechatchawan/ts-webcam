@@ -1,7 +1,7 @@
 import { UAInfo } from 'ua-info';
-import { WebcamStatus, PermissionStatus } from './types';
 import { WebcamError } from './errors';
-import { WebcamConfig, WebcamState, WebcamCapabilities, DeviceCapabilities, Resolution } from './interfaces';
+import { DeviceCapabilities, Resolution, WebcamCapabilities, WebcamConfig, WebcamState } from './interfaces';
+import { PermissionStatus, WebcamStatus } from './types';
 export declare class Webcam {
     private state;
     private deviceChangeListener;
