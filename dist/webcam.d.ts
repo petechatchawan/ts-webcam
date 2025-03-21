@@ -39,8 +39,12 @@ export declare class Webcam {
     updateConfiguration(configuration: Partial<WebcamConfig>, options?: {
         restart?: boolean;
     }): WebcamConfig;
-    updateResolution(resolution: Resolution | Resolution[]): WebcamConfig;
-    updateDevice(device: MediaDeviceInfo): WebcamConfig;
+    updateResolution(resolution: Resolution | Resolution[], options?: {
+        restart?: boolean;
+    }): WebcamConfig;
+    updateDevice(device: MediaDeviceInfo, options?: {
+        restart?: boolean;
+    }): WebcamConfig;
     toggle(setting: 'audioEnabled' | 'allowResolutionSwap' | 'allowAnyResolution'): Promise<boolean>;
     getConfiguration(): WebcamConfig;
     checkCameraPermission(): Promise<PermissionStatus>;

@@ -229,16 +229,16 @@ export class Webcam {
                 ? 'scaleX(-1)'
                 : 'none';
         }
-        if (wasActive && options.restart) {
+        if (wasActive || options.restart) {
             this.start().catch(this.handleError);
         }
         return Object.assign({}, this.state.config);
     }
-    updateResolution(resolution) {
-        return this.updateConfiguration({ resolution }, { restart: true });
+    updateResolution(resolution, options = { restart: true }) {
+        return this.updateConfiguration({ resolution }, options);
     }
-    updateDevice(device) {
-        return this.updateConfiguration({ device }, { restart: true });
+    updateDevice(device, options = { restart: true }) {
+        return this.updateConfiguration({ device }, options);
     }
     toggle(setting) {
         return __awaiter(this, void 0, void 0, function* () {

@@ -306,19 +306,25 @@ export class Webcam {
                 : 'none';
         }
 
-        if (wasActive && options.restart) {
+        if (wasActive || options.restart) {
             this.start().catch(this.handleError);
         }
 
         return { ...this.state.config! };
     }
 
-    public updateResolution(resolution: Resolution | Resolution[]): WebcamConfig {
-        return this.updateConfiguration({ resolution }, { restart: true });
+    public updateResolution(
+        resolution: Resolution | Resolution[],
+        options: { restart?: boolean } = { restart: true },
+    ): WebcamConfig {
+        return this.updateConfiguration({ resolution }, options);
     }
 
-    public updateDevice(device: MediaDeviceInfo): WebcamConfig {
-        return this.updateConfiguration({ device }, { restart: true });
+    public updateDevice(
+        device: MediaDeviceInfo,
+        options: { restart?: boolean } = { restart: true },
+    ): WebcamConfig {
+        return this.updateConfiguration({ device }, options);
     }
 
     public async toggle(

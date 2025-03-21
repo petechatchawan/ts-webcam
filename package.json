@@ -1,6 +1,6 @@
 {
   "name": "ts-webcam",
-  "version": "1.4.5",
+  "version": "1.4.6",
   "type": "module",
   "description": "A TypeScript library for managing webcam access using the MediaDevices API",
   "main": "dist/index.js",
