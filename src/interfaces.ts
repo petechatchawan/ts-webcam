@@ -54,6 +54,7 @@ export interface WebcamState {
     capabilities: WebcamCapabilities;
     activeStream: MediaStream | null;
     currentOrientation?: DeviceOrientation;
+    currentResolution?: Resolution | null;
     permissions: {
         camera: PermissionStatus;
         microphone: PermissionStatus;

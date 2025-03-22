@@ -548,20 +548,7 @@ export class Webcam {
         return this.state.config.device;
     }
     getCurrentResolution() {
-        // If no stream or no configuration, return null
-        if (!this.state.activeStream || !this.state.config)
-            return null;
-        const videoTrack = this.state.activeStream.getVideoTracks()[0];
-        const settings = videoTrack.getSettings();
-        const currentWidth = settings.width || 0;
-        const currentHeight = settings.height || 0;
-        const resolutionKey = `${currentWidth}x${currentHeight}`;
-        return {
-            id: resolutionKey,
-            label: `${currentWidth}x${currentHeight}`,
-            width: currentWidth,
-            height: currentHeight,
-        };
+        return this.state.currentResolution || null;
     }
     // Private Methods
     initializeWebcam() {
@@ -626,6 +613,15 @@ export class Webcam {
                 this.state.activeStream = yield navigator.mediaDevices.getUserMedia(constraints);
                 yield this.updateCapabilities();
                 yield this.setupPreviewElement();
+                // Update currentResolution with actual resolution from stream
+                const videoTrack = this.state.activeStream.getVideoTracks()[0];
+                const settings = videoTrack.getSettings();
+                this.state.currentResolution = {
+                    id: resolution.id,
+                    label: resolution.label,
+                    width: settings.width || resolution.width,
+                    height: settings.height || resolution.height,
+                };
                 console.log(`Successfully opened webcam with resolution: ${resolution.id}`);
                 this.state.status = WebcamStatus.READY;
                 (_b = (_a = this.state.config) === null || _a === void 0 ? void 0 : _a.onStartSuccess) === null || _b === void 0 ? void 0 : _b.call(_a);
@@ -657,8 +653,14 @@ export class Webcam {
                 yield this.setupPreviewElement();
                 const videoTrack = this.state.activeStream.getVideoTracks()[0];
                 const settings = videoTrack.getSettings();
-                const actualResolution = `${settings.width}x${settings.height}`;
-                console.log(`Opened webcam with resolution: ${actualResolution}`);
+                // Update currentResolution with actual resolution from stream
+                this.state.currentResolution = {
+                    id: `${settings.width}x${settings.height}`,
+                    label: `${settings.width}x${settings.height}`,
+                    width: settings.width || 0,
+                    height: settings.height || 0,
+                };
+                console.log(`Opened webcam with resolution: ${this.state.currentResolution.id}`);
                 this.state.status = WebcamStatus.READY;
                 (_b = (_a = this.state.config) === null || _a === void 0 ? void 0 : _a.onStartSuccess) === null || _b === void 0 ? void 0 : _b.call(_a);
             }
@@ -719,7 +721,7 @@ export class Webcam {
     }
     resetState() {
         this.stopChangeListeners();
-        this.state = Object.assign(Object.assign({}, this.state), { status: WebcamStatus.IDLE, activeStream: null, lastError: null, capabilities: DEFAULT_CAPABILITIES });
+        this.state = Object.assign(Object.assign({}, this.state), { status: WebcamStatus.IDLE, activeStream: null, lastError: null, capabilities: DEFAULT_CAPABILITIES, currentResolution: null });
     }
     requestMediaPermission(mediaType) {
         return __awaiter(this, void 0, void 0, function* () {
