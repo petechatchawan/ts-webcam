@@ -6,7 +6,7 @@ export type PermissionStatus = 'granted' | 'denied' | 'prompt';
  * Comprehensive list of possible error types that can occur during webcam operations
  * Categorized by error source: permissions, device, initialization, functionality, etc.
  */
-export type WebcamErrorType = 'no-permissions-api' | 'permission-denied' | 'microphone-permission-denied' | 'configuration-error' | 'no-device' | 'no-media-devices-support' | 'invalid-device-id' | 'no-resolutions' | 'webcam-start-error' | 'webcam-initialization-error' | 'no-stream' | 'webcam-settings-error' | 'webcam-stop-error' | 'webcam-already-in-use' | 'zoom-not-supported' | 'torch-not-supported' | 'focus-not-supported' | 'device-list-error' | 'unknown';
+export type WebcamErrorType = 'no-permissions-api' | 'permission-denied' | 'microphone-permission-denied' | 'configuration-error' | 'no-device' | 'no-media-devices-support' | 'invalid-device-id' | 'no-resolutions' | 'webcam-start-error' | 'webcam-initialization-error' | 'no-stream' | 'webcam-settings-error' | 'webcam-stop-error' | 'webcam-already-in-use' | 'zoom-not-supported' | 'torch-not-supported' | 'focus-not-supported' | 'device-list-error' | 'capture-failed' | 'unknown';
 /**
  * Represents the possible device orientations
  */

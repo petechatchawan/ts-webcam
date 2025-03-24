@@ -335,36 +335,48 @@ export class Webcam {
         return (this.state.permissions.camera === 'denied' ||
             (!!((_a = this.state.config) === null || _a === void 0 ? void 0 : _a.audioEnabled) && this.state.permissions.microphone === 'denied'));
     }
-    captureImage(config = {}) {
-        this.checkConfiguration();
-        if (!this.state.activeStream) {
-            throw new WebcamError('no-stream', 'No active stream to capture image from');
-        }
-        const videoTrack = this.state.activeStream.getVideoTracks()[0];
-        const settings = videoTrack.getSettings();
-        const canvas = this.state.captureCanvas;
-        const context = canvas.getContext('2d');
-        if (!context) {
-            throw new WebcamError('webcam-settings-error', 'Failed to get canvas context');
-        }
-        const scale = config.scale || 1;
-        canvas.width = (settings.width || 640) * scale;
-        canvas.height = (settings.height || 480) * scale;
-        if (this.state.config.mirrorEnabled) {
-            context.translate(canvas.width, 0);
-            context.scale(-1, 1);
-        }
-        context.drawImage(this.state.config.previewElement, 0, 0, canvas.width, canvas.height);
-        if (this.state.config.mirrorEnabled) {
-            context.setTransform(1, 0, 0, 1, 0, 0);
-        }
-        const mediaType = config.mediaType || 'image/png';
-        const quality = typeof config.quality === 'number'
-            ? Math.min(Math.max(config.quality, 0), 1)
-            : mediaType === 'image/jpeg'
-                ? 0.92
-                : undefined;
-        return canvas.toDataURL(mediaType, quality);
+    captureImage() {
+        return __awaiter(this, arguments, void 0, function* (config = {}) {
+            this.checkConfiguration();
+            if (!this.state.activeStream) {
+                throw new WebcamError('no-stream', 'No active stream to capture image from');
+            }
+            const videoTrack = this.state.activeStream.getVideoTracks()[0];
+            const settings = videoTrack.getSettings();
+            const canvas = this.state.captureCanvas;
+            const context = canvas.getContext('2d');
+            if (!context) {
+                throw new WebcamError('webcam-settings-error', 'Failed to get canvas context');
+            }
+            const scale = config.scale || 1;
+            canvas.width = (settings.width || 640) * scale;
+            canvas.height = (settings.height || 480) * scale;
+            if (this.state.config.mirrorEnabled) {
+                context.translate(canvas.width, 0);
+                context.scale(-1, 1);
+            }
+            context.drawImage(this.state.config.previewElement, 0, 0, canvas.width, canvas.height);
+            if (this.state.config.mirrorEnabled) {
+                context.setTransform(1, 0, 0, 1, 0, 0);
+            }
+            const mediaType = config.mediaType || 'image/png';
+            const quality = typeof config.quality === 'number'
+                ? Math.min(Math.max(config.quality, 0), 1)
+                : mediaType === 'image/jpeg'
+                    ? 0.92
+                    : undefined;
+            return new Promise((resolve, reject) => {
+                canvas.toBlob((blob) => {
+                    if (!blob) {
+                        return reject(new WebcamError('capture-failed', 'Failed to capture image'));
+                    }
+                    const reader = new FileReader();
+                    reader.onloadend = () => resolve(reader.result);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(blob);
+                }, mediaType, quality);
+            });
+        });
     }
     checkDevicesCapabilitiesData(deviceId) {
         return __awaiter(this, void 0, void 0, function* () {

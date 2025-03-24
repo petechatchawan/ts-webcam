@@ -436,13 +436,13 @@ export class Webcam {
         );
     }
 
-    public captureImage(
+    public async captureImage(
         config: {
             scale?: number;
             mediaType?: 'image/png' | 'image/jpeg';
             quality?: number;
         } = {},
-    ): string {
+    ): Promise<string> {
         this.checkConfiguration();
         if (!this.state.activeStream) {
             throw new WebcamError('no-stream', 'No active stream to capture image from');
@@ -480,7 +480,21 @@ export class Webcam {
                   ? 0.92
                   : undefined;
 
-        return canvas.toDataURL(mediaType, quality);
+        return new Promise<string>((resolve, reject) => {
+            canvas.toBlob(
+                (blob) => {
+                    if (!blob) {
+                        return reject(new WebcamError('capture-failed', 'Failed to capture image'));
+                    }
+                    const reader = new FileReader();
+                    reader.onloadend = () => resolve(reader.result as string);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(blob);
+                },
+                mediaType,
+                quality,
+            );
+        });
     }
 
     public async checkDevicesCapabilitiesData(deviceId: string): Promise<DeviceCapabilities> {

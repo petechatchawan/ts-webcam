@@ -63,7 +63,7 @@ export declare class Webcam {
         scale?: number;
         mediaType?: 'image/png' | 'image/jpeg';
         quality?: number;
-    }): string;
+    }): Promise<string>;
     checkDevicesCapabilitiesData(deviceId: string): Promise<DeviceCapabilities>;
     checkSupportedResolutions(deviceCapabilities: DeviceCapabilities[], desiredResolutions: Resolution[]): {
         resolutions: {

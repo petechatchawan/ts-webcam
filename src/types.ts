@@ -30,6 +30,7 @@ export type WebcamErrorType =
     | 'torch-not-supported'
     | 'focus-not-supported'
     | 'device-list-error'
+    | 'capture-failed'
     // Miscellaneous errors
     | 'unknown';
 
