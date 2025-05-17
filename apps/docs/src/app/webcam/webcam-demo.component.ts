@@ -1,295 +1,323 @@
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
-import {
-  CommonResolutions,
-  DeviceInfo,
-  Resolution,
-  Webcam,
-  WebcamError,
-  WebcamErrorCode,
-  WebcamEventType,
-  WebcamState
-} from '@repo/webcam';
+import { AfterViewInit, Component, ElementRef, ViewChild } from '@angular/core';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { Resolution, Webcam, WebcamError } from '@repo/webcam';
+import { UAInfo } from 'ua-info';
 
 @Component({
   selector: 'app-webcam-demo',
   standalone: true,
-  imports: [CommonModule],
-  template: `
-    <div class="container mx-auto p-4">
-      <h1 class="text-2xl font-bold mb-4">Webcam Demo</h1>
-
-      <div
-        *ngIf="error"
-        class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4"
-      >
-        {{ error }}
-      </div>
-
-      <div class="flex flex-col md:flex-row gap-4">
-        <div class="w-full md:w-2/3">
-          <div class="bg-gray-100 rounded-lg overflow-hidden relative">
-            <video #videoElement class="w-full h-auto" autoplay playsinline></video>
-
-            <div
-              *ngIf="state !== 'ACTIVE'"
-              class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 text-white"
-            >
-              {{ state === 'IDLE' ? 'Camera Off' : 'Starting Camera...' }}
-            </div>
-          </div>
-
-          <div *ngIf="snapshot" class="mt-4">
-            <h3 class="text-lg font-semibold mb-2">Snapshot</h3>
-            <img [src]="snapshot" alt="Snapshot" class="max-w-full h-auto border rounded" />
-          </div>
-        </div>
-
-        <div class="w-full md:w-1/3">
-          <div class="bg-white p-4 rounded-lg shadow">
-            <h2 class="text-xl font-semibold mb-4">Controls</h2>
-
-            <div class="mb-4">
-              <p class="text-sm text-gray-600 mb-1">
-                Status: <span class="font-medium">{{ state }}</span>
-              </p>
-
-              <div class="flex gap-2 mt-2">
-                <button
-                  *ngIf="state !== 'ACTIVE'"
-                  (click)="startWebcam()"
-                  class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded"
-                  [disabled]="state === 'INITIALIZING' || state === 'REQUESTING_PERMISSIONS'"
-                >
-                  Start Camera
-                </button>
-
-                <button
-                  *ngIf="state === 'ACTIVE'"
-                  (click)="stopWebcam()"
-                  class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded"
-                >
-                  Stop Camera
-                </button>
-
-                <button
-                  (click)="takeSnapshot()"
-                  class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
-                  [disabled]="state !== 'ACTIVE'"
-                >
-                  Take Snapshot
-                </button>
-              </div>
-            </div>
-
-            <div class="mb-4">
-              <label class="block text-sm font-medium text-gray-700 mb-1"> Camera Device </label>
-              <select
-                class="w-full p-2 border rounded"
-                (change)="switchDevice($event)"
-                [value]="currentDevice || ''"
-                [disabled]="state !== 'ACTIVE'"
-              >
-                <option value="">Select a device</option>
-                <option *ngFor="let device of devices" [value]="device.id">
-                  {{ device.label }}
-                </option>
-              </select>
-            </div>
-
-            <div class="mb-4">
-              <label class="block text-sm font-medium text-gray-700 mb-1"> Resolution </label>
-              <div class="grid grid-cols-2 gap-2">
-                <button
-                  (click)="changeResolution('VGA')"
-                  class="bg-gray-200 hover:bg-gray-300 px-2 py-1 rounded text-sm"
-                  [disabled]="state !== 'ACTIVE'"
-                >
-                  VGA (640×480)
-                </button>
-                <button
-                  (click)="changeResolution('HD')"
-                  class="bg-gray-200 hover:bg-gray-300 px-2 py-1 rounded text-sm"
-                  [disabled]="state !== 'ACTIVE'"
-                >
-                  HD (1280×720)
-                </button>
-                <button
-                  (click)="changeResolution('FULL_HD')"
-                  class="bg-gray-200 hover:bg-gray-300 px-2 py-1 rounded text-sm"
-                  [disabled]="state !== 'ACTIVE'"
-                >
-                  Full HD (1920×1080)
-                </button>
-                <button
-                  (click)="changeResolution('QVGA')"
-                  class="bg-gray-200 hover:bg-gray-300 px-2 py-1 rounded text-sm"
-                  [disabled]="state !== 'ACTIVE'"
-                >
-                  QVGA (320×240)
-                </button>
-              </div>
-            </div>
-
-            <div *ngIf="currentResolution" class="mb-4">
-              <h3 class="text-sm font-medium text-gray-700 mb-1">Current Resolution</h3>
-              <p class="text-sm">
-                {{ currentResolution.width }}×{{ currentResolution.height }}
-                {{ currentResolution.frameRate ? ' @ ' + currentResolution.frameRate + 'fps' : '' }}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  `,
+  imports: [CommonModule, ReactiveFormsModule, FormsModule],
+  templateUrl: './webcam-demo.component.html',
   styles: []
 })
-export class WebcamDemoComponent implements OnInit, OnDestroy {
-  @ViewChild('videoElement', { static: true }) videoElement!: ElementRef<HTMLVideoElement>;
+export class WebcamDemoComponent implements AfterViewInit {
+  @ViewChild('preview') previewElement!: ElementRef<HTMLVideoElement>;
 
-  webcam: Webcam | null = null;
-  state: WebcamState = WebcamState.IDLE;
-  devices: DeviceInfo[] = [];
-  currentDevice: string | null = null;
-  currentResolution: Resolution | null = null;
-  error: string | null = null;
-  snapshot: string | null = null;
+  public readonly webcam = new Webcam();
+  public uaInfo = new UAInfo();
+  public videoDevices: MediaDeviceInfo[] = [];
+  public selectedDevice: MediaDeviceInfo | null = null;
+  public selectedResolution: Resolution | null = null;
+  public isAudioEnabled: boolean = false;
+  public isMirrorEnabled: boolean = false;
+  public isAllowSwapResolution: boolean = false;
+  public isAllowAnyResolution: boolean = false;
 
-  ngOnInit(): void {
-    this.initWebcam();
+  public resolutions: Resolution[] = [
+    // PORTRAIT RESOLUTIONS
+    this.webcam.createResolution('PORTRAIT-360P', 360, 640),
+    this.webcam.createResolution('PORTRAIT-480P', 480, 854),
+    this.webcam.createResolution('PORTRAIT-720P', 720, 1280),
+    this.webcam.createResolution('PORTRAIT-1080P', 1080, 1920),
+    this.webcam.createResolution('PORTRAIT-2K', 1440, 2560),
+    this.webcam.createResolution('PORTRAIT-4K', 2160, 3840),
+
+    // LANDSCAPE RESOLUTIONS
+    this.webcam.createResolution('LANDSCAPE-360P', 640, 360),
+    this.webcam.createResolution('LANDSCAPE-480P', 854, 480),
+    this.webcam.createResolution('LANDSCAPE-720P', 1280, 720),
+    this.webcam.createResolution('LANDSCAPE-1080P', 1920, 1080),
+    this.webcam.createResolution('LANDSCAPE-2K', 2560, 1440),
+    this.webcam.createResolution('LANDSCAPE-4K', 3840, 2160),
+
+    // SQUARE RESOLUTIONS
+    this.webcam.createResolution('SQUARE-360', 360, 360),
+    this.webcam.createResolution('SQUARE-480', 480, 480),
+    this.webcam.createResolution('SQUARE-720', 720, 720),
+    this.webcam.createResolution('SQUARE-1080', 1080, 1080),
+    this.webcam.createResolution('SQUARE-1920', 1920, 1920),
+    this.webcam.createResolution('SQUARE-2K', 2048, 2048),
+    this.webcam.createResolution('SQUARE-4K', 4096, 4096)
+  ];
+
+  constructor() {
+    this.uaInfo.setUserAgent(navigator.userAgent);
   }
 
-  ngOnDestroy(): void {
-    if (this.webcam) {
-      this.webcam.dispose();
-    }
-  }
-
-  initWebcam(): void {
-    this.webcam = new Webcam({
-      resolution: CommonResolutions.HD,
-      debug: true,
-      mirrored: true
-    });
-
-    // Set up event listeners
-    this.webcam.on(WebcamEventType.STATE_CHANGE, (newState) => {
-      this.state = newState;
-    });
-
-    this.webcam.on(WebcamEventType.ERROR, (err) => {
-      this.error = err.message;
-    });
-
-    this.webcam.on(WebcamEventType.DEVICE_CHANGE, (newDevices) => {
-      this.devices = newDevices;
-    });
-
-    // Get available devices
-    this.webcam
-      .getDevices()
-      .then((deviceList) => {
-        this.devices = deviceList;
-      })
-      .catch((err) => {
-        this.error = `Failed to get devices: ${err.message}`;
-      });
-  }
-
-  async startWebcam(): Promise<void> {
-    if (!this.webcam) return;
-
+  async ngAfterViewInit(): Promise<void> {
     try {
-      this.error = null;
-      const stream = await this.webcam.start();
-
-      if (this.videoElement?.nativeElement) {
-        this.webcam.attachToVideo(this.videoElement.nativeElement);
-      }
-
-      this.currentDevice = this.webcam.getCurrentDeviceId();
-      this.currentResolution = this.webcam.getCurrentResolution();
-    } catch (err) {
-      if (err instanceof WebcamError) {
-        switch (err.code) {
-          case WebcamErrorCode.PERMISSION_DENIED:
-            this.error = 'Camera permission denied. Please allow access to your camera.';
-            break;
-          case WebcamErrorCode.DEVICE_NOT_FOUND:
-            this.error = 'No camera device found.';
-            break;
-          default:
-            this.error = `Error: ${err.message}`;
-        }
-      } else {
-        this.error = `Unknown error: ${err instanceof Error ? err.message : String(err)}`;
-      }
+      // request camera permission
+      await this.requestCameraPermission();
+    } catch (error) {
+      await this.showMessage('danger', 'Failed to initialize camera');
     }
   }
 
-  async stopWebcam(): Promise<void> {
-    if (!this.webcam) return;
+  private async requestCameraPermission(): Promise<void> {
+    const state = await this.webcam.checkCameraPermission();
+    await this.showMessage('success', 'Permission state: ' + state);
 
-    try {
-      await this.webcam.stop();
-      this.snapshot = null;
-    } catch (err) {
-      this.error = `Failed to stop webcam: ${err instanceof Error ? err.message : String(err)}`;
-    }
-  }
+    switch (state) {
+      case 'granted':
+        // check device capabilities
+        await this.checkDeviceCapabilities();
 
-  takeSnapshot(): void {
-    if (!this.webcam || this.state !== WebcamState.ACTIVE) return;
-
-    const snapshotData = this.webcam.takeSnapshot();
-    this.snapshot = snapshotData;
-  }
-
-  async switchDevice(event: Event): Promise<void> {
-    if (!this.webcam) return;
-
-    const select = event.target as HTMLSelectElement;
-    const deviceId = select.value;
-
-    try {
-      await this.webcam.switchDevice(deviceId);
-      this.currentDevice = this.webcam.getCurrentDeviceId();
-      this.currentResolution = this.webcam.getCurrentResolution();
-    } catch (err) {
-      this.error = `Failed to switch device: ${err instanceof Error ? err.message : String(err)}`;
-    }
-  }
-
-  async changeResolution(resolutionName: string): Promise<void> {
-    if (!this.webcam) return;
-
-    let resolution: Resolution;
-
-    switch (resolutionName) {
-      case 'VGA':
-        resolution = CommonResolutions.VGA;
+        // initialize the webcam
+        await this.initializeWebcam();
         break;
-      case 'HD':
-        resolution = CommonResolutions.HD;
-        break;
-      case 'FULL_HD':
-        resolution = CommonResolutions.FULL_HD;
-        break;
-      case 'QVGA':
-        resolution = CommonResolutions.QVGA;
+      case 'prompt':
+        await this.showPermissionExplanation();
         break;
       default:
-        resolution = CommonResolutions.HD;
+        await this.showPermissionDeniedHelp();
+    }
+  }
+
+  async presentAlertConfirm() {
+    // console.log('presentAlertConfirm');
+    // const alert = await this.alertController.create({
+    //   header: 'Confirm!',
+    //   message: 'Message <strong>text</strong>!!!',
+    //   buttons: [
+    //     {
+    //       text: 'Cancel',
+    //       role: 'cancel',
+    //       cssClass: 'secondary',
+    //       handler: () => {
+    //         console.log('Confirm Cancel: blah');
+    //       }
+    //     },
+    //     {
+    //       text: 'Okay',
+    //       handler: async () => {
+    //         await this.initializeWebcam();
+    //       }
+    //     }
+    //   ]
+    // });
+    // console.log('alert', alert);
+    // await alert.present();
+  }
+
+  private async initializeWebcam(): Promise<void> {
+    console.log('Initialize Webcam...');
+    this.videoDevices = await this.webcam.getVideoDevices();
+    if (this.videoDevices.length === 0) {
+      await this.showMessage('danger', 'No cameras found. Please check your camera connection.');
+      return;
     }
 
+    this.selectedDevice = this.videoDevices[0];
+    if (!this.selectedDevice) return;
+
+    // setup the webcam
+    this.webcam.setupConfiguration({
+      audioEnabled: this.isAudioEnabled,
+      device: this.selectedDevice,
+      mirrorEnabled: this.isMirrorEnabled,
+      previewElement: this.previewElement.nativeElement,
+      allowAnyResolution: this.isAllowAnyResolution,
+      resolution: [
+        this.webcam.createResolution('SQUARE-4K', 4096, 4096),
+        this.webcam.createResolution('SQUARE-2K', 2048, 2048),
+        this.webcam.createResolution('SQUARE-1920', 1920, 1920),
+        this.webcam.createResolution('SQUARE-1080', 1080, 1080),
+        this.webcam.createResolution('SQUARE-720', 720, 720),
+        this.webcam.createResolution('SQUARE-480', 480, 480),
+        this.webcam.createResolution('SQUARE-360', 360, 360)
+      ],
+      onStart: async () => await this.handleOnStart(),
+      onError: async (error) => this.handleOnError(error)
+    });
+
+    // start the webcam
+    await this.webcam.start();
+  }
+
+  private async checkDeviceCapabilities(): Promise<void> {
     try {
-      await this.webcam.changeResolution(resolution);
-      this.currentResolution = this.webcam.getCurrentResolution();
-    } catch (err) {
-      this.error = `Failed to change resolution: ${
-        err instanceof Error ? err.message : String(err)
-      }`;
+      await this.showLoading('Checking device capabilities...');
+      const devices = await this.webcam.getVideoDevices();
+      const capabilities = [];
+
+      // check device capabilities
+      for (const device of devices) {
+        const capability = await this.webcam.checkDevicesCapabilitiesData(device.deviceId);
+        capabilities.push(capability);
+      }
+
+      // check supported resolutions
+      const result = this.webcam.checkSupportedResolutions(capabilities, this.resolutions);
+
+      result.resolutions.forEach((res: any) => {
+        console.log(
+          `${res.name} (${res.width}x${res.height}): ${
+            res.supported ? 'Supported' : 'Not supported'
+          }`
+        );
+      });
+
+      await this.showMessage('success', `Supported resolutions: ${result.resolutions.length}`);
+    } finally {
+      // await this.dismissLoading();
     }
+  }
+
+  private async handleOnStart(): Promise<void> {
+    if (await this.webcam.previewIsReady()) {
+      // get the current device and resolution
+      this.selectedDevice = this.webcam.getCurrentDevice();
+      this.selectedResolution = this.webcam.getCurrentResolution();
+      await this.showMessage(
+        'success',
+        `Opened camera ${this.selectedDevice?.label} with resolution ${this.selectedResolution?.id} successfully`
+      );
+
+      // update the allowAnyResolution and mirror
+      const config = this.webcam.getConfiguration();
+      console.log('config', config);
+
+      this.isAudioEnabled = config?.audioEnabled || false;
+      this.isMirrorEnabled = config?.mirrorEnabled || false;
+      this.isAllowAnyResolution = config?.allowAnyResolution || false;
+      this.isAllowSwapResolution = config?.allowResolutionSwap || false;
+    } else {
+      await this.showMessage('warning', 'Video not ready. Please wait...');
+    }
+  }
+
+  private async handleOnError(error: WebcamError): Promise<void> {
+    const message = error?.message || 'Unable to access camera';
+    await this.showMessage('danger', message);
+  }
+
+  public async showPermissionExplanation(): Promise<void> {
+    // const alert = await this.alertController.create({
+    //   header: 'Permission Required',
+    //   message: 'Camera access permission is required to take photos.',
+    //   buttons: ['OK']
+    // });
+    // await alert.present();
+  }
+
+  public async showPermissionDeniedHelp(): Promise<void> {
+    // const alert = await this.alertController.create({
+    //   header: 'Permission Denied',
+    //   message: 'Camera access permission was denied. Please enable it in settings.',
+    //   buttons: ['OK']
+    // });
+    // await alert.present();
+  }
+
+  public async handlePermissionDialogConfirm(): Promise<void> {
+    await this.handleRequestPermission();
+  }
+
+  private async handleRequestPermission(): Promise<void> {
+    if (this.webcam.needsPermissionRequest()) {
+      const permissions = await this.webcam.requestPermissions();
+      if (permissions.camera === 'granted') {
+        // initialize the camera
+        await this.initializeWebcam();
+      } else {
+        await this.showMessage('danger', 'Camera permission denied');
+      }
+    } else {
+      await this.initializeWebcam();
+    }
+  }
+
+  public async captureImage(): Promise<void> {
+    const image = await this.webcam.captureImage({
+      quality: 0.9,
+      mediaType: 'image/jpeg',
+      scale: 0.5
+    });
+
+    // show the image
+    await this.showMessage('success', `Image captured: ${image.slice(-10)}`);
+  }
+
+  public async setDevice(device: any): Promise<void> {
+    if (device) {
+      this.webcam.clearError();
+      this.webcam.updateDevice(device);
+    } else {
+      await this.showMessage('danger', 'Failed to switch camera');
+    }
+  }
+
+  public async setResolution(id: any): Promise<void> {
+    const selectedResolution = this.resolutions.find((r) => r.id === id);
+    if (selectedResolution) {
+      this.webcam.clearError();
+      this.webcam.updateResolution(selectedResolution);
+    } else {
+      await this.showMessage('danger', 'Failed to change resolution');
+    }
+  }
+
+  public toggleAllowAnyResolution(): void {
+    if (this.webcam.isActive()) {
+      this.webcam.toggle('allowAnyResolution');
+      this.isAllowAnyResolution = this.webcam.isAnyResolutionAllowed() || false;
+    }
+  }
+
+  public toggleMirror(): void {
+    if (this.webcam.isActive()) {
+      this.webcam.toggleMirror();
+      this.isMirrorEnabled = this.webcam.isMirrorEnabled() || false;
+    }
+  }
+
+  public toggleAudio(): void {
+    if (this.webcam.isActive()) {
+      this.webcam.toggle('audioEnabled');
+      this.isAudioEnabled = this.webcam.isAudioEnabled() || false;
+    }
+  }
+
+  public toggleAllowSwapResolution(): void {
+    if (this.webcam.isActive()) {
+      this.webcam.toggle('allowResolutionSwap');
+      this.isAllowSwapResolution = this.webcam.isResolutionSwapAllowed() || false;
+    }
+  }
+
+  public toggleTorch(): void {
+    if (this.webcam.isActive()) {
+      this.webcam.toggleTorch();
+    }
+  }
+
+  private async showMessage(type: 'success' | 'warning' | 'danger', detail: string): Promise<void> {
+    // const toast = await this.toastController.create({
+    //   message: detail,
+    //   duration: 1500,
+    //   position: 'top',
+    //   color: type
+    // });
+    // await toast.present();
+  }
+
+  async showLoading(message: string) {
+    // const loading = await this.loadingController.create({
+    //   message: message,
+    //   duration: 2000,
+    //   spinner: 'circular'
+    // });
+    // await loading.present();
   }
 }

@@ -21,6 +21,7 @@
     "@types/node": "^20.10.6",
     "eslint": "^8.57.0",
     "tsup": "^8.0.1",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "ua-info": "1.0.5"
   }
 }

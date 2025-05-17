@@ -1,0 +1,224 @@
+<div class="min-h-screen bg-gray-100 dark:bg-gray-900">
+  <!-- Header -->
+  <header class="bg-gray-800 text-white shadow p-4">
+    <h1 class="text-lg font-medium">TS-WEBCAM DEMO</h1>
+  </header>
+
+  <!-- Main Content -->
+  <main class="py-6 px-4 max-w-7xl mx-auto">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- Camera Preview -->
+      <div class="lg:col-span-2">
+        <div *ngIf="!webcam.needsPermissionRequest(); else permissionRequest">
+          <div
+            class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border dark:border-gray-700 overflow-hidden"
+          >
+            <!-- Video Container -->
+            <div class="relative aspect-video bg-black">
+              <video
+                #preview
+                autoplay
+                playsinline
+                [style.visibility]="
+                  webcam.isActive() && !webcam.getLastError() ? 'visible' : 'hidden'
+                "
+                class="w-full h-full object-contain"
+              ></video>
+
+              <!-- Spinner -->
+              <div
+                *ngIf="webcam.getStatus() === 'initializing'"
+                class="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+              >
+                <div
+                  class="w-10 h-10 border-4 border-white border-t-transparent rounded-full animate-spin"
+                ></div>
+              </div>
+
+              <!-- Error -->
+              <div
+                *ngIf="webcam?.getLastError()"
+                class="absolute inset-0 flex flex-col items-center justify-center bg-red-500/90 backdrop-blur-sm p-6 text-white"
+              >
+                <p class="text-lg font-medium mb-4">{{ webcam.getLastError()?.message }}</p>
+                <button
+                  (click)="webcam.clearError(); selectedResolution = null"
+                  class="px-4 py-2 bg-gray-200 text-black rounded font-medium"
+                >
+                  Try Again
+                </button>
+              </div>
+            </div>
+
+            <!-- Status Badges -->
+            <div class="flex flex-wrap gap-2 px-4 py-2 border-t dark:border-gray-700">
+              <span
+                class="px-2 py-1 rounded text-white text-sm"
+                [ngClass]="webcam.isActive() ? 'bg-green-500 animate-pulse' : 'bg-red-500'"
+              >
+                {{ webcam.isActive() ? 'Active' : 'Inactive' }}
+              </span>
+              <span
+                class="px-2 py-1 rounded text-white text-sm"
+                [ngClass]="webcam.isTorchSupported() ? 'bg-blue-500' : 'bg-gray-400'"
+              >
+                {{ webcam.isTorchSupported() ? 'Flash Available' : 'No Flash' }}
+              </span>
+              <span
+                class="px-2 py-1 rounded text-white text-sm"
+                [ngClass]="webcam.isZoomSupported() ? 'bg-blue-500' : 'bg-gray-400'"
+              >
+                {{ webcam.isZoomSupported() ? 'Zoom Available' : 'No Zoom' }}
+              </span>
+              <span
+                class="px-2 py-1 rounded text-white text-sm"
+                [ngClass]="webcam.isFocusSupported() ? 'bg-blue-500' : 'bg-gray-400'"
+              >
+                {{ webcam.isFocusSupported() ? 'Auto Focus' : 'Fixed Focus' }}
+              </span>
+            </div>
+
+            <!-- Control Buttons -->
+            <div class="flex flex-wrap justify-center gap-4 p-4">
+              <button
+                *ngIf="!webcam.isActive()"
+                (click)="webcam.start()"
+                class="min-w-[160px] px-4 py-2 bg-blue-600 text-white rounded"
+              >
+                Start Camera
+              </button>
+              <button
+                *ngIf="webcam.isActive()"
+                (click)="captureImage()"
+                class="min-w-[160px] px-4 py-2 bg-blue-600 text-white rounded"
+              >
+                Capture
+              </button>
+              <button
+                *ngIf="webcam.isActive()"
+                [disabled]="!webcam.isTorchSupported()"
+                (click)="toggleTorch()"
+                class="min-w-[160px] px-4 py-2 bg-blue-600 text-white rounded"
+              >
+                {{ webcam.isTorchActive() ? 'Torch On' : 'Torch Off' }}
+              </button>
+              <button
+                [disabled]="!webcam.isActive()"
+                (click)="webcam.stop()"
+                class="min-w-[160px] px-4 py-2 bg-red-600 text-white rounded"
+              >
+                Stop Camera
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <ng-template #permissionRequest>
+          <div
+            class="bg-white dark:bg-gray-800 rounded-xl border dark:border-gray-700 p-6 text-center"
+          >
+            <div class="text-red-600 text-6xl mb-4">&#9888;</div>
+            <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-3">
+              Permission Required
+            </h2>
+            <p class="text-gray-600 dark:text-gray-300 mb-6">
+              Please allow camera access to use this feature
+            </p>
+            <button
+              (click)="handlePermissionDialogConfirm()"
+              class="px-4 py-2 bg-blue-600 text-white rounded"
+            >
+              Allow
+            </button>
+          </div>
+        </ng-template>
+      </div>
+
+      <!-- Camera Settings -->
+      <div class="lg:col-span-1">
+        <div
+          class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border dark:border-gray-700 sticky top-4"
+        >
+          <div class="border-b px-4 py-3 dark:border-gray-700">
+            <h3 class="text-lg font-medium text-gray-900 dark:text-white flex items-center gap-2">
+              <span class="text-gray-500 dark:text-gray-400">⚙️</span> Camera Settings
+            </h3>
+          </div>
+
+          <div class="p-4 space-y-4">
+            <!-- Device Selection -->
+            <div>
+              <p class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Select Camera
+              </p>
+              <select
+                [disabled]="webcam.getStatus() === 'initializing'"
+                [value]="selectedDevice"
+                (change)="setDevice($event)"
+                class="w-full p-2 rounded bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white"
+              >
+                <option *ngFor="let device of videoDevices; let i = index" [value]="device">
+                  {{ device.label || 'Camera ' + (i + 1) }}
+                </option>
+              </select>
+            </div>
+
+            <!-- Resolution -->
+            <div>
+              <p class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Resolution
+              </p>
+              <select
+                [disabled]="webcam.getStatus() === 'initializing'"
+                [value]="webcam.getCurrentResolution()?.id"
+                (change)="setResolution($event)"
+                class="w-full p-2 rounded bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white"
+              >
+                <option *ngFor="let resolution of resolutions" [value]="resolution.id">
+                  {{ resolution.label }} - {{ resolution.id }}
+                </option>
+              </select>
+            </div>
+
+            <!-- Advanced Toggles -->
+            <div class="border-t pt-4 space-y-3 text-sm text-gray-700 dark:text-gray-300">
+              <div class="flex justify-between">
+                <span>Is Mobile</span><span>{{ uaInfo.isMobile() ? 'Yes' : 'No' }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span>Is Tablet</span><span>{{ uaInfo.isTablet() ? 'Yes' : 'No' }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span>Is Desktop</span><span>{{ uaInfo.isDesktop() ? 'Yes' : 'No' }}</span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span>Allow Any Resolution</span>
+                <input
+                  type="checkbox"
+                  [(ngModel)]="isAllowAnyResolution"
+                  (change)="toggleAllowAnyResolution()"
+                />
+              </div>
+              <div class="flex justify-between items-center">
+                <span>Auto Rotation</span>
+                <input
+                  type="checkbox"
+                  [(ngModel)]="isAllowSwapResolution"
+                  (change)="toggleAllowSwapResolution()"
+                />
+              </div>
+              <div class="flex justify-between items-center">
+                <span>Mirror Video</span>
+                <input type="checkbox" [(ngModel)]="isMirrorEnabled" (change)="toggleMirror()" />
+              </div>
+              <div class="flex justify-between items-center">
+                <span>Enable Audio</span>
+                <input type="checkbox" [(ngModel)]="isAudioEnabled" (change)="toggleAudio()" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>

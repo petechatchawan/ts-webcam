@@ -1,99 +1,55 @@
 /**
- * Resolution configuration for the webcam
+ * Represents the permission state for device access
  */
-export interface Resolution {
-  width: number;
-  height: number;
-  aspectRatio?: number;
-  frameRate?: number;
-}
+export type PermissionStatus = 'granted' | 'denied' | 'prompt';
 
 /**
- * Common resolutions that can be used
+ * Comprehensive list of possible error types that can occur during webcam operations
+ * Categorized by error source: permissions, device, initialization, functionality, etc.
  */
-export const CommonResolutions = {
-  VGA: { width: 640, height: 480 } as Resolution,
-  HD: { width: 1280, height: 720 } as Resolution,
-  FULL_HD: { width: 1920, height: 1080 } as Resolution,
-  QVGA: { width: 320, height: 240 } as Resolution,
-  SVGA: { width: 800, height: 600 } as Resolution,
-  XGA: { width: 1024, height: 768 } as Resolution,
-  UXGA: { width: 1600, height: 1200 } as Resolution,
-  QXGA: { width: 2048, height: 1536 } as Resolution,
-};
+export type WebcamErrorType =
+  // Permission-related errors
+  | 'no-permissions-api'
+  | 'permission-denied'
+  | 'microphone-permission-denied'
+  // Device and configuration errors
+  | 'configuration-error'
+  | 'no-device'
+  | 'no-media-devices-support'
+  | 'invalid-device-id'
+  | 'no-resolutions'
+  // Webcam initialization and operation errors
+  | 'webcam-start-error'
+  | 'webcam-initialization-error'
+  | 'no-stream'
+  | 'webcam-settings-error'
+  | 'webcam-stop-error'
+  | 'webcam-already-in-use'
+  // Webcam functionality errors
+  | 'zoom-not-supported'
+  | 'torch-not-supported'
+  | 'focus-not-supported'
+  | 'device-list-error'
+  | 'capture-failed'
+  // Miscellaneous errors
+  | 'unknown';
 
 /**
- * Device information
+ * Represents the possible device orientations
  */
-export interface DeviceInfo {
-  id: string;
-  label: string;
-  kind: MediaDeviceKind;
-}
+export type DeviceOrientation =
+  | 'portrait-primary'
+  | 'portrait-secondary'
+  | 'landscape-primary'
+  | 'landscape-secondary'
+  | 'unknown';
 
 /**
- * Webcam configuration options
+ * Enum representing the possible states of a webcam
  */
-export interface WebcamOptions {
-  /** Preferred resolution for the webcam */
-  resolution?: Resolution;
-  
-  /** Device ID to use (if not provided, the system default will be used) */
-  deviceId?: string;
-  
-  /** Whether to enable audio (default: false) */
-  audio?: boolean;
-  
-  /** Whether to enable debug logging (default: false) */
-  debug?: boolean;
-  
-  /** Whether to mirror the video (useful for front-facing cameras) (default: false) */
-  mirrored?: boolean;
-  
-  /** Whether to automatically request permissions on initialization (default: true) */
-  autoRequestPermissions?: boolean;
-  
-  /** Custom constraints to pass to getUserMedia */
-  customConstraints?: MediaStreamConstraints;
-}
-
-/**
- * Webcam state
- */
-export enum WebcamState {
-  IDLE = 'IDLE',
-  REQUESTING_PERMISSIONS = 'REQUESTING_PERMISSIONS',
-  INITIALIZING = 'INITIALIZING',
-  ACTIVE = 'ACTIVE',
-  ERROR = 'ERROR',
-  STOPPING = 'STOPPING',
-}
-
-/**
- * Webcam event types
- */
-export enum WebcamEventType {
-  STATE_CHANGE = 'STATE_CHANGE',
-  ERROR = 'ERROR',
-  STREAM_STARTED = 'STREAM_STARTED',
-  STREAM_STOPPED = 'STREAM_STOPPED',
-  DEVICE_CHANGE = 'DEVICE_CHANGE',
-  PERMISSION_CHANGE = 'PERMISSION_CHANGE',
-}
-
-/**
- * Webcam event listener
- */
-export type WebcamEventListener<T = any> = (data: T) => void;
-
-/**
- * Webcam event map
- */
-export interface WebcamEventMap {
-  [WebcamEventType.STATE_CHANGE]: WebcamState;
-  [WebcamEventType.ERROR]: Error;
-  [WebcamEventType.STREAM_STARTED]: MediaStream;
-  [WebcamEventType.STREAM_STOPPED]: void;
-  [WebcamEventType.DEVICE_CHANGE]: DeviceInfo[];
-  [WebcamEventType.PERMISSION_CHANGE]: PermissionState;
+export enum WebcamStatus {
+  IDLE = 'idle',
+  INITIALIZING = 'initializing',
+  READY = 'ready',
+  ERROR = 'error'
 }
