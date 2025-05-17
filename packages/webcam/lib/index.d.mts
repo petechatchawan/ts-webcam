@@ -3,16 +3,16 @@ import { UAInfo } from 'ua-info';
 /**
  * Represents the permission state for device access
  */
-type PermissionStatus = "granted" | "denied" | "prompt";
+type PermissionStatus = 'granted' | 'denied' | 'prompt';
 /**
  * Comprehensive list of possible error types that can occur during webcam operations
  * Categorized by error source: permissions, device, initialization, functionality, etc.
  */
-type WebcamErrorType = "no-permissions-api" | "permission-denied" | "microphone-permission-denied" | "configuration-error" | "no-device" | "no-media-devices-support" | "invalid-device-id" | "no-resolutions" | "webcam-start-error" | "webcam-initialization-error" | "no-stream" | "webcam-settings-error" | "webcam-stop-error" | "webcam-already-in-use" | "zoom-not-supported" | "torch-not-supported" | "focus-not-supported" | "device-list-error" | "capture-failed" | "unknown";
+type WebcamErrorType = 'no-permissions-api' | 'permission-denied' | 'microphone-permission-denied' | 'configuration-error' | 'no-device' | 'no-media-devices-support' | 'invalid-device-id' | 'no-resolutions' | 'webcam-start-error' | 'webcam-initialization-error' | 'no-stream' | 'webcam-settings-error' | 'webcam-stop-error' | 'webcam-already-in-use' | 'zoom-not-supported' | 'torch-not-supported' | 'focus-not-supported' | 'device-list-error' | 'capture-failed' | 'unknown';
 /**
  * Represents the possible device orientations
  */
-type DeviceOrientation = "portrait-primary" | "portrait-secondary" | "landscape-primary" | "landscape-secondary" | "unknown";
+type DeviceOrientation = 'portrait-primary' | 'portrait-secondary' | 'landscape-primary' | 'landscape-secondary' | 'unknown';
 /**
  * Enum representing the possible states of a webcam
  */
@@ -44,7 +44,7 @@ interface Resolution {
 /**
  * Configuration options for initializing a webcam
  */
-interface WebcamConfiguration {
+interface WebcamConfig {
     device: MediaDeviceInfo;
     previewElement: HTMLVideoElement;
     audioEnabled?: boolean;
@@ -54,7 +54,6 @@ interface WebcamConfiguration {
     allowResolutionSwap?: boolean;
     onStart?: () => void;
     onError?: (error: WebcamError) => void;
-    onStop?: () => void;
 }
 /**
  * Interface for managing and checking webcam hardware capabilities
@@ -76,7 +75,7 @@ interface WebcamCapabilities {
  */
 interface WebcamState {
     status: WebcamStatus;
-    configuration: WebcamConfiguration | null;
+    config: WebcamConfig | null;
     lastError: WebcamError | null;
     captureCanvas?: HTMLCanvasElement;
     availableDevices: MediaDeviceInfo[];
@@ -174,7 +173,7 @@ declare class Webcam {
     getMaxZoomLevel(): number;
     isTorchActive(): boolean;
     isFocusActive(): boolean;
-    setupConfiguration(configuration: WebcamConfiguration): void;
+    setupConfiguration(configuration: WebcamConfig): void;
     start(): Promise<void>;
     stop(): void;
     previewIsReady(): Promise<boolean>;
@@ -184,17 +183,17 @@ declare class Webcam {
     toggleTorch(): Promise<boolean>;
     toggleMirror(): boolean;
     createResolution(name: string, width: number, height: number): Resolution;
-    updateConfiguration(configuration: Partial<WebcamConfiguration>, options?: {
+    updateConfiguration(configuration: Partial<WebcamConfig>, options?: {
         restart?: boolean;
-    }): WebcamConfiguration;
+    }): WebcamConfig;
     updateResolution(resolution: Resolution | Resolution[], options?: {
         restart?: boolean;
-    }): WebcamConfiguration;
+    }): WebcamConfig;
     updateDevice(device: MediaDeviceInfo, options?: {
         restart?: boolean;
-    }): WebcamConfiguration;
-    toggle(setting: "audioEnabled" | "allowResolutionSwap" | "allowAnyResolution"): Promise<boolean>;
-    getConfiguration(): WebcamConfiguration;
+    }): WebcamConfig;
+    toggle(setting: 'audioEnabled' | 'allowResolutionSwap' | 'allowAnyResolution'): Promise<boolean>;
+    getConfiguration(): WebcamConfig;
     checkCameraPermission(): Promise<PermissionStatus>;
     checkMicrophonePermission(): Promise<PermissionStatus>;
     requestPermissions(): Promise<{
@@ -209,7 +208,7 @@ declare class Webcam {
     hasPermissionDenied(): boolean;
     captureImage(config?: {
         scale?: number;
-        mediaType?: "image/png" | "image/jpeg";
+        mediaType?: 'image/png' | 'image/jpeg';
         quality?: number;
     }): Promise<string>;
     checkDevicesCapabilitiesData(deviceId: string): Promise<DeviceCapabilities>;
@@ -251,4 +250,4 @@ declare class Webcam {
     private stopChangeListeners;
 }
 
-export { type DeviceCapabilities, type DeviceOrientation, type ExtendedMediaTrackCapabilities, type ExtendedMediaTrackConstraintSet, type ExtendedMediaTrackSettings, type PermissionStatus, type Resolution, Webcam, type WebcamCapabilities, type WebcamConfiguration, WebcamError, type WebcamErrorType, type WebcamState, WebcamStatus };
+export { type DeviceCapabilities, type DeviceOrientation, type ExtendedMediaTrackCapabilities, type ExtendedMediaTrackConstraintSet, type ExtendedMediaTrackSettings, type PermissionStatus, type Resolution, Webcam, type WebcamCapabilities, type WebcamConfig, WebcamError, type WebcamErrorType, type WebcamState, WebcamStatus };
