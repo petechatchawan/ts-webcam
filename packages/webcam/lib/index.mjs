@@ -958,10 +958,7 @@ function buildConstraints(deviceId, resolution, allowResolutionSwap, audioEnable
 }
 function validatePermissions(permissions, audioEnabled) {
   if (permissions.camera === "denied") {
-    throw new WebcamError(
-      "permission-denied",
-      "Please allow camera access"
-    );
+    throw new WebcamError("permission-denied", "Please allow camera access");
   }
   if (audioEnabled && permissions.microphone === "denied") {
     throw new WebcamError(
@@ -1124,7 +1121,11 @@ var Webcam = class {
         this.handleError(error);
       } else {
         this.handleError(
-          new WebcamError("webcam-start-error", "Failed to start webcam", error)
+          new WebcamError(
+            "webcam-start-error",
+            "Failed to start webcam",
+            error
+          )
         );
       }
       throw this.state.lastError;
@@ -1157,12 +1158,18 @@ var Webcam = class {
   }
   async setZoom(zoomLevel) {
     if (!this.state.activeStream || !this.state.capabilities.zoomSupported) {
-      throw new WebcamError("zoom-not-supported", "Zoom is not supported or webcam is not active");
+      throw new WebcamError(
+        "zoom-not-supported",
+        "Zoom is not supported or webcam is not active"
+      );
     }
     const videoTrack = this.state.activeStream.getVideoTracks()[0];
     const capabilities = videoTrack.getCapabilities();
     if (!capabilities.zoom) {
-      throw new WebcamError("zoom-not-supported", "Zoom is not supported by this device");
+      throw new WebcamError(
+        "zoom-not-supported",
+        "Zoom is not supported by this device"
+      );
     }
     try {
       const constrainedZoomLevel = Math.min(
@@ -1178,7 +1185,11 @@ var Webcam = class {
       });
       this.state.capabilities.zoomLevel = constrainedZoomLevel;
     } catch (error) {
-      throw new WebcamError("webcam-settings-error", "Failed to set zoom level", error);
+      throw new WebcamError(
+        "webcam-settings-error",
+        "Failed to set zoom level",
+        error
+      );
     }
   }
   async setTorch(active) {
@@ -1191,7 +1202,10 @@ var Webcam = class {
     const videoTrack = this.state.activeStream.getVideoTracks()[0];
     const capabilities = videoTrack.getCapabilities();
     if (!capabilities.torch) {
-      throw new WebcamError("torch-not-supported", "Torch is not supported by this device");
+      throw new WebcamError(
+        "torch-not-supported",
+        "Torch is not supported by this device"
+      );
     }
     try {
       await videoTrack.applyConstraints({
@@ -1199,7 +1213,11 @@ var Webcam = class {
       });
       this.state.capabilities.torchActive = active;
     } catch (error) {
-      throw new WebcamError("webcam-settings-error", "Failed to set torch mode", error);
+      throw new WebcamError(
+        "webcam-settings-error",
+        "Failed to set torch mode",
+        error
+      );
     }
   }
   async setFocusMode(mode) {
@@ -1224,12 +1242,19 @@ var Webcam = class {
       this.state.capabilities.currentFocusMode = mode;
       this.state.capabilities.focusActive = true;
     } catch (error) {
-      throw new WebcamError("webcam-settings-error", "Failed to set focus mode", error);
+      throw new WebcamError(
+        "webcam-settings-error",
+        "Failed to set focus mode",
+        error
+      );
     }
   }
   async toggleTorch() {
     if (!this.isTorchSupported()) {
-      throw new WebcamError("torch-not-supported", "Torch is not supported by this device");
+      throw new WebcamError(
+        "torch-not-supported",
+        "Torch is not supported by this device"
+      );
     }
     const newTorchState = !this.state.capabilities.torchActive;
     await this.setTorch(newTorchState);
@@ -1276,14 +1301,23 @@ var Webcam = class {
       if (micPermission === "prompt") {
         const permission = await this.requestMediaPermission("audio");
         if (permission === "denied") {
-          throw new WebcamError("microphone-permission-denied", "Please allow microphone access");
+          throw new WebcamError(
+            "microphone-permission-denied",
+            "Please allow microphone access"
+          );
         }
       } else if (micPermission === "denied") {
-        throw new WebcamError("microphone-permission-denied", "Please allow microphone access");
+        throw new WebcamError(
+          "microphone-permission-denied",
+          "Please allow microphone access"
+        );
       }
     }
     const shouldRestart = setting === "audioEnabled" || setting === "allowResolutionSwap";
-    this.updateConfiguration({ [setting]: newValue }, { restart: shouldRestart });
+    this.updateConfiguration(
+      { [setting]: newValue },
+      { restart: shouldRestart }
+    );
     return newValue;
   }
   getConfiguration() {
@@ -1348,14 +1382,20 @@ var Webcam = class {
   async captureImage(config = {}) {
     this.checkConfiguration();
     if (!this.state.activeStream) {
-      throw new WebcamError("no-stream", "No active stream to capture image from");
+      throw new WebcamError(
+        "no-stream",
+        "No active stream to capture image from"
+      );
     }
     const videoTrack = this.state.activeStream.getVideoTracks()[0];
     const settings = videoTrack.getSettings();
     const canvas = this.state.captureCanvas;
     const context = canvas.getContext("2d");
     if (!context) {
-      throw new WebcamError("webcam-settings-error", "Failed to get canvas context");
+      throw new WebcamError(
+        "webcam-settings-error",
+        "Failed to get canvas context"
+      );
     }
     const scale = config.scale || 1;
     canvas.width = (settings.width || 640) * scale;
@@ -1364,7 +1404,13 @@ var Webcam = class {
       context.translate(canvas.width, 0);
       context.scale(-1, 1);
     }
-    context.drawImage(this.state.configuration.previewElement, 0, 0, canvas.width, canvas.height);
+    context.drawImage(
+      this.state.configuration.previewElement,
+      0,
+      0,
+      canvas.width,
+      canvas.height
+    );
     if (this.state.configuration.mirrorEnabled) {
       context.setTransform(1, 0, 0, 1, 0, 0);
     }
@@ -1374,7 +1420,9 @@ var Webcam = class {
       canvas.toBlob(
         (blob) => {
           if (!blob) {
-            return reject(new WebcamError("capture-failed", "Failed to capture image"));
+            return reject(
+              new WebcamError("capture-failed", "Failed to capture image")
+            );
           }
           const reader = new FileReader();
           reader.onloadend = () => resolve(reader.result);
@@ -1458,7 +1506,9 @@ var Webcam = class {
       await this.refreshDevices();
       const currentDevice = this.getCurrentDevice();
       if (this.isActive() && !currentDevice) {
-        this.handleError(new WebcamError("no-device", "Current device is no longer available"));
+        this.handleError(
+          new WebcamError("no-device", "Current device is no longer available")
+        );
         this.stop();
       }
     };
@@ -1493,8 +1543,14 @@ var Webcam = class {
         }
       }
     };
-    navigator.mediaDevices.addEventListener("devicechange", this.deviceChangeListener);
-    window.addEventListener("orientationchange", this.orientationChangeListener);
+    navigator.mediaDevices.addEventListener(
+      "devicechange",
+      this.deviceChangeListener
+    );
+    window.addEventListener(
+      "orientationchange",
+      this.orientationChangeListener
+    );
   }
   async getAvailableDevices() {
     try {
@@ -1509,7 +1565,11 @@ var Webcam = class {
       return devices;
     } catch (error) {
       this.handleError(
-        new WebcamError("device-list-error", "Failed to get device list", error)
+        new WebcamError(
+          "device-list-error",
+          "Failed to get device list",
+          error
+        )
       );
       return [];
     }
@@ -1521,7 +1581,9 @@ var Webcam = class {
     if (this.state.availableDevices.length === 0) {
       await this.getAvailableDevices();
     }
-    return this.state.availableDevices.filter((device) => device.kind === "videoinput");
+    return this.state.availableDevices.filter(
+      (device) => device.kind === "videoinput"
+    );
   }
   async getDevices() {
     if (this.state.availableDevices.length === 0) {
@@ -1533,13 +1595,17 @@ var Webcam = class {
     if (this.state.availableDevices.length === 0) {
       await this.getAvailableDevices();
     }
-    return this.state.availableDevices.filter((device) => device.kind === "audioinput");
+    return this.state.availableDevices.filter(
+      (device) => device.kind === "audioinput"
+    );
   }
   async getAudioOutputDevices() {
     if (this.state.availableDevices.length === 0) {
       await this.getAvailableDevices();
     }
-    return this.state.availableDevices.filter((device) => device.kind === "audiooutput");
+    return this.state.availableDevices.filter(
+      (device) => device.kind === "audiooutput"
+    );
   }
   getCurrentDevice() {
     if (!this.state.configuration?.device) return null;
@@ -1553,7 +1619,10 @@ var Webcam = class {
     this.state.status = "initializing" /* INITIALIZING */;
     this.state.lastError = null;
     const permissions = await this.requestPermissions();
-    validatePermissions(permissions, this.state.configuration.audioEnabled || false);
+    validatePermissions(
+      permissions,
+      this.state.configuration.audioEnabled || false
+    );
     await this.openWebcam();
   }
   async openWebcam() {
@@ -1587,12 +1656,16 @@ var Webcam = class {
           `Failed to open webcam with resolution: ${resolution.id}`,
           error
         );
-        console.log(`Failed to open webcam with resolution: ${resolution.id}. Trying next...`);
+        console.log(
+          `Failed to open webcam with resolution: ${resolution.id}. Trying next...`
+        );
       }
     }
     if (this.state.configuration.allowAnyResolution) {
       try {
-        console.log("All specified resolutions failed. Trying any supported resolution...");
+        console.log(
+          "All specified resolutions failed. Trying any supported resolution..."
+        );
         await this.tryAnyResolution();
       } catch (error) {
         throw new WebcamError(
@@ -1629,16 +1702,23 @@ var Webcam = class {
         width: settings.width || resolution.width,
         height: settings.height || resolution.height
       };
-      console.log(`Successfully opened webcam with resolution: ${resolution.id}`);
+      console.log(
+        `Successfully opened webcam with resolution: ${resolution.id}`
+      );
       this.state.status = "ready" /* READY */;
       this.state.configuration?.onStart?.();
     } catch (error) {
-      console.error(`Failed to open webcam with resolution: ${resolution.id}`, error);
+      console.error(
+        `Failed to open webcam with resolution: ${resolution.id}`,
+        error
+      );
       throw error;
     }
   }
   async tryAnyResolution() {
-    console.log("Attempting to open webcam with any supported resolution (ideal: 4K)");
+    console.log(
+      "Attempting to open webcam with any supported resolution (ideal: 4K)"
+    );
     if (!this.state.configuration.device) {
       throw new WebcamError("no-device", "Selected device not found");
     }
@@ -1662,7 +1742,9 @@ var Webcam = class {
         width: settings.width || 0,
         height: settings.height || 0
       };
-      console.log(`Opened webcam with resolution: ${this.state.currentResolution.id}`);
+      console.log(
+        `Opened webcam with resolution: ${this.state.currentResolution.id}`
+      );
       this.state.status = "ready" /* READY */;
       this.state.configuration?.onStart?.();
     } catch (error) {
@@ -1713,7 +1795,10 @@ var Webcam = class {
     this.state.configuration?.onError?.(this.state.lastError);
   }
   stopStream() {
-    stopStream(this.state.activeStream, this.state.configuration?.previewElement);
+    stopStream(
+      this.state.activeStream,
+      this.state.configuration?.previewElement
+    );
   }
   resetState() {
     this.stopChangeListeners();
@@ -1750,11 +1835,17 @@ var Webcam = class {
   }
   stopChangeListeners() {
     if (this.deviceChangeListener) {
-      navigator.mediaDevices.removeEventListener("devicechange", this.deviceChangeListener);
+      navigator.mediaDevices.removeEventListener(
+        "devicechange",
+        this.deviceChangeListener
+      );
       this.deviceChangeListener = null;
     }
     if (this.orientationChangeListener) {
-      window.removeEventListener("orientationchange", this.orientationChangeListener);
+      window.removeEventListener(
+        "orientationchange",
+        this.orientationChangeListener
+      );
       this.orientationChangeListener = null;
     }
   }
