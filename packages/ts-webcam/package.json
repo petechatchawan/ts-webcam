@@ -1,20 +1,44 @@
 {
   "name": "ts-webcam",
-  "version": "0.1.0",
+  "version": "1.5.0",
   "private": false,
+  "description": "A TypeScript library for managing webcam access using the MediaDevices API",
+  "author": "Pete Chatchawan",
+  "homepage": "https://ts-webcam.web.app",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/petechatchawan/ts-webcam.git"
+  },
+  "keywords": [
+    "webcam",
+    "camera",
+    "typescript",
+    "mediadevices",
+    "browser",
+    "video",
+    "stream",
+    "getUserMedia"
+  ],
   "main": "./lib/index.js",
   "module": "./lib/index.mjs",
   "types": "./lib/index.d.ts",
   "sideEffects": false,
   "license": "MIT",
   "files": [
-    "lib/**"
+    "lib/**",
+    "README.md",
+    "LICENSE"
   ],
   "scripts": {
     "build": "tsup src/index.ts --format esm,cjs --dts --outDir lib",
     "dev": "tsup src/index.ts --format esm,cjs --watch --dts --outDir lib",
     "lint": "eslint src/",
-    "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf lib"
+    "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf lib",
+    "prepublishOnly": "pnpm run build",
+    "publish": "npm publish",
+    "publish:dry": "npm publish --dry-run",
+    "publish:beta": "npm publish --tag beta",
+    "pack": "npm pack"
   },
   "devDependencies": {
     "@repo/eslint-config": "workspace:*",
@@ -23,5 +47,11 @@
     "tsup": "^8.0.1",
     "typescript": "^5.3.3",
     "ua-info": "1.0.5"
+  },
+  "dependencies": {
+    "ua-info": "1.0.5"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
