@@ -44,11 +44,11 @@ function createResolution(name, width, height) {
     height
   };
 }
-function buildMediaConstraints(deviceId, resolution, allowResolutionSwap, audioEnabled) {
+function buildMediaConstraints(deviceId, resolution, allowAutoRotateResolution, audioEnabled) {
   const videoConstraints = {
     deviceId: { exact: deviceId }
   };
-  if (allowResolutionSwap) {
+  if (allowAutoRotateResolution) {
     videoConstraints.width = { exact: resolution.height };
     videoConstraints.height = { exact: resolution.width };
   } else {
@@ -107,6 +107,8 @@ var DEFAULT_WEBCAM_CONFIG = {
   get allowResolutionSwap() {
     return shouldAutoSwapResolution();
   },
+  /** Enable debug mode to show console.log messages */
+  debug: false,
   /** Callback when webcam starts successfully */
   onStart: () => {
   },
@@ -193,6 +195,16 @@ var Webcam = class {
     };
     this.handleError = this.handleError.bind(this);
   }
+  /**
+   * Internal logging function that only logs when debug mode is enabled
+   * @param message The message to log
+   * @param data Optional data to log
+   */
+  log(message, ...data) {
+    if (this.state.configuration?.debug) {
+      console.log(`[ts-webcam] ${message}`, ...data);
+    }
+  }
   // ===== State and Status Methods =====
   /**
    * Get the current state of the webcam
@@ -244,13 +256,19 @@ var Webcam = class {
    * Check if resolution swap is allowed on mobile devices
    */
   isResolutionSwapAllowed() {
-    return this.state.configuration?.autoSwapResolutionOnMobile || false;
+    return this.state.configuration?.allowAutoRotateResolution || false;
   }
   /**
    * Check if fallback to any supported resolution is allowed
    */
   isFallbackResolutionAllowed() {
     return this.state.configuration?.allowFallbackResolution || false;
+  }
+  /**
+   * Check if debug mode is enabled
+   */
+  isDebugEnabled() {
+    return this.state.configuration?.debug || false;
   }
   // ===== Device Capabilities Methods =====
   /**
@@ -320,6 +338,9 @@ var Webcam = class {
       ...DEFAULT_WEBCAM_CONFIG,
       ...configuration
     };
+    if (this.state.configuration.debug) {
+      this.log("Configuration set up", this.state.configuration);
+    }
   }
   /**
    * Start the webcam with the current configuration
@@ -327,9 +348,12 @@ var Webcam = class {
    */
   async start() {
     this.checkConfiguration();
+    this.log("Starting webcam...");
     try {
       await this.initializeWebcam();
+      this.log("Webcam started successfully");
     } catch (error) {
+      this.log("Error starting webcam", error);
       if (error instanceof WebcamError) {
         this.handleError(error);
       } else {
@@ -349,8 +373,10 @@ var Webcam = class {
    */
   stop() {
     this.checkConfiguration();
+    this.log("Stopping webcam...");
     this.stopStream();
     this.resetState();
+    this.log("Webcam stopped");
   }
   /**
    * Check if the video preview element is ready to display content
@@ -511,11 +537,25 @@ var Webcam = class {
    */
   toggleMirror() {
     this.checkConfiguration();
-    const newValue = !this.state.configuration.mirrorVideo;
+    const newValue = !this.state.configuration?.mirrorVideo;
     this.updateConfiguration(
       { mirrorVideo: newValue },
       { restart: false }
     );
+    return newValue;
+  }
+  /**
+   * Toggle debug mode on/off
+   * @returns The new debug state (true = enabled, false = disabled)
+   */
+  toggleDebug() {
+    this.checkConfiguration();
+    const newValue = !this.state.configuration?.debug;
+    this.updateConfiguration(
+      { debug: newValue },
+      { restart: false }
+    );
+    this.log(newValue ? "Debug mode enabled" : "Debug mode disabled");
     return newValue;
   }
   // ===== Configuration and Resolution Methods =====
@@ -605,11 +645,14 @@ var Webcam = class {
         );
       }
     }
-    const shouldRestart = setting === "enableAudio" || setting === "autoSwapResolutionOnMobile";
+    const shouldRestart = setting === "enableAudio" || setting === "allowAutoRotateResolution";
     this.updateConfiguration(
       { [setting]: newValue },
       { restart: shouldRestart }
     );
+    if (setting === "debug") {
+      this.log(newValue ? "Debug mode enabled" : "Debug mode disabled");
+    }
     return newValue;
   }
   // ===== Permission Management Methods =====
@@ -629,7 +672,7 @@ var Webcam = class {
       this.state.permissionStates.camera = "prompt";
       return "prompt";
     } catch (error) {
-      console.warn("Permissions API error:", error);
+      this.log("Permissions API error:", error);
       this.state.permissionStates.camera = "prompt";
       return "prompt";
     }
@@ -650,7 +693,7 @@ var Webcam = class {
       this.state.permissionStates.microphone = "prompt";
       return "prompt";
     } catch (error) {
-      console.warn("Permissions API error:", error);
+      this.log("Permissions API error:", error);
       this.state.permissionStates.microphone = "prompt";
       return "prompt";
     }
@@ -719,7 +762,7 @@ var Webcam = class {
     const scale = config.scale || 1;
     canvas.width = (settings.width || 640) * scale;
     canvas.height = (settings.height || 480) * scale;
-    if (this.state.configuration.mirrorVideo) {
+    if (this.state.configuration?.mirrorVideo) {
       context.translate(canvas.width, 0);
       context.scale(-1, 1);
     }
@@ -853,32 +896,32 @@ var Webcam = class {
     this.orientationChangeListener = () => {
       if (this.isActive()) {
         if (screen.orientation) {
-          console.log("Screen orientation is supported");
+          this.log("Screen orientation is supported");
           const orientation = screen.orientation.type;
           const angle = screen.orientation.angle;
-          console.log(
+          this.log(
             `Orientation type: ${orientation}, angle: ${angle}`
           );
           this.state.deviceOrientation = orientation;
           switch (orientation) {
             case "portrait-primary":
-              console.log("Portrait (normal)");
+              this.log("Portrait (normal)");
               break;
             case "portrait-secondary":
-              console.log("Portrait (flipped)");
+              this.log("Portrait (flipped)");
               break;
             case "landscape-primary":
-              console.log("Landscape (normal)");
+              this.log("Landscape (normal)");
               break;
             case "landscape-secondary":
-              console.log("Landscape (flipped)");
+              this.log("Landscape (flipped)");
               break;
             default:
-              console.log("Unknown orientation");
+              this.log("Unknown orientation");
               this.state.deviceOrientation = "unknown";
           }
         } else {
-          console.log("screen.orientation is not supported");
+          this.log("screen.orientation is not supported");
           this.state.deviceOrientation = "unknown";
         }
       }
@@ -901,9 +944,7 @@ var Webcam = class {
         );
       }
       const devices = await navigator.mediaDevices.enumerateDevices();
-      this.state.videoDevices = devices.filter(
-        (device) => device.kind === "videoinput"
-      );
+      this.state.videoDevices = devices.filter((device) => device.kind === "videoinput");
       return devices;
     } catch (error) {
       this.handleError(
@@ -997,14 +1038,14 @@ var Webcam = class {
           `Failed to open webcam with resolution: ${resolution.id}`,
           error
         );
-        console.log(
+        this.log(
           `Failed to open webcam with resolution: ${resolution.id}. Trying next...`
         );
       }
     }
     if (this.state.configuration.allowFallbackResolution) {
       try {
-        console.log(
+        this.log(
           "All specified resolutions failed. Trying any supported resolution..."
         );
         await this.tryAnyResolution();
@@ -1021,16 +1062,14 @@ var Webcam = class {
   }
   async tryResolution(resolution) {
     const resolutionString = `${resolution.width}x${resolution.height}`;
-    console.log(
-      `Attempting to open webcam with resolution: ${resolution.id} (${resolutionString})`
-    );
+    this.log(`Attempting to open webcam with resolution: ${resolution.id} (${resolutionString})`);
     const constraints = buildMediaConstraints(
       this.state.configuration.deviceInfo.deviceId,
       resolution,
-      this.state.configuration.autoSwapResolutionOnMobile || false,
+      this.state.configuration.allowAutoRotateResolution || false,
       this.state.configuration.enableAudio || false
     );
-    console.log("Using constraints:", constraints);
+    this.log("Using constraints:", constraints);
     try {
       this.state.mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
       await this.updateCapabilities();
@@ -1043,23 +1082,16 @@ var Webcam = class {
         width: settings.width || resolution.width,
         height: settings.height || resolution.height
       };
-      console.log(
-        `Successfully opened webcam with resolution: ${resolution.id}`
-      );
+      this.log(`Successfully opened webcam with resolution: ${resolution.id}`);
       this.state.status = "ready" /* READY */;
       this.state.configuration?.onStart?.();
     } catch (error) {
-      console.error(
-        `Failed to open webcam with resolution: ${resolution.id}`,
-        error
-      );
+      this.log(`Failed to open webcam with resolution: ${resolution.id}`, error);
       throw error;
     }
   }
   async tryAnyResolution() {
-    console.log(
-      "Attempting to open webcam with any supported resolution (ideal: 4K)"
-    );
+    this.log("Attempting to open webcam with any supported resolution (ideal: 4K)");
     if (!this.state.configuration.deviceInfo) {
       throw new WebcamError("DEVICE_NOT_FOUND", "Selected device not found");
     }
@@ -1083,16 +1115,11 @@ var Webcam = class {
         width: settings.width || 0,
         height: settings.height || 0
       };
-      console.log(
-        `Opened webcam with resolution: ${this.state.activeResolution.id}`
-      );
+      this.log(`Opened webcam with resolution: ${this.state.activeResolution.id}`);
       this.state.status = "ready" /* READY */;
       this.state.configuration?.onStart?.();
     } catch (error) {
-      console.error(
-        "Failed to initialize webcam with any resolution",
-        error
-      );
+      this.log("Failed to initialize webcam with any resolution", error);
       throw new WebcamError(
         "STREAM_ERROR",
         "Failed to initialize webcam with any resolution",
@@ -1136,6 +1163,7 @@ var Webcam = class {
   handleError(error) {
     this.state.status = "error" /* ERROR */;
     this.state.lastError = error instanceof WebcamError ? error : new WebcamError("UNKNOWN_ERROR", error.message, error);
+    this.log("Error occurred:", this.state.lastError);
     this.state.configuration?.onError?.(this.state.lastError);
   }
   stopStream() {

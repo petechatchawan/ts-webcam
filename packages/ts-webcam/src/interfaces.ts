@@ -45,7 +45,7 @@ export interface WebcamConfiguration {
     allowFallbackResolution?: boolean;
 
     /** Whether to automatically swap width/height on mobile devices */
-    autoSwapResolutionOnMobile?: boolean;
+    allowAutoRotateResolution?: boolean;
 
     /** Enable debug mode to show console.log messages */
     debug?: boolean;

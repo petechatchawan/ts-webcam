@@ -68,27 +68,34 @@
 								</div>
 							</div>
 
-							<!-- Status Badges -->
-							<div class="flex flex-wrap gap-2 px-4 py-2">
+							<!-- Status Badges (Compact) -->
+							<div class="mt-2 flex flex-wrap gap-1 px-2 py-1 text-xs">
 								<span
-									class="rounded px-2 py-1 text-sm text-white"
+									class="flex items-center gap-1 rounded px-1.5 py-0.5 text-white"
 									[ngClass]="webcam.isActive() ? 'animate-pulse bg-green-500' : 'bg-red-500'">
-									<mat-icon class="mr-1 align-middle text-sm">
-										{{ webcam.isActive() ? "check_circle" : "error" }}
-									</mat-icon>
+									<mat-icon inline class="text-xs">{{ webcam.isActive() ? "check_circle" : "error" }}</mat-icon>
 									{{ webcam.isActive() ? "Active" : "Inactive" }}
 								</span>
-								<span *ngIf="webcam.isTorchSupported()" class="rounded bg-blue-500 px-2 py-1 text-sm text-white">
-									<mat-icon class="mr-1 align-middle text-sm">flash_on</mat-icon>
-									Flash Available
+
+								<span
+									*ngIf="webcam.isTorchSupported()"
+									class="flex items-center gap-1 rounded bg-blue-500 px-1.5 py-0.5 text-white">
+									<mat-icon inline class="text-xs">flash_on</mat-icon>
+									Flash
 								</span>
-								<span *ngIf="webcam.isZoomSupported()" class="rounded bg-blue-500 px-2 py-1 text-sm text-white">
-									<mat-icon class="mr-1 align-middle text-sm">zoom_in</mat-icon>
-									Zoom Available
+
+								<span
+									*ngIf="webcam.isZoomSupported()"
+									class="flex items-center gap-1 rounded bg-blue-500 px-1.5 py-0.5 text-white">
+									<mat-icon inline class="text-xs">zoom_in</mat-icon>
+									Zoom
 								</span>
-								<span *ngIf="webcam.isFocusSupported()" class="rounded bg-blue-500 px-2 py-1 text-sm text-white">
-									<mat-icon class="mr-1 align-middle text-sm">center_focus_strong</mat-icon>
-									Auto Focus
+
+								<span
+									*ngIf="webcam.isFocusSupported()"
+									class="flex items-center gap-1 rounded bg-blue-500 px-1.5 py-0.5 text-white">
+									<mat-icon inline class="text-xs">center_focus_strong</mat-icon>
+									Focus
 								</span>
 							</div>
 
@@ -156,7 +163,7 @@
 
 			<!-- Camera Settings -->
 			<div class="lg:col-span-1">
-				<mat-card class="sticky top-4">
+				<mat-card class="sticky">
 					<mat-card-header>
 						<mat-card-title>
 							<div class="flex items-center gap-2">

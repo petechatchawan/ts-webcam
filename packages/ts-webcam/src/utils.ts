@@ -31,14 +31,14 @@ export function createResolution(
  *
  * @param deviceId - Camera device ID
  * @param resolution - Desired resolution
- * @param allowResolutionSwap - Whether to swap width/height for mobile devices
+ * @param allowAutoRotateResolution - Whether to swap width/height for mobile devices
  * @param audioEnabled - Whether to enable audio capture
  * @returns MediaStreamConstraints object for getUserMedia
  */
 export function buildMediaConstraints(
     deviceId: string,
     resolution: Resolution,
-    allowResolutionSwap: boolean,
+    allowAutoRotateResolution: boolean,
     audioEnabled: boolean,
 ): MediaStreamConstraints {
     const videoConstraints: MediaTrackConstraints = {
@@ -46,7 +46,7 @@ export function buildMediaConstraints(
     };
 
     // If resolution swap is allowed (for mobile devices), swap width and height
-    if (allowResolutionSwap) {
+    if (allowAutoRotateResolution) {
         videoConstraints.width = { exact: resolution.height };
         videoConstraints.height = { exact: resolution.width };
     } else {

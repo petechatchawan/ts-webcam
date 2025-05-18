@@ -16,6 +16,7 @@ View the demo project source code [here](https://github.com/petechatchawan/ts-we
 - Support for advanced webcam controls (zoom, torch, focus)
 - Improved resolution handling with auto-swap resolution support for mobile devices
 - Comprehensive TypeScript interfaces for better type safety
+- Added debug mode for easier troubleshooting
 
 ## Features
 
@@ -29,6 +30,7 @@ View the demo project source code [here](https://github.com/petechatchawan/ts-we
 - Device change tracking
 - Comprehensive error handling with error codes
 - Detailed status tracking
+- Debug mode for troubleshooting
 
 ## Installation
 
@@ -77,6 +79,7 @@ Let the webcam use its supported resolution:
 webcam.setupConfiguration({
   deviceInfo: selectedDevice,
   videoElement: document.getElementById("preview") as HTMLVideoElement,
+  debug: true, // Enable debug logging to console
   onStart: () => console.log("Webcam started"),
   onError: (error: WebcamError) => {
     console.error("Error code:", error.code);
@@ -433,10 +436,18 @@ const isAllowFallbackResolution = webcam.isFallbackResolutionAllowed();
 console.log(`Allow fallback resolution is ${isAllowFallbackResolution ? 'enabled' : 'disabled'}`);
 
 // Toggle auto swap resolution on mobile
-webcam.toggleSetting('autoSwapResolutionOnMobile');
+webcam.toggleSetting('allowAutoRotateResolution');
 // Get current auto swap resolution status
-const isAutoSwapResolutionOnMobile = webcam.isResolutionSwapAllowed();
-console.log(`Auto swap resolution on mobile is ${isAutoSwapResolutionOnMobile ? 'enabled' : 'disabled'}`);
+const isAutoRotateAllowed = webcam.isResolutionSwapAllowed();
+console.log(`Auto rotate resolution is ${isAutoRotateAllowed ? 'enabled' : 'disabled'}`);
+
+// Toggle debug mode
+webcam.toggleSetting('debug');
+// Or use the dedicated method
+webcam.toggleDebug();
+// Check debug status
+const isDebugEnabled = webcam.isDebugEnabled();
+console.log(`Debug mode is ${isDebugEnabled ? 'enabled' : 'disabled'}`);
 ```
 
 ### Status Tracking
@@ -531,6 +542,37 @@ console.log("Support info:", supportInfo);
     - Greater than or equal to the device's minimum width/height
 - The aspect ratio is calculated automatically if not provided
 - The device info includes the maximum and minimum dimensions supported by the device
+
+## Debugging
+
+The library includes a debug mode that can be enabled to help troubleshoot issues:
+
+```typescript
+// Enable debug mode in configuration
+webcam.setupConfiguration({
+  deviceInfo: selectedDevice,
+  videoElement: document.getElementById("preview") as HTMLVideoElement,
+  debug: true, // Enable debug logging
+  // ... other options
+});
+
+// Toggle debug mode on/off
+webcam.toggleDebug();
+// or
+webcam.toggleSetting('debug');
+
+// Check if debug mode is enabled
+const isDebugEnabled = webcam.isDebugEnabled();
+```
+
+When debug mode is enabled, the library will output detailed logs to the console about:
+- Webcam initialization and configuration
+- Permission requests and status
+- Device capabilities and resolution selection
+- Error details and troubleshooting information
+- State changes and operation status
+
+This is particularly useful during development or when troubleshooting issues in production.
 
 ## System Requirements
 

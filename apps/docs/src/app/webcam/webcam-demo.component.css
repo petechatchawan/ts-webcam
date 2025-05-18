@@ -1,0 +1,51 @@
+/* Mobile-first styles */
+.camera-controls {
+	position: fixed;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	padding: 1rem;
+	background: rgba(0, 0, 0, 0.7);
+	backdrop-filter: blur(10px);
+	z-index: 10;
+	display: flex;
+	justify-content: center;
+	gap: 1rem;
+	transition: transform 0.3s ease;
+}
+
+.camera-controls.hidden {
+	transform: translateY(100%);
+}
+
+.fullscreen-video {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	z-index: 9;
+	background: black;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.fullscreen-video video {
+	width: 100%;
+	height: 100%;
+	object-fit: contain;
+}
+
+/* Responsive adjustments */
+@media (min-width: 768px) {
+	.camera-controls {
+		position: static;
+		background: transparent;
+		backdrop-filter: none;
+	}
+
+	.fullscreen-video {
+		position: relative;
+	}
+}

@@ -121,7 +121,7 @@ export class Webcam {
      * Check if resolution swap is allowed on mobile devices
      */
     public isResolutionSwapAllowed(): boolean {
-        return this.state.configuration?.autoSwapResolutionOnMobile || false;
+        return this.state.configuration?.allowAutoRotateResolution || false;
     }
 
     /**
@@ -574,7 +574,7 @@ export class Webcam {
      * @throws WebcamError if microphone permission is denied when enabling audio
      */
     public async toggleSetting(
-        setting: 'enableAudio' | 'autoSwapResolutionOnMobile' | 'allowFallbackResolution' | 'debug',
+        setting: 'enableAudio' | 'allowAutoRotateResolution' | 'allowFallbackResolution' | 'debug',
     ): Promise<boolean> {
         this.checkConfiguration();
         const newValue = !this.state.configuration![setting];
@@ -597,7 +597,7 @@ export class Webcam {
             }
         }
 
-        const shouldRestart = setting === 'enableAudio' || setting === 'autoSwapResolutionOnMobile';
+        const shouldRestart = setting === 'enableAudio' || setting === 'allowAutoRotateResolution';
         this.updateConfiguration(
             { [setting]: newValue },
             { restart: shouldRestart },
@@ -1153,7 +1153,7 @@ export class Webcam {
         const constraints = buildMediaConstraints(
             this.state.configuration!.deviceInfo.deviceId,
             resolution,
-            this.state.configuration!.autoSwapResolutionOnMobile || false,
+            this.state.configuration!.allowAutoRotateResolution || false,
             this.state.configuration!.enableAudio || false,
         );
         this.log('Using constraints:', constraints);

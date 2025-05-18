@@ -105,7 +105,9 @@ interface WebcamConfiguration {
     /** Whether to allow any resolution if specified resolution is not supported */
     allowFallbackResolution?: boolean;
     /** Whether to automatically swap width/height on mobile devices */
-    autoSwapResolutionOnMobile?: boolean;
+    allowAutoRotateResolution?: boolean;
+    /** Enable debug mode to show console.log messages */
+    debug?: boolean;
     /** Callback when webcam starts successfully */
     onStart?: () => void;
     /** Callback when an error occurs */
@@ -259,6 +261,12 @@ declare class Webcam {
     uaInfo: UAInfo;
     constructor();
     /**
+     * Internal logging function that only logs when debug mode is enabled
+     * @param message The message to log
+     * @param data Optional data to log
+     */
+    private log;
+    /**
      * Get the current state of the webcam
      */
     getState(): WebcamState;
@@ -294,6 +302,10 @@ declare class Webcam {
      * Check if fallback to any supported resolution is allowed
      */
     isFallbackResolutionAllowed(): boolean;
+    /**
+     * Check if debug mode is enabled
+     */
+    isDebugEnabled(): boolean;
     /**
      * Get current device capabilities
      */
@@ -379,6 +391,11 @@ declare class Webcam {
      */
     toggleMirror(): boolean;
     /**
+     * Toggle debug mode on/off
+     * @returns The new debug state (true = enabled, false = disabled)
+     */
+    toggleDebug(): boolean;
+    /**
      * Create a resolution object with the specified parameters
      * @param name The name/identifier for the resolution
      * @param width The width in pixels
@@ -424,7 +441,7 @@ declare class Webcam {
      * @returns The new value of the setting
      * @throws WebcamError if microphone permission is denied when enabling audio
      */
-    toggleSetting(setting: 'enableAudio' | 'autoSwapResolutionOnMobile' | 'allowFallbackResolution'): Promise<boolean>;
+    toggleSetting(setting: 'enableAudio' | 'allowAutoRotateResolution' | 'allowFallbackResolution' | 'debug'): Promise<boolean>;
     /**
      * Check the current camera permission status
      * @returns The current permission status (granted, denied, prompt)

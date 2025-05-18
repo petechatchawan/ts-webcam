@@ -158,10 +158,7 @@ export class WebcamDemoComponent implements AfterViewInit {
     console.log('Initialize Webcam...');
     this.videoDevices = await this.webcam.getVideoDevices();
     if (this.videoDevices.length === 0) {
-      await this.showMessage(
-        'danger',
-        'No cameras found. Please check your camera connection.',
-      );
+      await this.showMessage('danger', 'No cameras found. Please check your camera connection.');
       return;
     }
 
@@ -186,6 +183,7 @@ export class WebcamDemoComponent implements AfterViewInit {
       mirrorVideo: this.isMirrorEnabled,
       videoElement: this.previewElement.nativeElement,
       allowFallbackResolution: this.isAllowFallbackResolution,
+      allowAutoRotateResolution: this.isAutoSwapResolutionOnMobile,
       preferredResolutions: resolutionPacks,
       onStart: async () => await this.handleStart(),
       onError: async (error) => this.handleError(error),
@@ -242,7 +240,7 @@ export class WebcamDemoComponent implements AfterViewInit {
       this.isAudioEnabled = config?.enableAudio || false;
       this.isMirrorEnabled = config?.mirrorVideo || false;
       this.isAllowFallbackResolution = config?.allowFallbackResolution || false;
-      this.isAutoSwapResolutionOnMobile = config?.autoSwapResolutionOnMobile || false;
+      this.isAutoSwapResolutionOnMobile = config?.allowAutoRotateResolution || false;
     } else {
       await this.showMessage('warning', 'Video not ready. Please wait...');
     }
@@ -433,7 +431,7 @@ export class WebcamDemoComponent implements AfterViewInit {
 
   public toggleAutoSwapResolutionOnMobile(): void {
     if (this.webcam.isActive()) {
-      this.webcam.toggleSetting('autoSwapResolutionOnMobile');
+      this.webcam.toggleSetting('allowAutoRotateResolution');
       this.isAutoSwapResolutionOnMobile = this.webcam.isResolutionSwapAllowed() || false;
     }
   }
