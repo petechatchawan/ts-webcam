@@ -331,9 +331,9 @@ export class WebcamDemoComponent implements AfterViewInit {
   public async captureImage(): Promise<void> {
     try {
       const image = await this.webcam.captureImage({
-        quality: 0.9,
+        quality: 1,
         mediaType: 'image/jpeg',
-        scale: 0.5,
+        scale: 1,
       });
 
       // Store the captured image and show it

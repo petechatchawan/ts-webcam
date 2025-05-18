@@ -19,6 +19,9 @@ export const DEFAULT_WEBCAM_CONFIG = {
         return shouldAutoSwapResolution();
     },
 
+    /** Enable debug mode to show console.log messages */
+    debug: false,
+
     /** Callback when webcam starts successfully */
     onStart: () => { },
 

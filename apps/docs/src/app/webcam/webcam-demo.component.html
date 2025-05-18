@@ -1,16 +1,12 @@
 <div class="min-h-screen bg-gray-100 dark:bg-gray-900">
 	<!-- Header -->
-	<header
-		class="flex items-center justify-between bg-gray-800 p-4 text-white shadow">
+	<header class="flex items-center justify-between bg-gray-800 p-4 text-white shadow">
 		<h1 class="flex items-center gap-2 text-lg font-medium">
 			<mat-icon>photo_camera</mat-icon>
 			TS-WEBCAM DEMO
 		</h1>
 		<div class="flex gap-2">
-			<button
-				mat-icon-button
-				matTooltip="Toggle fullscreen"
-				(click)="toggleFullscreen()">
+			<button mat-icon-button matTooltip="Toggle fullscreen" (click)="toggleFullscreen()">
 				<mat-icon>
 					{{ isFullscreen ? "fullscreen_exit" : "fullscreen" }}
 				</mat-icon>
@@ -30,18 +26,12 @@
 					<mat-card class="overflow-hidden">
 						<mat-card-content class="p-0">
 							<!-- Video Container -->
-							<div
-								class="relative aspect-video rounded-xl bg-black"
-								[class.hidden]="showCapturedImage">
+							<div class="relative aspect-video rounded-xl bg-black" [class.hidden]="showCapturedImage">
 								<video
 									#preview
 									autoplay
 									playsinline
-									[style.visibility]="
-										webcam.isActive() && !webcam.getLastError()
-											? 'visible'
-											: 'hidden'
-									"
+									[style.visibility]="webcam.isActive() && !webcam.getLastError() ? 'visible' : 'hidden'"
 									class="h-full w-full object-contain"></video>
 
 								<!-- Spinner -->
@@ -58,10 +48,7 @@
 									<p class="mb-4 text-lg font-medium">
 										{{ webcam.getLastError()?.message }}
 									</p>
-									<button
-										mat-raised-button
-										color="default"
-										(click)="webcam.clearError(); selectedResolution = null">
+									<button mat-raised-button color="default" (click)="webcam.clearError(); selectedResolution = null">
 										<mat-icon>refresh</mat-icon>
 										Try Again
 									</button>
@@ -69,26 +56,13 @@
 							</div>
 
 							<!-- Captured Image Display -->
-							<div
-								*ngIf="showCapturedImage && capturedImage"
-								class="relative aspect-video rounded-t-xl bg-black">
-								<img
-									[src]="capturedImage"
-									class="h-full w-full object-contain"
-									alt="Captured image" />
+							<div *ngIf="showCapturedImage && capturedImage" class="relative aspect-video rounded-t-xl bg-black">
+								<img [src]="capturedImage" class="h-full w-full object-contain" alt="Captured image" />
 								<div class="absolute bottom-4 right-4 flex gap-2">
-									<button
-										mat-mini-fab
-										color="primary"
-										matTooltip="Download image"
-										(click)="downloadImage()">
+									<button mat-mini-fab color="primary" matTooltip="Download image" (click)="downloadImage()">
 										<mat-icon>download</mat-icon>
 									</button>
-									<button
-										mat-mini-fab
-										color="warn"
-										matTooltip="Discard image"
-										(click)="discardImage()">
+									<button mat-mini-fab color="warn" matTooltip="Discard image" (click)="discardImage()">
 										<mat-icon>delete</mat-icon>
 									</button>
 								</div>
@@ -98,36 +72,22 @@
 							<div class="flex flex-wrap gap-2 px-4 py-2">
 								<span
 									class="rounded px-2 py-1 text-sm text-white"
-									[ngClass]="
-										webcam.isActive()
-											? 'animate-pulse bg-green-500'
-											: 'bg-red-500'
-									">
+									[ngClass]="webcam.isActive() ? 'animate-pulse bg-green-500' : 'bg-red-500'">
 									<mat-icon class="mr-1 align-middle text-sm">
 										{{ webcam.isActive() ? "check_circle" : "error" }}
 									</mat-icon>
 									{{ webcam.isActive() ? "Active" : "Inactive" }}
 								</span>
-								<span
-									*ngIf="webcam.isTorchSupported()"
-									class="rounded bg-blue-500 px-2 py-1 text-sm text-white">
-									<mat-icon class="mr-1 align-middle text-sm">
-										flash_on
-									</mat-icon>
+								<span *ngIf="webcam.isTorchSupported()" class="rounded bg-blue-500 px-2 py-1 text-sm text-white">
+									<mat-icon class="mr-1 align-middle text-sm">flash_on</mat-icon>
 									Flash Available
 								</span>
-								<span
-									*ngIf="webcam.isZoomSupported()"
-									class="rounded bg-blue-500 px-2 py-1 text-sm text-white">
+								<span *ngIf="webcam.isZoomSupported()" class="rounded bg-blue-500 px-2 py-1 text-sm text-white">
 									<mat-icon class="mr-1 align-middle text-sm">zoom_in</mat-icon>
 									Zoom Available
 								</span>
-								<span
-									*ngIf="webcam.isFocusSupported()"
-									class="rounded bg-blue-500 px-2 py-1 text-sm text-white">
-									<mat-icon class="mr-1 align-middle text-sm">
-										center_focus_strong
-									</mat-icon>
+								<span *ngIf="webcam.isFocusSupported()" class="rounded bg-blue-500 px-2 py-1 text-sm text-white">
+									<mat-icon class="mr-1 align-middle text-sm">center_focus_strong</mat-icon>
 									Auto Focus
 								</span>
 							</div>
@@ -157,11 +117,7 @@
 									Capture
 								</button>
 								<button
-									*ngIf="
-										webcam.isActive() &&
-										webcam.isTorchSupported() &&
-										!showCapturedImage
-									"
+									*ngIf="webcam.isActive() && webcam.isTorchSupported() && !showCapturedImage"
 									mat-raised-button
 									[color]="webcam.isTorchActive() ? 'accent' : 'primary'"
 									(click)="toggleTorch()"
@@ -187,20 +143,10 @@
 
 				<ng-template #permissionRequest>
 					<mat-card class="p-6 text-center">
-						<mat-icon class="mb-4 text-6xl text-red-600">
-							camera_alt_off
-						</mat-icon>
-						<h2
-							class="mb-3 text-xl font-semibold text-gray-900 dark:text-white">
-							Camera Permission Required
-						</h2>
-						<p class="mb-6 text-gray-600 dark:text-gray-300">
-							Please allow camera access to use the webcam features
-						</p>
-						<button
-							mat-raised-button
-							color="primary"
-							(click)="handlePermissionDialogConfirm()">
+						<mat-icon class="mb-4 text-6xl text-red-600">camera_alt_off</mat-icon>
+						<h2 class="mb-3 text-xl font-semibold text-gray-900 dark:text-white">Camera Permission Required</h2>
+						<p class="mb-6 text-gray-600 dark:text-gray-300">Please allow camera access to use the webcam features</p>
+						<button mat-raised-button color="primary" (click)="handlePermissionDialogConfirm()">
 							<mat-icon>check</mat-icon>
 							Allow Camera Access
 						</button>
@@ -231,9 +177,7 @@
 									[disabled]="webcam.getStatus() === 'initializing'"
 									(selectionChange)="setDevice($event)"
 									[value]="selectedDevice?.deviceId">
-									<mat-option
-										*ngFor="let device of videoDevices; let i = index"
-										[value]="device.deviceId">
+									<mat-option *ngFor="let device of videoDevices; let i = index" [value]="device.deviceId">
 										{{ device.label || "Camera " + (i + 1) }}
 									</mat-option>
 								</mat-select>
@@ -248,12 +192,8 @@
 									[disabled]="webcam.getStatus() === 'initializing'"
 									[value]="webcam.getCurrentResolution()?.id"
 									(selectionChange)="setResolution($event)">
-									<mat-option
-										*ngFor="let resolution of resolutions"
-										[value]="resolution.id">
-										{{ resolution.label }} ({{ resolution.width }}x{{
-											resolution.height
-										}})
+									<mat-option *ngFor="let resolution of resolutions" [value]="resolution.id">
+										{{ resolution.label }} ({{ resolution.width }}x{{ resolution.height }})
 									</mat-option>
 								</mat-select>
 							</mat-form-field>
@@ -325,13 +265,7 @@
 								<div class="flex justify-between">
 									<span>Device Type</span>
 									<span class="font-medium">
-										{{
-											uaInfo.isMobile()
-												? "Mobile"
-												: uaInfo.isTablet()
-													? "Tablet"
-													: "Desktop"
-										}}
+										{{ uaInfo.isMobile() ? "Mobile" : uaInfo.isTablet() ? "Tablet" : "Desktop" }}
 									</span>
 								</div>
 								<div class="flex justify-between">
@@ -362,10 +296,7 @@
 		Webcam Demo Help
 	</h2>
 	<mat-dialog-content class="space-y-4">
-		<p>
-			This demo showcases the features of the TS-Webcam library. Here's how to
-			use it:
-		</p>
+		<p>This demo showcases the features of the TS-Webcam library. Here's how to use it:</p>
 
 		<div class="space-y-2">
 			<h3 class="text-lg font-medium">Basic Controls</h3>

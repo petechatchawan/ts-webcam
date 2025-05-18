@@ -47,6 +47,9 @@ export interface WebcamConfiguration {
     /** Whether to automatically swap width/height on mobile devices */
     autoSwapResolutionOnMobile?: boolean;
 
+    /** Enable debug mode to show console.log messages */
+    debug?: boolean;
+
     /** Callback when webcam starts successfully */
     onStart?: () => void;
 
