@@ -899,8 +899,7 @@ export class Webcam {
             if (this.isActive()) {
                 if (screen.orientation) {
                     console.log('Screen orientation is supported');
-                    const orientation = screen.orientation
-                        .type as OrientationType;
+                    const orientation = screen.orientation.type as OrientationType;
                     const angle = screen.orientation.angle;
                     console.log(
                         `Orientation type: ${orientation}, angle: ${angle}`,
