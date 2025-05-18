@@ -5,10 +5,9 @@ import { UAInfo } from 'ua-info';
  */
 type PermissionStatus = 'granted' | 'denied' | 'prompt';
 /**
- * Comprehensive list of possible error types that can occur during webcam operations
- * Categorized by error source: permissions, device, initialization, functionality, etc.
+ * Standardized error codes for webcam operations
  */
-type WebcamErrorType = 'no-permissions-api' | 'permission-denied' | 'microphone-permission-denied' | 'configuration-error' | 'no-device' | 'no-media-devices-support' | 'invalid-device-id' | 'no-resolutions' | 'webcam-start-error' | 'webcam-initialization-error' | 'no-stream' | 'webcam-settings-error' | 'webcam-stop-error' | 'webcam-already-in-use' | 'zoom-not-supported' | 'torch-not-supported' | 'focus-not-supported' | 'device-list-error' | 'capture-failed' | 'unknown';
+type WebcamErrorCode = 'PERMISSION_DENIED' | 'PERMISSION_PROMPT_BLOCKED' | 'DEVICE_NOT_FOUND' | 'RESOLUTION_UNSUPPORTED' | 'STREAM_ERROR' | 'NOT_INITIALIZED' | 'UNKNOWN_ERROR';
 /**
  * Represents the possible device orientations
  */
@@ -27,9 +26,13 @@ declare enum WebcamStatus {
  * Custom error class for webcam-related errors
  */
 declare class WebcamError extends Error {
-    type: WebcamErrorType;
+    message: string;
     originalError?: Error | undefined;
-    constructor(type: WebcamErrorType, message: string, originalError?: Error | undefined);
+    /**
+     * The standardized error code
+     */
+    code: WebcamErrorCode;
+    constructor(code: WebcamErrorCode, message: string, originalError?: Error | undefined);
 }
 
 /**
@@ -250,4 +253,4 @@ declare class Webcam {
     private stopChangeListeners;
 }
 
-export { type DeviceCapabilities, type DeviceOrientation, type ExtendedMediaTrackCapabilities, type ExtendedMediaTrackConstraintSet, type ExtendedMediaTrackSettings, type PermissionStatus, type Resolution, Webcam, type WebcamCapabilities, type WebcamConfig, WebcamError, type WebcamErrorType, type WebcamState, WebcamStatus };
+export { type DeviceCapabilities, type DeviceOrientation, type ExtendedMediaTrackCapabilities, type ExtendedMediaTrackConstraintSet, type ExtendedMediaTrackSettings, type PermissionStatus, type Resolution, Webcam, type WebcamCapabilities, type WebcamConfig, WebcamError, type WebcamErrorCode, type WebcamState, WebcamStatus };

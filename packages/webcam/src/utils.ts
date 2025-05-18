@@ -50,13 +50,13 @@ export function validatePermissions(
 ): void {
     if (permissions.camera === 'denied') {
         throw new WebcamError(
-            'permission-denied',
+            'PERMISSION_DENIED',
             'Please allow camera access',
         );
     }
     if (audioEnabled && permissions.microphone === 'denied') {
         throw new WebcamError(
-            'microphone-permission-denied',
+            'PERMISSION_DENIED',
             'Please allow microphone access',
         );
     }

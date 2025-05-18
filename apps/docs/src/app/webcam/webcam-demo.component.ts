@@ -25,7 +25,7 @@ import { MatSlideToggleModule } from "@angular/material/slide-toggle";
 import { MatSnackBar } from "@angular/material/snack-bar";
 import { MatTabsModule } from "@angular/material/tabs";
 import { MatTooltipModule } from "@angular/material/tooltip";
-import { Resolution, Webcam } from "@repo/webcam";
+import { Resolution, Webcam, WebcamError, WebcamErrorCode } from "@repo/webcam";
 import { UAInfo } from "ua-info";
 
 @Component({
@@ -207,7 +207,6 @@ export class WebcamDemoComponent implements AfterViewInit {
 
             // check supported resolutions
             const result = this.webcam.checkSupportedResolutions(capabilities, this.resolutions);
-
             result.resolutions.forEach((res: any) => {
                 console.log(
                     `${res.name} (${res.width}x${res.height}): ${
@@ -250,7 +249,62 @@ export class WebcamDemoComponent implements AfterViewInit {
 
     private async handleOnError(error: any): Promise<void> {
         const message = error?.message || 'Unable to access camera';
-        await this.showMessage('danger', message);
+        let errorType: 'success' | 'warning' | 'danger' = 'danger';
+
+        // Handle specific error codes if it's a WebcamError
+        if (error instanceof WebcamError) {
+            switch (error.code) {
+                case 'PERMISSION_DENIED':
+                    await this.showMessage('danger', 'Camera permission was denied. Please enable it in your browser settings.');
+                    return;
+
+                case 'DEVICE_NOT_FOUND':
+                    await this.showMessage('danger', 'No camera device was found. Please check your camera connection.');
+                    return;
+
+                case 'RESOLUTION_UNSUPPORTED':
+                    await this.showMessage('warning', 'The requested resolution is not supported by your camera.');
+                    return;
+
+                case 'STREAM_ERROR':
+                    await this.showMessage('danger', 'Failed to access camera stream: ' + message);
+                    return;
+
+                case 'NOT_INITIALIZED':
+                    await this.showMessage('warning', 'Camera is not properly initialized.');
+                    return;
+
+                case 'PERMISSION_PROMPT_BLOCKED':
+                    await this.showMessage('danger', 'Permission prompt was blocked. Please allow camera access in your browser settings.');
+                    return;
+
+                case 'UNKNOWN_ERROR':
+                default:
+                    // Fall through to generic error handling
+                    break;
+            }
+        } else if (error && error.type) {
+            // Fallback for legacy error types
+            if (error.type.includes('permission-denied') || error.type.includes('no-permissions-api')) {
+                await this.showMessage('danger', 'Camera permission was denied. Please enable it in your browser settings.');
+                return;
+            } else if (error.type.includes('no-device') || error.type.includes('device-list-error')) {
+                await this.showMessage('danger', 'No camera device was found. Please check your camera connection.');
+                return;
+            } else if (error.type.includes('no-resolutions')) {
+                await this.showMessage('warning', 'The requested resolution is not supported by your camera.');
+                return;
+            } else if (error.type.includes('stream') || error.type.includes('webcam-initialization')) {
+                await this.showMessage('danger', 'Failed to access camera stream: ' + message);
+                return;
+            } else if (error.type.includes('configuration-error')) {
+                await this.showMessage('warning', 'Camera is not properly initialized.');
+                return;
+            }
+        }
+
+        // Generic error handling
+        await this.showMessage(errorType, message);
     }
 
     public async showPermissionExplanation(): Promise<void> {
