@@ -31,7 +31,7 @@
 						<mat-card-content class="p-0">
 							<!-- Video Container -->
 							<div
-								class="relative aspect-video rounded-t-xl bg-black"
+								class="relative aspect-video rounded-xl bg-black"
 								[class.hidden]="showCapturedImage">
 								<video
 									#preview
@@ -93,8 +93,6 @@
 									</button>
 								</div>
 							</div>
-
-							<mat-divider></mat-divider>
 
 							<!-- Status Badges -->
 							<div class="flex flex-wrap gap-2 px-4 py-2">
@@ -290,13 +288,13 @@
 							<div class="flex items-center justify-between">
 								<span
 									class="flex items-center gap-2"
-									matTooltip="Allow any resolution even if not supported by the device">
+									matTooltip="Use any available resolution if preferred resolutions are not supported">
 									<mat-icon>aspect_ratio</mat-icon>
-									Allow Any Resolution
+									Allow Fallback Resolution
 								</span>
 								<mat-slide-toggle
-									[(ngModel)]="isAllowAnyResolution"
-									(change)="toggleAllowAnyResolution()"
+									[(ngModel)]="isAllowFallbackResolution"
+									(change)="toggleAllowFallbackResolution()"
 									color="primary"
 									[disabled]="!webcam.isActive()"></mat-slide-toggle>
 							</div>
@@ -305,11 +303,11 @@
 									class="flex items-center gap-2"
 									matTooltip="Automatically swap width/height for device orientation">
 									<mat-icon>screen_rotation</mat-icon>
-									Auto Rotation
+									Auto Swap Resolution
 								</span>
 								<mat-slide-toggle
-									[(ngModel)]="isAllowSwapResolution"
-									(change)="toggleAllowSwapResolution()"
+									[(ngModel)]="isAutoSwapResolutionOnMobile"
+									(change)="toggleAutoSwapResolutionOnMobile()"
 									color="primary"
 									[disabled]="!webcam.isActive()"></mat-slide-toggle>
 							</div>
@@ -411,12 +409,12 @@
 					- Include audio in the stream
 				</li>
 				<li>
-					<strong>Allow Any Resolution</strong>
-					- Try to use resolutions even if not supported
+					<strong>Allow Fallback Resolution</strong>
+					- Try to use any resolution if preferred ones are not supported
 				</li>
 				<li>
-					<strong>Auto Rotation</strong>
-					- Automatically adjust for device orientation
+					<strong>Auto Swap Resolution</strong>
+					- Automatically swap width/height for mobile devices
 				</li>
 			</ul>
 		</div>

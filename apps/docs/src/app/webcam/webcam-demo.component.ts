@@ -25,8 +25,8 @@ import { MatSlideToggleModule } from "@angular/material/slide-toggle";
 import { MatSnackBar } from "@angular/material/snack-bar";
 import { MatTabsModule } from "@angular/material/tabs";
 import { MatTooltipModule } from "@angular/material/tooltip";
-import { Resolution, Webcam, WebcamError } from "ts-webcam";
 import { UAInfo } from "ua-info";
+import { Resolution, Webcam, WebcamError } from "../../../../../packages/ts-webcam/lib";
 
 @Component({
   selector: "app-webcam-demo",
@@ -63,8 +63,8 @@ export class WebcamDemoComponent implements AfterViewInit {
   public selectedResolution: Resolution | null = null;
   public isAudioEnabled: boolean = false;
   public isMirrorEnabled: boolean = false;
-  public isAllowSwapResolution: boolean = false;
-  public isAllowAnyResolution: boolean = false;
+  public isAutoSwapResolutionOnMobile: boolean = false;
+  public isAllowFallbackResolution: boolean = false;
 
   // UI state properties
   public isFullscreen: boolean = false;
@@ -169,23 +169,24 @@ export class WebcamDemoComponent implements AfterViewInit {
     if (!this.selectedDevice) return;
 
     // resolutions
-    const resolutionPacks = [this.webcam.createResolution('SQUARE-4K', 4096, 4096),
-    this.webcam.createResolution('SQUARE-2K', 2048, 2048),
-    this.webcam.createResolution('SQUARE-1920', 1920, 1920),
-    this.webcam.createResolution('SQUARE-1080', 1080, 1080),
-    this.webcam.createResolution('SQUARE-720', 720, 720),
-    this.webcam.createResolution('SQUARE-480', 480, 480),
-    this.webcam.createResolution('SQUARE-360', 360, 360),
+    const resolutionPacks: Resolution[] = [
+      this.webcam.createResolution('SQUARE-4K', 4096, 4096),
+      this.webcam.createResolution('SQUARE-2K', 2048, 2048),
+      this.webcam.createResolution('SQUARE-1920', 1920, 1920),
+      this.webcam.createResolution('SQUARE-1080', 1080, 1080),
+      this.webcam.createResolution('SQUARE-720', 720, 720),
+      this.webcam.createResolution('SQUARE-480', 480, 480),
+      this.webcam.createResolution('SQUARE-360', 360, 360),
     ];
 
     // setup the webcam
     this.webcam.setupConfiguration({
-      audioEnabled: this.isAudioEnabled,
-      device: this.selectedDevice,
-      mirrorEnabled: this.isMirrorEnabled,
-      previewElement: this.previewElement.nativeElement,
-      allowAnyResolution: this.isAllowAnyResolution,
-      resolution: resolutionPacks,
+      enableAudio: this.isAudioEnabled,
+      deviceInfo: this.selectedDevice,
+      mirrorVideo: this.isMirrorEnabled,
+      videoElement: this.previewElement.nativeElement,
+      allowFallbackResolution: this.isAllowFallbackResolution,
+      preferredResolutions: resolutionPacks,
       onStart: async () => await this.handleStart(),
       onError: async (error) => this.handleError(error),
     });
@@ -202,7 +203,7 @@ export class WebcamDemoComponent implements AfterViewInit {
 
       // check device capabilities
       for (const device of devices) {
-        const capability = await this.webcam.checkDevicesCapabilitiesData(device.deviceId);
+        const capability = await this.webcam.getDeviceCapabilities(device.deviceId);
         capabilities.push(capability);
       }
 
@@ -225,7 +226,7 @@ export class WebcamDemoComponent implements AfterViewInit {
   }
 
   private async handleStart(): Promise<void> {
-    if (await this.webcam.previewIsReady()) {
+    if (await this.webcam.isVideoPreviewReady()) {
       // get the current device and resolution
       this.selectedDevice = this.webcam.getCurrentDevice();
       this.selectedResolution = this.webcam.getCurrentResolution();
@@ -234,20 +235,20 @@ export class WebcamDemoComponent implements AfterViewInit {
         `Opened camera ${this.selectedDevice?.label} with resolution ${this.selectedResolution?.id} successfully`,
       );
 
-      // update the allowAnyResolution and mirror
+      // update configuration values
       const config = this.webcam.getConfiguration();
       console.log('config', config);
 
-      this.isAudioEnabled = config?.audioEnabled || false;
-      this.isMirrorEnabled = config?.mirrorEnabled || false;
-      this.isAllowAnyResolution = config?.allowAnyResolution || false;
-      this.isAllowSwapResolution = config?.allowResolutionSwap || false;
+      this.isAudioEnabled = config?.enableAudio || false;
+      this.isMirrorEnabled = config?.mirrorVideo || false;
+      this.isAllowFallbackResolution = config?.allowFallbackResolution || false;
+      this.isAutoSwapResolutionOnMobile = config?.autoSwapResolutionOnMobile || false;
     } else {
       await this.showMessage('warning', 'Video not ready. Please wait...');
     }
   }
 
-  private async handleError(error:any): Promise<void> {
+  private async handleError(error: any): Promise<void> {
     const message = error?.message || 'Unable to access camera';
     let errorType: 'success' | 'warning' | 'danger' = 'danger';
 
@@ -282,24 +283,6 @@ export class WebcamDemoComponent implements AfterViewInit {
         default:
           // Fall through to generic error handling
           break;
-      }
-    } else if (error && error.type) {
-      // Fallback for legacy error types
-      if (error.type.includes('permission-denied') || error.type.includes('no-permissions-api')) {
-        await this.showMessage('danger', 'Camera permission was denied. Please enable it in your browser settings.');
-        return;
-      } else if (error.type.includes('no-device') || error.type.includes('device-list-error')) {
-        await this.showMessage('danger', 'No camera device was found. Please check your camera connection.');
-        return;
-      } else if (error.type.includes('no-resolutions')) {
-        await this.showMessage('warning', 'The requested resolution is not supported by your camera.');
-        return;
-      } else if (error.type.includes('stream') || error.type.includes('webcam-initialization')) {
-        await this.showMessage('danger', 'Failed to access camera stream: ' + message);
-        return;
-      } else if (error.type.includes('configuration-error')) {
-        await this.showMessage('warning', 'Camera is not properly initialized.');
-        return;
       }
     }
 
@@ -427,10 +410,10 @@ export class WebcamDemoComponent implements AfterViewInit {
     }
   }
 
-  public toggleAllowAnyResolution(): void {
+  public toggleAllowFallbackResolution(): void {
     if (this.webcam.isActive()) {
-      this.webcam.toggle('allowAnyResolution');
-      this.isAllowAnyResolution = this.webcam.isAnyResolutionAllowed() || false;
+      this.webcam.toggleSetting('allowFallbackResolution');
+      this.isAllowFallbackResolution = this.webcam.isFallbackResolutionAllowed() || false;
     }
   }
 
@@ -443,15 +426,15 @@ export class WebcamDemoComponent implements AfterViewInit {
 
   public toggleAudio(): void {
     if (this.webcam.isActive()) {
-      this.webcam.toggle('audioEnabled');
+      this.webcam.toggleSetting('enableAudio');
       this.isAudioEnabled = this.webcam.isAudioEnabled() || false;
     }
   }
 
-  public toggleAllowSwapResolution(): void {
+  public toggleAutoSwapResolutionOnMobile(): void {
     if (this.webcam.isActive()) {
-      this.webcam.toggle('allowResolutionSwap');
-      this.isAllowSwapResolution = this.webcam.isResolutionSwapAllowed() || false;
+      this.webcam.toggleSetting('autoSwapResolutionOnMobile');
+      this.isAutoSwapResolutionOnMobile = this.webcam.isResolutionSwapAllowed() || false;
     }
   }
 

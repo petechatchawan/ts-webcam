@@ -2,8 +2,15 @@ import { UAInfo } from 'ua-info';
 import { WebcamError } from './errors';
 import { Resolution } from './interfaces';
 
+// ===== Resolution Management =====
+
 /**
- * Create a new Resolution object with key
+ * Creates a new Resolution object with standardized ID format
+ *
+ * @param name - Display name for the resolution
+ * @param width - Width in pixels
+ * @param height - Height in pixels
+ * @returns A Resolution object with id, label, width, and height
  */
 export function createResolution(
     name: string,
@@ -11,13 +18,24 @@ export function createResolution(
     height: number,
 ): Resolution {
     const resolutionKey = `${width}x${height}`;
-    return { id: resolutionKey, label: name, width, height };
+    return {
+        id: resolutionKey,
+        label: name,
+        width,
+        height
+    };
 }
 
 /**
- * Build media constraints for getUserMedia based on resolution
+ * Builds MediaStreamConstraints for getUserMedia based on resolution
+ *
+ * @param deviceId - Camera device ID
+ * @param resolution - Desired resolution
+ * @param allowResolutionSwap - Whether to swap width/height for mobile devices
+ * @param audioEnabled - Whether to enable audio capture
+ * @returns MediaStreamConstraints object for getUserMedia
  */
-export function buildConstraints(
+export function buildMediaConstraints(
     deviceId: string,
     resolution: Resolution,
     allowResolutionSwap: boolean,
@@ -27,6 +45,7 @@ export function buildConstraints(
         deviceId: { exact: deviceId },
     };
 
+    // If resolution swap is allowed (for mobile devices), swap width and height
     if (allowResolutionSwap) {
         videoConstraints.width = { exact: resolution.height };
         videoConstraints.height = { exact: resolution.width };
@@ -41,8 +60,15 @@ export function buildConstraints(
     };
 }
 
+// ===== Permission Management =====
+
 /**
- * Validate permissions
+ * Validates camera and microphone permissions
+ * Throws appropriate errors if permissions are denied
+ *
+ * @param permissions - Current permission states
+ * @param audioEnabled - Whether audio is enabled
+ * @throws WebcamError if permissions are denied
  */
 export function validatePermissions(
     permissions: { camera: PermissionState; microphone: PermissionState },
@@ -51,21 +77,26 @@ export function validatePermissions(
     if (permissions.camera === 'denied') {
         throw new WebcamError(
             'PERMISSION_DENIED',
-            'Please allow camera access',
+            'Camera access is denied. Please allow camera access in your browser settings.',
         );
     }
     if (audioEnabled && permissions.microphone === 'denied') {
         throw new WebcamError(
             'PERMISSION_DENIED',
-            'Please allow microphone access',
+            'Microphone access is denied. Please allow microphone access in your browser settings.',
         );
     }
 }
 
+// ===== Stream Management =====
+
 /**
- * Stop media stream
+ * Safely stops a media stream and cleans up resources
+ *
+ * @param stream - MediaStream to stop
+ * @param previewElement - Video element to clear
  */
-export function stopStream(
+export function stopMediaStream(
     stream: MediaStream | null,
     previewElement?: HTMLVideoElement,
 ): void {
@@ -78,18 +109,24 @@ export function stopStream(
     }
 }
 
+// ===== Device Detection =====
+
 /**
- * Detect if device is mobile or tablet
+ * Detects if the device is mobile or tablet and should auto-swap resolution
+ * Uses multiple detection methods for better accuracy
+ *
+ * @returns true if resolution should be swapped (mobile/tablet in portrait)
  */
 export function shouldAutoSwapResolution(): boolean {
     const uaInfo = new UAInfo();
     uaInfo.setUserAgent(navigator.userAgent);
-    const parsedUserAgent = uaInfo.getParsedUserAgent();
-    console.log('parsedUserAgent', parsedUserAgent);
 
-    // Check for mobile or tablet using User Agent
-    const userAgent =
-        navigator.userAgent || navigator.vendor || (window as any).opera;
+    // Use UAInfo library for primary detection
+    const isMobile = uaInfo.isMobile();
+    const isTablet = uaInfo.isTablet();
+
+    // Fallback detection methods
+    const userAgent = navigator.userAgent || navigator.vendor || (window as any).opera;
 
     // Mobile detection regex
     const mobileRegex =
@@ -104,17 +141,11 @@ export function shouldAutoSwapResolution(): boolean {
     // Check screen size (most tablets are less than 1200px wide)
     const isSmallScreen = window.innerWidth <= 1024;
 
-    // Check if device is mobile
-    const isMobile = uaInfo.isMobile();
-
-    // Check if device is tablet
-    const isTablet = uaInfo.isTablet();
-
     return (
-        mobileRegex.test(userAgent) ||
-        tabletRegex.test(userAgent) ||
         isMobile ||
         isTablet ||
+        mobileRegex.test(userAgent) ||
+        tabletRegex.test(userAgent) ||
         (hasOrientation && isSmallScreen)
     );
 }
