@@ -1,10 +1,10 @@
-# ts-webcam (v1.5.0)
+# ts-webcam
 
 A TypeScript library for managing webcam access using the MediaDevices API. This library provides a simple, type-safe interface for initializing and controlling webcam streams in web applications.
 
 ## Demo
 
-Try out the live demo [here](https://ts-webcam.web.app)
+Try out the live demo [here](https://ts-webcam.web.app/webcam)
 
 View the demo project source code [here](https://github.com/petechatchawan/ts-webcam.git)
 
@@ -569,17 +569,3 @@ If you encounter any issues or would like to request new features, please create
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
-
-## Changelog
-
-### v1.5.0
-- Added comprehensive permission management
-- Improved error handling with specific error codes
-- Enhanced device change tracking
-- Added support for advanced webcam controls
-- Improved TypeScript interfaces and naming conventions
-- Improved resolution handling with auto-swap resolution support
-- Updated documentation
-
-### v0.1.0
-- Initial release
