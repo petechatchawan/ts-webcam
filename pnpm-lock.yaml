@@ -56,12 +56,12 @@ importers:
       '@angular/router':
         specifier: ^17.3.0
         version: 17.3.8(@angular/common@17.3.8)(@angular/core@17.3.8)(@angular/platform-browser@17.3.8)(rxjs@7.8.1)
-      '@repo/webcam':
-        specifier: workspace:*
-        version: link:../../packages/webcam
       rxjs:
         specifier: ~7.8.0
         version: 7.8.1
+      ts-webcam:
+        specifier: workspace:*
+        version: link:../../packages/webcam
       tslib:
         specifier: ^2.3.0
         version: 2.6.2

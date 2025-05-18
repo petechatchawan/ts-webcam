@@ -228,10 +228,7 @@ export class Webcam {
     }
 
     public async setTorch(active: boolean): Promise<void> {
-        if (
-            !this.state.activeStream ||
-            !this.state.capabilities.torchSupported
-        ) {
+        if (!this.state.activeStream || !this.state.capabilities.torchSupported) {
             throw new WebcamError(
                 'DEVICE_NOT_FOUND',
                 'Torch is not supported or webcam is not active',
@@ -239,9 +236,7 @@ export class Webcam {
         }
 
         const videoTrack = this.state.activeStream.getVideoTracks()[0];
-        const capabilities =
-            videoTrack.getCapabilities() as ExtendedMediaTrackCapabilities;
-
+        const capabilities = videoTrack.getCapabilities() as ExtendedMediaTrackCapabilities;
         if (!capabilities.torch) {
             throw new WebcamError(
                 'DEVICE_NOT_FOUND',

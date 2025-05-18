@@ -1,5 +1,5 @@
 {
-  "name": "@repo/webcam",
+  "name": "ts-webcam",
   "version": "0.1.0",
   "private": false,
   "main": "./lib/index.js",
