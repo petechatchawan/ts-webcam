@@ -1,0 +1,14 @@
+{
+  "projects": {
+    "default": "ekyc-otp-project"
+  },
+  "targets": {
+    "ekyc-otp-project": {
+      "hosting": {
+        "ts-webcam": [
+          "ts-webcam"
+        ]
+      }
+    }
+  }
+}

@@ -5,7 +5,9 @@
     "build": "turbo run build",
     "lint": "turbo run lint",
     "format": "prettier --write \"./**/*.{html,ts,scss}\"",
-    "start": "turbo run start --filter=docs"
+    "start": "turbo run start --filter=docs",
+    "deploy": "pnpm build --filter=docs && firebase deploy --only hosting:ts-webcam",
+    "deploy:preview": "pnpm build --filter=docs && firebase hosting:channel:deploy preview --only ts-webcam"
   },
   "engines": {
     "node": ">=18"
