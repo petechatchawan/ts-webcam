@@ -1,32 +1,87 @@
-# Turborepo starter
+# ts-webcam
 
-This is a community-maintained example. If you experience a problem, please submit a pull request with a fix. GitHub Issues will be closed.
+A TypeScript library for managing webcam access using the MediaDevices API. This library provides a simple, type-safe interface for initializing and controlling webcam streams in web applications.
 
-## Using this example
+[![npm version](https://img.shields.io/npm/v/ts-webcam.svg)](https://www.npmjs.com/package/ts-webcam)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Run the following command:
+## Documentation & Demo
 
-```sh
-npx create-turbo@latest -e with-angular
+- **Live Demo**: [https://ts-webcam.web.app](https://ts-webcam.web.app)
+- **Full Documentation**: [View on GitHub](https://github.com/petechatchawan/ts-webcam/blob/main/packages/ts-webcam/README.md)
+- **Source Code**: [GitHub Repository](https://github.com/petechatchawan/ts-webcam)
+- **NPM Package**: [ts-webcam on npm](https://www.npmjs.com/package/ts-webcam)
+
+## Features
+
+- Type-safe configuration with TypeScript interfaces
+- Support for multiple resolution options with automatic fallback
+- Mirror and auto-rotation capabilities
+- Customizable preview element integration
+- Event callbacks for start and error handling
+- Permission management for webcam and microphone
+- Advanced webcam capabilities (zoom, torch, focus mode)
+- Device change tracking
+- Comprehensive error handling with error codes
+- Detailed status tracking
+
+## Installation
+
+```bash
+npm install ts-webcam
 ```
 
-## What's inside?
+Or using yarn:
 
-This Turborepo includes the following pckages/apps:
+```bash
+yarn add ts-webcam
+```
 
-### Apps and Packages
+Or using pnpm:
 
-- `docs` an [angular](https://angular.dev/) app
-- `web` another [angular](https://angular.dev/) app
-- `ui` a stub Angular component library shared by both `web` and `docs` application
-- `eslint-config`: `eslint` configurations (based on [@angular-eslint/eslint-plugin](https://github.com/angular-eslint/angular-eslint#readme))
+```bash
+pnpm add ts-webcam
+```
 
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
+## Quick Start
 
-### Utilities
+```typescript
+import { Webcam, WebcamError } from "ts-webcam";
 
-This Turborepo has some additional tools already setup for you:
+// Create Webcam instance
+const webcam = new Webcam();
 
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io/) for code formatting
+async function initializeWebcam() {
+    try {
+        // 1. Request permissions
+        const permissions = await webcam.requestPermissions();
+        if (permissions.camera === 'granted') {
+            // 2. Get device list
+            const webcams = await webcam.getVideoDevices();
+
+            if (webcams.length > 0) {
+                // 3. Setup webcam configuration
+                webcam.setupConfiguration({
+                    device: webcams[0],
+                    // ... other config options
+                });
+
+                // 4. Setup device change tracking
+                webcam.setupChangeListeners();
+
+                // 5. Start the webcam
+                await webcam.start();
+            }
+        }
+    } catch (error) {
+        console.error('Error initializing webcam:', error);
+    }
+}
+
+// Start initialization
+initializeWebcam();
+```
+
+## License
+
+MIT License
