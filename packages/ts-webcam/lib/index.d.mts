@@ -441,7 +441,7 @@ declare class Webcam {
      * @returns The new value of the setting
      * @throws WebcamError if microphone permission is denied when enabling audio
      */
-    toggleSetting(setting: 'enableAudio' | 'allowAutoRotateResolution' | 'allowFallbackResolution' | 'debug'): Promise<boolean>;
+    toggleSetting(setting: "enableAudio" | "allowAutoRotateResolution" | "allowFallbackResolution" | "debug"): Promise<boolean>;
     /**
      * Check the current camera permission status
      * @returns The current permission status (granted, denied, prompt)
@@ -472,7 +472,7 @@ declare class Webcam {
      * Check if permission request is needed for camera or microphone
      * @returns True if permission request is needed, false otherwise
      */
-    needsPermissionRequest(): boolean;
+    needsPermissionRequest(): Promise<boolean>;
     /**
      * Check if permission has been denied for camera or microphone
      * @returns True if permission has been denied, false otherwise
@@ -486,7 +486,7 @@ declare class Webcam {
      */
     captureImage(config?: {
         scale?: number;
-        mediaType?: 'image/png' | 'image/jpeg';
+        mediaType?: "image/png" | "image/jpeg";
         quality?: number;
     }): Promise<string>;
     /**

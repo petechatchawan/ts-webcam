@@ -1,6 +1,6 @@
 {
   "name": "ts-webcam",
-  "version": "1.5.2",
+  "version": "1.5.6",
   "private": false,
   "description": "A TypeScript library for managing webcam access using the MediaDevices API",
   "author": "Pete Chatchawan",
@@ -35,9 +35,9 @@
     "lint": "eslint src/",
     "clean": "rm -rf .turbo && rm -rf node_modules && rm -rf lib",
     "prepublishOnly": "pnpm run build",
-    "publish": "npm publish",
-    "publish:dry": "npm publish --dry-run",
-    "publish:beta": "npm publish --tag beta",
+    "release": "npm publish",
+    "release:dry": "npm publish --dry-run",
+    "release:beta": "npm publish --tag beta",
     "pack": "npm pack"
   },
   "devDependencies": {
