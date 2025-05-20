@@ -531,7 +531,9 @@ export class Webcam {
 	public async checkCameraPermission(): Promise<PermissionStatus> {
 		try {
 			if (navigator?.permissions?.query) {
-				const { state } = await navigator.permissions.query({ name: "camera" as PermissionName });
+				const { state } = await navigator.permissions.query({
+					name: "camera" as PermissionName,
+				});
 				this.state.permissionStates.camera = state as PermissionStatus;
 				return state as PermissionStatus;
 			}
@@ -600,10 +602,9 @@ export class Webcam {
 	 * Check if permission request is needed for camera or microphone
 	 * @returns True if permission request is needed, false otherwise
 	 */
-	public async needsPermissionRequest(): Promise<boolean> {
-		const permission = await this.checkCameraPermission();
+	public needsPermissionRequest(): boolean {
 		return (
-			(this.state.permissionStates.camera === "prompt" && permission === "prompt") ||
+			this.state.permissionStates.camera === "prompt" ||
 			(!!this.state.configuration?.enableAudio && this.state.permissionStates.microphone === "prompt")
 		);
 	}

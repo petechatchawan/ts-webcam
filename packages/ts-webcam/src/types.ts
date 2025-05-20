@@ -6,7 +6,7 @@
  * - 'denied': Permission has been denied
  * - 'prompt': Permission has not been requested yet
  */
-export type PermissionStatus = 'granted' | 'denied' | 'prompt';
+export type PermissionStatus = "granted" | "denied" | "prompt";
 
 // ===== Error Types =====
 
@@ -22,13 +22,13 @@ export type PermissionStatus = 'granted' | 'denied' | 'prompt';
  * - UNKNOWN_ERROR: An unexpected error occurred
  */
 export type WebcamErrorCode =
-  | 'PERMISSION_DENIED'
-  | 'PERMISSION_PROMPT_BLOCKED'
-  | 'DEVICE_NOT_FOUND'
-  | 'RESOLUTION_UNSUPPORTED'
-  | 'STREAM_ERROR'
-  | 'NOT_INITIALIZED'
-  | 'UNKNOWN_ERROR';
+	| "PERMISSION_DENIED"
+	| "PERMISSION_PROMPT_BLOCKED"
+	| "DEVICE_NOT_FOUND"
+	| "RESOLUTION_UNSUPPORTED"
+	| "STREAM_ERROR"
+	| "NOT_INITIALIZED"
+	| "UNKNOWN_ERROR";
 
 // ===== Device Types =====
 
@@ -42,11 +42,11 @@ export type WebcamErrorCode =
  * - 'unknown': Device orientation could not be determined
  */
 export type DeviceOrientation =
-    | 'portrait-primary'
-    | 'portrait-secondary'
-    | 'landscape-primary'
-    | 'landscape-secondary'
-    | 'unknown';
+	| "portrait-primary"
+	| "portrait-secondary"
+	| "landscape-primary"
+	| "landscape-secondary"
+	| "unknown";
 
 // ===== Status Types =====
 
@@ -59,15 +59,15 @@ export type DeviceOrientation =
  * - ERROR: An error occurred while using the webcam
  */
 export enum WebcamStatus {
-    /** Webcam is not active */
-    IDLE = 'idle',
+	/** Webcam is not active */
+	IDLE = "idle",
 
-    /** Webcam is in the process of starting */
-    INITIALIZING = 'initializing',
+	/** Webcam is in the process of starting */
+	INITIALIZING = "initializing",
 
-    /** Webcam is active and ready to use */
-    READY = 'ready',
+	/** Webcam is active and ready to use */
+	READY = "ready",
 
-    /** An error occurred while using the webcam */
-    ERROR = 'error',
+	/** An error occurred while using the webcam */
+	ERROR = "error",
 }

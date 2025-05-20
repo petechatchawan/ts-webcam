@@ -6,7 +6,7 @@ import { UAInfo } from 'ua-info';
  * - 'denied': Permission has been denied
  * - 'prompt': Permission has not been requested yet
  */
-type PermissionStatus = 'granted' | 'denied' | 'prompt';
+type PermissionStatus = "granted" | "denied" | "prompt";
 /**
  * Standardized error codes for webcam operations
  *
@@ -18,7 +18,7 @@ type PermissionStatus = 'granted' | 'denied' | 'prompt';
  * - NOT_INITIALIZED: Webcam was not properly initialized before use
  * - UNKNOWN_ERROR: An unexpected error occurred
  */
-type WebcamErrorCode = 'PERMISSION_DENIED' | 'PERMISSION_PROMPT_BLOCKED' | 'DEVICE_NOT_FOUND' | 'RESOLUTION_UNSUPPORTED' | 'STREAM_ERROR' | 'NOT_INITIALIZED' | 'UNKNOWN_ERROR';
+type WebcamErrorCode = "PERMISSION_DENIED" | "PERMISSION_PROMPT_BLOCKED" | "DEVICE_NOT_FOUND" | "RESOLUTION_UNSUPPORTED" | "STREAM_ERROR" | "NOT_INITIALIZED" | "UNKNOWN_ERROR";
 /**
  * Represents the possible device orientations
  *
@@ -28,7 +28,7 @@ type WebcamErrorCode = 'PERMISSION_DENIED' | 'PERMISSION_PROMPT_BLOCKED' | 'DEVI
  * - 'landscape-secondary': Device is in landscape mode (upside down)
  * - 'unknown': Device orientation could not be determined
  */
-type DeviceOrientation = 'portrait-primary' | 'portrait-secondary' | 'landscape-primary' | 'landscape-secondary' | 'unknown';
+type DeviceOrientation = "portrait-primary" | "portrait-secondary" | "landscape-primary" | "landscape-secondary" | "unknown";
 /**
  * Enum representing the possible states of a webcam
  *
@@ -472,7 +472,7 @@ declare class Webcam {
      * Check if permission request is needed for camera or microphone
      * @returns True if permission request is needed, false otherwise
      */
-    needsPermissionRequest(): Promise<boolean>;
+    needsPermissionRequest(): boolean;
     /**
      * Check if permission has been denied for camera or microphone
      * @returns True if permission has been denied, false otherwise

@@ -630,7 +630,9 @@ var Webcam = class {
   async checkCameraPermission() {
     try {
       if (navigator?.permissions?.query) {
-        const { state } = await navigator.permissions.query({ name: "camera" });
+        const { state } = await navigator.permissions.query({
+          name: "camera"
+        });
         this.state.permissionStates.camera = state;
         return state;
       }
@@ -689,9 +691,8 @@ var Webcam = class {
    * Check if permission request is needed for camera or microphone
    * @returns True if permission request is needed, false otherwise
    */
-  async needsPermissionRequest() {
-    const permission = await this.checkCameraPermission();
-    return this.state.permissionStates.camera === "prompt" && permission === "prompt" || !!this.state.configuration?.enableAudio && this.state.permissionStates.microphone === "prompt";
+  needsPermissionRequest() {
+    return this.state.permissionStates.camera === "prompt" || !!this.state.configuration?.enableAudio && this.state.permissionStates.microphone === "prompt";
   }
   /**
    * Check if permission has been denied for camera or microphone
