@@ -70,11 +70,29 @@
 
 							<!-- Status Badges (Compact) -->
 							<div class="mt-2 flex flex-wrap gap-1 px-2 py-1 text-xs">
+								<!-- Webcam Status -->
 								<span
 									class="flex items-center gap-1 rounded px-1.5 py-0.5 text-white"
-									[ngClass]="webcam.isActive() ? 'animate-pulse bg-green-500' : 'bg-red-500'">
-									<mat-icon inline class="text-xs">{{ webcam.isActive() ? "check_circle" : "error" }}</mat-icon>
-									{{ webcam.isActive() ? "Active" : "Inactive" }}
+									[ngClass]="{
+										'bg-gray-500': webcam.getStatus() === 'idle',
+										'animate-pulse bg-yellow-500': webcam.getStatus() === 'initializing',
+										'bg-green-500': webcam.getStatus() === 'ready',
+										'bg-red-500': webcam.getStatus() === 'error'
+									}">
+									<mat-icon inline class="text-xs">
+										{{ webcam.getStatus() === 'idle' ? 'pause_circle' :
+										   webcam.getStatus() === 'initializing' ? 'hourglass_empty' :
+										   webcam.getStatus() === 'ready' ? 'check_circle' : 'error' }}
+									</mat-icon>
+									{{ webcam.getStatus() | titlecase }}
+								</span>
+
+								<!-- Active Status -->
+								<span
+									class="flex items-center gap-1 rounded px-1.5 py-0.5 text-white"
+									[ngClass]="webcam.isActive() ? 'bg-green-600' : 'bg-gray-600'">
+									<mat-icon inline class="text-xs">{{ webcam.isActive() ? "videocam" : "videocam_off" }}</mat-icon>
+									{{ webcam.isActive() ? "Stream Active" : "Stream Inactive" }}
 								</span>
 
 								<span
@@ -269,6 +287,24 @@
 								Device Info
 							</div>
 							<div class="space-y-2 text-sm">
+								<div class="flex justify-between">
+									<span>Webcam Status</span>
+									<span class="font-medium"
+										[ngClass]="{
+											'text-gray-500': webcam.getStatus() === 'idle',
+											'text-yellow-500': webcam.getStatus() === 'initializing',
+											'text-green-500': webcam.getStatus() === 'ready',
+											'text-red-500': webcam.getStatus() === 'error'
+										}">
+										{{ webcam.getStatus() | titlecase }}
+									</span>
+								</div>
+								<div class="flex justify-between">
+									<span>Stream Status</span>
+									<span class="font-medium" [ngClass]="webcam.isActive() ? 'text-green-500' : 'text-gray-500'">
+										{{ webcam.isActive() ? "Active" : "Inactive" }}
+									</span>
+								</div>
 								<div class="flex justify-between">
 									<span>Device Type</span>
 									<span class="font-medium">

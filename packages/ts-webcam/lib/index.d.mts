@@ -472,7 +472,7 @@ declare class Webcam {
      * Check if permission request is needed for camera or microphone
      * @returns True if permission request is needed, false otherwise
      */
-    needsPermissionRequest(): boolean;
+    needsPermissionRequest(): Promise<boolean>;
     /**
      * Check if permission has been denied for camera or microphone
      * @returns True if permission has been denied, false otherwise

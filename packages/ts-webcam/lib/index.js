@@ -377,6 +377,9 @@ var Webcam = class {
   async start() {
     this.checkConfiguration();
     this.log("Starting webcam...");
+    this.state.status = "initializing" /* INITIALIZING */;
+    this.state.lastError = null;
+    this.log("Status changed to:", this.state.status);
     try {
       await this.initializeWebcam();
       this.log("Webcam started successfully");
@@ -396,6 +399,8 @@ var Webcam = class {
   stop() {
     this.checkConfiguration();
     this.log("Stopping webcam...");
+    this.state.status = "idle" /* IDLE */;
+    this.log("Status changed to:", this.state.status);
     this.stopStream();
     this.resetState();
     this.log("Webcam stopped");
@@ -630,9 +635,7 @@ var Webcam = class {
   async checkCameraPermission() {
     try {
       if (navigator?.permissions?.query) {
-        const { state } = await navigator.permissions.query({
-          name: "camera"
-        });
+        const { state } = await navigator.permissions.query({ name: "camera" });
         this.state.permissionStates.camera = state;
         return state;
       }
@@ -691,8 +694,9 @@ var Webcam = class {
    * Check if permission request is needed for camera or microphone
    * @returns True if permission request is needed, false otherwise
    */
-  needsPermissionRequest() {
-    return this.state.permissionStates.camera === "prompt" || !!this.state.configuration?.enableAudio && this.state.permissionStates.microphone === "prompt";
+  async needsPermissionRequest() {
+    const permission = await this.checkCameraPermission();
+    return this.state.permissionStates.camera === "prompt" && permission === "prompt" || !!this.state.configuration?.enableAudio && this.state.permissionStates.microphone === "prompt";
   }
   /**
    * Check if permission has been denied for camera or microphone
@@ -915,8 +919,6 @@ var Webcam = class {
   }
   // Private Methods
   async initializeWebcam() {
-    this.state.status = "initializing" /* INITIALIZING */;
-    this.state.lastError = null;
     const permissions = await this.requestPermissions();
     validatePermissions(permissions, this.state.configuration.enableAudio || false);
     await this.openWebcam();
@@ -983,6 +985,7 @@ var Webcam = class {
       };
       this.log(`Successfully opened webcam with resolution: ${resolution.id}`);
       this.state.status = "ready" /* READY */;
+      this.log("Status changed to:", this.state.status);
       this.state.configuration?.onStart?.();
     } catch (error) {
       this.log(`Failed to open webcam with resolution: ${resolution.id}`, error);
@@ -1016,6 +1019,7 @@ var Webcam = class {
       };
       this.log(`Opened webcam with resolution: ${this.state.activeResolution.id}`);
       this.state.status = "ready" /* READY */;
+      this.log("Status changed to:", this.state.status);
       this.state.configuration?.onStart?.();
     } catch (error) {
       this.log("Failed to initialize webcam with any resolution", error);
@@ -1054,6 +1058,7 @@ var Webcam = class {
   }
   handleError(error) {
     this.state.status = "error" /* ERROR */;
+    this.log("Status changed to:", this.state.status);
     this.state.lastError = error instanceof WebcamError ? error : new WebcamError("UNKNOWN_ERROR", error.message, error);
     this.log("Error occurred:", this.state.lastError);
     this.state.configuration?.onError?.(this.state.lastError);
@@ -1071,6 +1076,7 @@ var Webcam = class {
       deviceCapabilities: DEFAULT_WEBCAM_CAPABILITIES,
       activeResolution: null
     };
+    this.log("Status reset to:", this.state.status);
   }
   async requestMediaPermission(mediaType) {
     try {

@@ -220,6 +220,12 @@ export class Webcam {
 	public async start(): Promise<void> {
 		this.checkConfiguration();
 		this.log("Starting webcam...");
+
+		// Set status to initializing at the beginning
+		this.state.status = WebcamStatus.INITIALIZING;
+		this.state.lastError = null;
+		this.log("Status changed to:", this.state.status);
+
 		try {
 			await this.initializeWebcam();
 			this.log("Webcam started successfully");
@@ -240,6 +246,11 @@ export class Webcam {
 	public stop(): void {
 		this.checkConfiguration();
 		this.log("Stopping webcam...");
+
+		// Set status to indicate stopping process
+		this.state.status = WebcamStatus.IDLE;
+		this.log("Status changed to:", this.state.status);
+
 		this.stopStream();
 		this.resetState();
 		this.log("Webcam stopped");
@@ -531,9 +542,7 @@ export class Webcam {
 	public async checkCameraPermission(): Promise<PermissionStatus> {
 		try {
 			if (navigator?.permissions?.query) {
-				const { state } = await navigator.permissions.query({
-					name: "camera" as PermissionName,
-				});
+				const { state } = await navigator.permissions.query({ name: "camera" as PermissionName });
 				this.state.permissionStates.camera = state as PermissionStatus;
 				return state as PermissionStatus;
 			}
@@ -602,9 +611,10 @@ export class Webcam {
 	 * Check if permission request is needed for camera or microphone
 	 * @returns True if permission request is needed, false otherwise
 	 */
-	public needsPermissionRequest(): boolean {
+	public async needsPermissionRequest(): Promise<boolean> {
+		const permission = await this.checkCameraPermission();
 		return (
-			this.state.permissionStates.camera === "prompt" ||
+			(this.state.permissionStates.camera === "prompt" && permission === "prompt") ||
 			(!!this.state.configuration?.enableAudio && this.state.permissionStates.microphone === "prompt")
 		);
 	}
@@ -922,8 +932,9 @@ export class Webcam {
 
 	// Private Methods
 	private async initializeWebcam(): Promise<void> {
-		this.state.status = WebcamStatus.INITIALIZING;
-		this.state.lastError = null;
+		// Status is already set to INITIALIZING in start() method
+		// this.state.status = WebcamStatus.INITIALIZING;
+		// this.state.lastError = null;
 
 		const permissions = await this.requestPermissions();
 		validatePermissions(permissions, this.state.configuration!.enableAudio || false);
@@ -1005,6 +1016,7 @@ export class Webcam {
 
 			this.log(`Successfully opened webcam with resolution: ${resolution.id}`);
 			this.state.status = WebcamStatus.READY;
+			this.log("Status changed to:", this.state.status);
 			this.state.configuration?.onStart?.();
 		} catch (error) {
 			this.log(`Failed to open webcam with resolution: ${resolution.id}`, error);
@@ -1045,6 +1057,7 @@ export class Webcam {
 
 			this.log(`Opened webcam with resolution: ${this.state.activeResolution.id}`);
 			this.state.status = WebcamStatus.READY;
+			this.log("Status changed to:", this.state.status);
 			this.state.configuration?.onStart?.();
 		} catch (error) {
 			this.log("Failed to initialize webcam with any resolution", error);
@@ -1090,6 +1103,7 @@ export class Webcam {
 
 	private handleError(error: Error): void {
 		this.state.status = WebcamStatus.ERROR;
+		this.log("Status changed to:", this.state.status);
 		this.state.lastError =
 			error instanceof WebcamError ? error : new WebcamError("UNKNOWN_ERROR", error.message, error);
 
@@ -1112,6 +1126,7 @@ export class Webcam {
 			deviceCapabilities: DEFAULT_WEBCAM_CAPABILITIES,
 			activeResolution: null,
 		};
+		this.log("Status reset to:", this.state.status);
 	}
 
 	private async requestMediaPermission(mediaType: "video" | "audio"): Promise<PermissionStatus> {

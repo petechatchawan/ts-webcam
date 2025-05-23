@@ -175,12 +175,19 @@ export class WebcamDemoComponent implements AfterViewInit {
 			allowFallbackResolution: this.isAllowFallbackResolution,
 			allowAutoRotateResolution: this.isAutoSwapResolutionOnMobile,
 			preferredResolutions: resolutionPacks,
+			debug: true, // Enable debug logging
 			onStart: async () => await this.handleStart(),
 			onError: async (error) => this.handleError(error),
 		});
 
+		console.log("Before start - Status:", this.webcam.getStatus());
+		console.log("Before start - isActive:", this.webcam.isActive());
+
 		// start the webcam
 		await this.webcam.start();
+
+		console.log("After start - Status:", this.webcam.getStatus());
+		console.log("After start - isActive:", this.webcam.isActive());
 	}
 
 	private async checkDeviceCapabilities(): Promise<void> {
@@ -208,6 +215,9 @@ export class WebcamDemoComponent implements AfterViewInit {
 	}
 
 	private async handleStart(): Promise<void> {
+		console.log("handleStart called - Status:", this.webcam.getStatus());
+		console.log("handleStart called - isActive:", this.webcam.isActive());
+
 		if (await this.webcam.isVideoPreviewReady()) {
 			// get the current device and resolution
 			this.selectedDevice = this.webcam.getCurrentDevice();
