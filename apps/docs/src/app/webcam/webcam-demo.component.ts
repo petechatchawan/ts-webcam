@@ -15,8 +15,8 @@ import { MatSlideToggleModule } from "@angular/material/slide-toggle";
 import { MatSnackBar } from "@angular/material/snack-bar";
 import { MatTabsModule } from "@angular/material/tabs";
 import { MatTooltipModule } from "@angular/material/tooltip";
-import { UAInfo } from "ua-info";
 import { Resolution, Webcam, WebcamError } from "ts-webcam";
+import { UAInfo } from "ua-info";
 
 @Component({
 	selector: "app-webcam-demo",
@@ -310,7 +310,9 @@ export class WebcamDemoComponent implements AfterViewInit {
 	}
 
 	private async handleRequestPermission(): Promise<void> {
-		if (this.webcam.needsPermissionRequest()) {
+		const needsPermissionRequest = await this.webcam.needsPermissionRequest();
+		console.log("needsPermissionRequest", needsPermissionRequest);
+		if (needsPermissionRequest) {
 			const permissions = await this.webcam.requestPermissions();
 			if (permissions.camera === "granted") {
 				// initialize the camera

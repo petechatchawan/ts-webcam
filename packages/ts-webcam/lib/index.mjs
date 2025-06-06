@@ -538,8 +538,10 @@ var Webcam = class {
    */
   updateConfiguration(configuration, options = { restart: true }) {
     this.checkConfiguration();
+    const isOnlyMirrorUpdate = Object.keys(configuration).length === 1 && "mirrorVideo" in configuration;
     const wasActive = this.isActive();
-    if (wasActive && options.restart) {
+    const shouldRestart = options.restart && !isOnlyMirrorUpdate;
+    if (wasActive && shouldRestart) {
       this.stop();
     }
     this.state.configuration = {
@@ -549,7 +551,7 @@ var Webcam = class {
     if ("mirrorVideo" in configuration && this.state.configuration.videoElement) {
       this.state.configuration.videoElement.style.transform = this.state.configuration.mirrorVideo ? "scaleX(-1)" : "none";
     }
-    if (wasActive || options.restart) {
+    if (wasActive && shouldRestart || !wasActive && options.restart) {
       this.start().catch(this.handleError);
     }
     return { ...this.state.configuration };

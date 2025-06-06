@@ -450,8 +450,13 @@ export class Webcam {
 		options: { restart?: boolean } = { restart: true },
 	): WebcamConfiguration {
 		this.checkConfiguration();
+
+		const isOnlyMirrorUpdate = Object.keys(configuration).length === 1 && "mirrorVideo" in configuration;
+
 		const wasActive = this.isActive();
-		if (wasActive && options.restart) {
+		const shouldRestart = options.restart && !isOnlyMirrorUpdate;
+
+		if (wasActive && shouldRestart) {
 			this.stop();
 		}
 
@@ -466,7 +471,7 @@ export class Webcam {
 				: "none";
 		}
 
-		if (wasActive || options.restart) {
+		if ((wasActive && shouldRestart) || (!wasActive && options.restart)) {
 			this.start().catch(this.handleError);
 		}
 
