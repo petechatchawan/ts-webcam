@@ -299,9 +299,68 @@ export class Webcam {
     this.state.status = 'initializing';
 
     try {
-      const constraints = this.buildConstraints();
-      this.stream = await navigator.mediaDevices.getUserMedia(constraints);
-      this.currentDeviceId = this.configuration.deviceInfo.deviceId;
+      const allowAny = this.configuration.allowAnyResolution !== false;
+      const preferred = this.configuration.preferredResolutions;
+      let constraints: MediaStreamConstraints | null = null;
+
+      if (!preferred) {
+        if (allowAny) {
+          constraints = this.buildConstraints();
+          this.stream = await navigator.mediaDevices.getUserMedia(constraints);
+          this.currentDeviceId = this.configuration.deviceInfo.deviceId;
+        } else {
+          throw this.createError(
+            'NO_PREFERRED_RESOLUTION',
+            'No preferredResolutions specified and allowAnyResolution is false'
+          );
+        }
+      } else {
+        const resolutions = Array.isArray(preferred) ? preferred : [preferred];
+        let lastError: any = null;
+        for (const res of resolutions) {
+          try {
+            const testConstraints = this.buildConstraints();
+            const baseVideo =
+              typeof testConstraints.video === 'object' && testConstraints.video !== null
+                ? testConstraints.video
+                : {};
+            testConstraints.video = {
+              ...baseVideo,
+              width: { exact: res.width },
+              height: { exact: res.height }
+            };
+            const testStream = await navigator.mediaDevices.getUserMedia(testConstraints);
+            // ตรวจสอบจริงว่าตรง resolution ที่ขอไหม
+            const track = testStream.getVideoTracks()[0];
+            const settings = track.getSettings();
+            if (settings.width === res.width && settings.height === res.height) {
+              this.stream = testStream;
+              this.currentDeviceId = this.configuration.deviceInfo.deviceId;
+              break;
+            } else {
+              // ไม่ตรง ให้ stop แล้วลองตัวถัดไป
+              testStream.getTracks().forEach((t) => t.stop());
+              this.stream = null;
+            }
+          } catch (err) {
+            lastError = err;
+            this.stream = null;
+          }
+        }
+        if (!this.stream) {
+          if (allowAny) {
+            constraints = this.buildConstraints();
+            this.stream = await navigator.mediaDevices.getUserMedia(constraints);
+            this.currentDeviceId = this.configuration.deviceInfo.deviceId;
+          } else {
+            throw this.createError(
+              'RESOLUTION_NOT_SUPPORTED',
+              'None of the preferredResolutions are supported',
+              lastError
+            );
+          }
+        }
+      }
 
       if (this.configuration.videoElement) {
         this.videoElement = this.configuration.videoElement;
@@ -492,8 +551,8 @@ export class Webcam {
       case 'enableAudio':
         this.configuration.enableAudio = !this.configuration.enableAudio;
         break;
-      case 'allowFallbackResolution':
-        this.configuration.allowFallbackResolution = !this.configuration.allowFallbackResolution;
+      case 'allowAnyResolution':
+        this.configuration.allowAnyResolution = !this.configuration.allowAnyResolution;
         break;
       case 'allowAutoRotateResolution':
         this.configuration.allowAutoRotateResolution =
@@ -513,10 +572,11 @@ export class Webcam {
   }
 
   /**
-   * Check if fallback resolution is allowed
+   * Check if any resolution is allowed (not fixed to preferred only)
    */
-  isFallbackResolutionAllowed(): boolean {
-    return this.configuration?.allowFallbackResolution || false;
+  isAnyResolutionAllowed(): boolean {
+    // Default true
+    return this.configuration?.allowAnyResolution !== false;
   }
 
   /**

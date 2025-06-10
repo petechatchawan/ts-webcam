@@ -1,5 +1,5 @@
 // Export the simple Webcam class matching npm package API
-export { Webcam } from './Webcam';
+export { Webcam } from './webcam';
 
 // Export all types for the simple API
 export type {
@@ -17,4 +17,4 @@ export type {
 } from './types';
 
 // Default export for compatibility
-export { Webcam as default } from './Webcam';
+export { Webcam as default } from './webcam';

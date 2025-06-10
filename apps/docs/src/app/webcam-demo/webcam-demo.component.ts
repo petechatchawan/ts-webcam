@@ -23,7 +23,7 @@ import { WebcamService } from '../services/webcam.service';
 })
 export class WebcamDemoComponent implements OnInit, OnDestroy {
   @ViewChild('videoElement', { static: true })
-  private videoElement!: ElementRef<HTMLVideoElement>;
+  private readonly videoElement!: ElementRef<HTMLVideoElement>;
 
   devices: DeviceInfo[] = [];
   selectedDevice: DeviceInfo | null = null;
@@ -36,7 +36,7 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
   resolutions: Resolution[] = [];
   resolutionSupport: ResolutionSupportInfo | null = null;
 
-  constructor(private webcamService: WebcamService) {}
+  constructor(private readonly webcamService: WebcamService) {}
 
   // ====================
   // GETTERS FOR SIMPLE ACCESS
@@ -237,7 +237,7 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
           this.webcamService.createResolution('1440x1440', 1440, 1440),
           this.webcamService.createResolution('1080x1080', 1080, 1080)
         ],
-        allowFallbackResolution: false,
+        allowAnyResolution: false,
         enableMirror: true,
         debug: true
       };

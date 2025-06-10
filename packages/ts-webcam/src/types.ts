@@ -58,7 +58,11 @@ export interface WebcamConfiguration {
   videoElement?: HTMLVideoElement;
   enableAudio?: boolean;
   enableMirror?: boolean;
-  allowFallbackResolution?: boolean;
+  /**
+   * If true (default), will allow using any supported resolution if preferredResolutions cannot be used.
+   * If false, will only use preferredResolutions and throw if none are available.
+   */
+  allowAnyResolution?: boolean;
   allowAutoRotateResolution?: boolean;
   debug?: boolean;
   onStart?: () => void;
