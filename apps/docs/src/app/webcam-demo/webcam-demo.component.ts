@@ -36,8 +36,13 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
   resolutions: Resolution[] = [];
   resolutionSupport: ResolutionSupportInfo | null = null;
 
+  capabilities: DeviceCapability | null = null;
+
   lastError: WebcamError | null = null;
   lastAction: (() => Promise<void>) | null = null;
+
+  showCapabilities = false;
+  showResolutions = false;
 
   constructor(private readonly webcamService: WebcamService) {}
 
@@ -51,10 +56,6 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
 
   get error(): WebcamError | null {
     return this.webcamService.lastError;
-  }
-
-  get capabilities(): DeviceCapability | null {
-    return this.webcamService.currentCapabilities;
   }
 
   get permissionStates(): PermissionStates {
@@ -163,23 +164,57 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
     }
   }
 
-  onDeviceChange(event: Event): void {
+  async onDeviceChange(event: Event): Promise<void> {
     const select = event.target as HTMLSelectElement;
     const deviceId = select.value;
     this.selectedDevice = this.devices.find((d) => d.deviceId === deviceId) || null;
+    this.resolutionSupport = null;
+    this.capabilities = null;
+    if (!this.selectedDevice) return;
 
-    if (this.selectedDevice) {
-      this.loadDeviceCapabilities();
+    // ตรวจสอบ permission ก่อน
+    if (this.permissionStates.camera !== 'granted') {
+      alert('Please grant camera permission first.');
+      return;
     }
+
+    // ป้องกัน stream ซ้อน
+    this.stopWebcam();
+
+    // โหลด capabilities และ resolutions
+    await this.loadDeviceCapabilities();
   }
 
   async loadDeviceCapabilities(): Promise<void> {
     if (!this.selectedDevice) return;
-
     try {
-      await this.webcamService.getDeviceCapabilities(this.selectedDevice.deviceId);
+      this.capabilities = await this.webcamService.getDeviceCapabilities(
+        this.selectedDevice.deviceId
+      );
+      await this.testResolutions();
     } catch (error) {
+      this.lastError = error as WebcamError;
+      alert(
+        'Failed to load device capabilities. Please make sure no other app is using the camera and permission is granted.'
+      );
       console.error('Failed to load capabilities:', error);
+    }
+  }
+
+  async testResolutions(): Promise<void> {
+    if (!this.capabilities) {
+      this.resolutionSupport = null;
+      return;
+    }
+    try {
+      this.resolutionSupport = this.webcamService.checkSupportedResolutions(
+        [this.capabilities],
+        this.resolutions
+      );
+    } catch (error) {
+      this.lastError = error as WebcamError;
+      alert('Resolution test failed');
+      console.error('Resolution test failed:', error);
     }
   }
 
@@ -320,26 +355,6 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
       console.log('Captured image data URL:', dataUrl);
     } catch (error) {
       console.error('Capture failed:', error);
-    }
-  }
-
-  // ====================
-  // RESOLUTION TESTING
-  // ====================
-
-  async testResolutions(): Promise<void> {
-    if (!this.capabilities) {
-      alert('No device capabilities available');
-      return;
-    }
-
-    try {
-      this.resolutionSupport = this.webcamService.checkSupportedResolutions(
-        [this.capabilities],
-        this.resolutions
-      );
-    } catch (error) {
-      console.error('Resolution test failed:', error);
     }
   }
 

@@ -1,200 +1,226 @@
-<div class="card">
-  <h2>Webcam Demo</h2>
-
-  <div class="status mb-3">
-    <strong>Status:</strong>
-    <span [class]="'status-badge ' + status.toLowerCase()">
-      {{ status }}
-    </span>
-  </div>
+<div class="max-w-3xl mx-auto p-4 md:p-8 bg-white rounded-xl shadow-lg space-y-6">
+  <!-- Header Section -->
+  <header class="border-b pb-4 mb-4">
+    <h2 class="text-2xl md:text-3xl font-bold text-gray-800">Webcam Demo</h2>
+    <div class="flex items-center gap-2 mt-2">
+      <span class="font-semibold text-gray-700 text-base">Status:</span>
+      <span
+        class="px-2 py-1 rounded text-xs font-semibold"
+        [ngClass]="{
+          'bg-green-100 text-green-700': status === 'ready',
+          'bg-yellow-100 text-yellow-700': status === 'initializing',
+          'bg-gray-200 text-gray-600': status === 'idle',
+          'bg-red-100 text-red-700': status === 'error'
+        }"
+      >
+        {{ status }}
+      </span>
+    </div>
+  </header>
 
   <!-- Permission Request Section -->
-  <div *ngIf="needsPermissionRequest()" class="card mb-3">
-    <div class="card-body">
-      <div class="alert alert-warning">
-        <strong>Camera Permission Required</strong>
-        <p>This demo requires access to your camera. Please grant permission to continue.</p>
-        <button class="btn btn-primary mt-2" (click)="requestPermissions()">
-          Grant Camera Access
-        </button>
-      </div>
+  <section *ngIf="needsPermissionRequest()">
+    <div class="bg-yellow-50 border border-yellow-300 rounded-lg p-4 flex flex-col items-center">
+      <div class="font-bold text-yellow-800 mb-1 text-base">Camera Permission Required</div>
+      <p class="text-yellow-700 text-sm mb-2 text-center">
+        This demo requires access to your camera. Please grant permission to continue.
+      </p>
+      <button
+        class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition text-base"
+        (click)="requestPermissions()"
+      >
+        Grant Camera Access
+      </button>
     </div>
-  </div>
+  </section>
 
-  <div class="video-container card mb-3">
-    <video #videoElement autoplay playsinline muted class="w-100"></video>
-  </div>
+  <!-- Video Section -->
+  <section>
+    <div
+      class="aspect-video w-full bg-black rounded-lg overflow-hidden flex items-center justify-center"
+    >
+      <video #videoElement autoplay playsinline muted class="w-full h-full object-contain"></video>
+    </div>
+  </section>
 
-  <div class="card mb-3">
-    <div class="card-body">
-      <div class="form-group mb-3">
-        <label for="deviceSelect" class="form-label">Select Camera:</label>
-        <select
-          id="deviceSelect"
-          class="form-control"
-          [value]="selectedDevice?.deviceId || ''"
-          (change)="onDeviceChange($event)"
-          [disabled]="status === 'initializing'"
-        >
-          <option value="" disabled>Select a camera</option>
-          <option *ngFor="let device of devices" [value]="device.deviceId">
-            {{ device.label || 'Camera ' + device.deviceId.substring(0, 8) }}
-          </option>
-        </select>
+  <!-- Camera Controls Section -->
+  <section class="bg-gray-50 rounded-lg p-4">
+    <div class="mb-3">
+      <label for="deviceSelect" class="block font-medium text-gray-700 mb-1 text-base"
+        >Select Camera:</label
+      >
+      <select
+        id="deviceSelect"
+        class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 text-base"
+        [value]="selectedDevice?.deviceId || ''"
+        (change)="onDeviceChange($event)"
+        [disabled]="status === 'initializing'"
+      >
+        <option value="" disabled>Select a camera</option>
+        <option *ngFor="let device of devices" [value]="device.deviceId">
+          {{ device.label || 'Camera ' + device.deviceId.substring(0, 8) }}
+        </option>
+      </select>
+      <div class="text-xs text-gray-500 mt-1">เลือกกล้องเพื่อดูรายละเอียดและความสามารถของอุปกรณ์</div>
+    </div>
+    <div class="flex flex-wrap gap-2 mt-2">
+      <button
+        class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition disabled:opacity-50 text-base"
+        (click)="startWebcam()"
+        [disabled]="!selectedDevice || status === 'initializing' || status === 'ready' || needsPermissionRequest()"
+      >
+        {{ status === 'initializing' ? 'Initializing...' : 'Start Camera' }}
+      </button>
+      <button
+        class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition disabled:opacity-50 text-base"
+        (click)="startWebcamForIdCard()"
+        [disabled]="!selectedDevice || status === 'initializing' || status === 'ready' || needsPermissionRequest()"
+      >
+        {{ status === 'initializing' ? 'Initializing...' : 'Start Camera for ID Card' }}
+      </button>
+      <button
+        class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition disabled:opacity-50 text-base"
+        (click)="stopWebcam()"
+        [disabled]="status !== 'ready'"
+      >
+        Stop Camera
+      </button>
+      <button
+        class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition disabled:opacity-50 text-base"
+        (click)="captureImage()"
+        [disabled]="status !== 'ready'"
+      >
+        Capture Image
+      </button>
+    </div>
+  </section>
+
+  <!-- Error Section -->
+  <section *ngIf="error">
+    <div class="bg-red-50 border border-red-300 rounded-lg p-4">
+      <div class="font-bold text-red-700 text-base">Error:</div>
+      <div class="text-red-600 text-sm">{{ error.message || error }}</div>
+      <button
+        class="mt-2 px-3 py-1 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200"
+        (click)="clearError()"
+      >
+        Clear
+      </button>
+    </div>
+  </section>
+
+  <!-- Error Block Section -->
+  <section *ngIf="hasError">
+    <div class="bg-red-50 border border-red-300 rounded-lg p-4">
+      <div class="font-bold text-red-700 text-base">Error: {{ error?.code }}</div>
+      <div class="text-red-600 text-sm mb-1">{{ error?.message }}</div>
+      <div *ngIf="error?.suggestions?.length">
+        <div class="font-semibold text-red-700 text-sm">Suggestions:</div>
+        <ul class="list-disc list-inside text-red-600 text-xs">
+          <li *ngFor="let s of error?.suggestions">{{ s }}</li>
+        </ul>
       </div>
-
-      <div class="d-flex gap-2">
+      <div *ngIf="error?.canRetry">
         <button
-          class="btn btn-primary"
-          (click)="startWebcam()"
-          [disabled]="
-            !selectedDevice ||
-            status === 'initializing' ||
-            status === 'ready' ||
-            needsPermissionRequest()
-          "
+          class="mt-2 px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
+          (click)="retryLastAction()"
         >
-          {{ status === 'initializing' ? 'Initializing...' : 'Start Camera' }}
+          Retry
         </button>
+      </div>
+    </div>
+  </section>
 
-        <button
-          class="btn btn-primary"
-          (click)="startWebcamForIdCard()"
-          [disabled]="
-            !selectedDevice ||
-            status === 'initializing' ||
-            status === 'ready' ||
-            needsPermissionRequest()
-          "
+  <!-- Webcam Controls Section -->
+  <section *ngIf="isWebcamReady" class="bg-white border border-gray-200 rounded-lg p-4">
+    <h3 class="text-lg font-semibold mb-2 text-gray-800">Webcam Controls</h3>
+    <div *ngIf="currentResolution" class="mb-2 text-base text-gray-700">
+      <span class="font-medium">Current Resolution:</span> {{ currentResolution.width }} ×
+      {{ currentResolution.height }}
+    </div>
+    <div class="flex flex-wrap gap-2">
+      <button
+        class="px-3 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 text-base"
+        (click)="toggleMirror()"
+      >
+        Toggle Mirror
+      </button>
+    </div>
+  </section>
+
+  <!-- Permission Status Section -->
+  <section *ngIf="!needsPermissionRequest()" class="bg-white border border-gray-200 rounded-lg p-4">
+    <h3 class="text-lg font-semibold mb-2 text-gray-800">Permission Status</h3>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+      <div>
+        <span class="font-medium text-base">Camera:</span>
+        <span
+          class="ml-2 px-2 py-1 rounded text-xs font-semibold"
+          [ngClass]="{
+            'bg-green-100 text-green-700': hasPermission,
+            'bg-red-100 text-red-700': permissionDenied,
+            'bg-yellow-100 text-yellow-700': !hasPermission && !permissionDenied
+          }"
         >
-          {{ status === 'initializing' ? 'Initializing...' : 'Start Camera for ID Card' }}
-        </button>
-
-        <button class="btn btn-danger" (click)="stopWebcam()" [disabled]="status !== 'ready'">
-          Stop Camera
-        </button>
-        <button class="btn btn-success" (click)="captureImage()" [disabled]="status !== 'ready'">
-          Capture Image
-        </button>
+          {{ permissionStates.camera }}
+        </span>
+      </div>
+      <div>
+        <span class="font-medium text-base">Microphone:</span>
+        <span
+          class="ml-2 px-2 py-1 rounded text-xs font-semibold"
+          [ngClass]="{
+            'bg-green-100 text-green-700': permissionStates.microphone === 'granted',
+            'bg-red-100 text-red-700': permissionStates.microphone === 'denied',
+            'bg-yellow-100 text-yellow-700': permissionStates.microphone === 'prompt'
+          }"
+        >
+          {{ permissionStates.microphone }}
+        </span>
       </div>
     </div>
-  </div>
+  </section>
 
-  <div *ngIf="error" class="alert alert-danger mb-3">
-    <strong>Error:</strong> {{ error.message || error }}
-    <button class="btn btn-sm btn-outline-danger ms-2" (click)="clearError()">Clear</button>
-  </div>
-
-  <!-- Error Block -->
-  <div
-    *ngIf="hasError"
-    class="error-block"
-    style="
-      color: #b71c1c;
-      background: #fff3f3;
-      border: 1px solid #f44336;
-      padding: 1em;
-      margin-bottom: 1em;
-    "
-  >
-    <b>Error:</b> {{ error?.code }}<br />
-    <span>{{ error?.message }}</span>
-    <div *ngIf="error?.suggestions?.length">
-      <b>Suggestions:</b>
-      <ul>
-        <li *ngFor="let s of error.suggestions">{{ s }}</li>
-      </ul>
+  <!-- Device Capabilities Section -->
+  <section class="bg-gray-50 rounded-lg p-4">
+    <h3 class="text-lg font-semibold text-gray-800 mb-2 flex items-center gap-2">
+      Device Capabilities
+      <span *ngIf="!capabilities" class="text-xs text-gray-400">(กรุณาเลือกกล้อง)</span>
+    </h3>
+    <div *ngIf="capabilities">
+      <pre class="bg-gray-100 rounded p-3 text-xs overflow-x-auto"><code>{{ capabilities | json }}</code></pre>
     </div>
-    <div *ngIf="error?.canRetry">
-      <button (click)="retryLastAction()">Retry</button>
-    </div>
-  </div>
+    <div *ngIf="!capabilities" class="text-gray-400 text-sm italic">No device capabilities loaded.</div>
+  </section>
 
-  <!-- Additional Controls (when webcam is ready) -->
-  <div *ngIf="isWebcamReady" class="card mb-3">
-    <div class="card-body">
-      <h3 class="h5 mb-3">Webcam Controls</h3>
-
-      <div *ngIf="currentResolution" class="mb-3">
-        <strong>Current Resolution:</strong> {{ currentResolution.width }} ×
-        {{ currentResolution.height }}
-      </div>
-
-      <div class="d-flex gap-2 flex-wrap">
-        <button class="btn btn-outline-primary" (click)="toggleMirror()">Toggle Mirror</button>
-        <button class="btn btn-outline-secondary" (click)="loadDeviceCapabilities()">
-          Refresh Capabilities
-        </button>
-        <button class="btn btn-outline-info" (click)="testResolutions()">Test Resolutions</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Permission Status -->
-  <div *ngIf="!needsPermissionRequest()" class="card mb-3">
-    <div class="card-body">
-      <h3 class="h5 mb-3">Permission Status</h3>
-      <div class="row">
-        <div class="col-md-6">
-          <strong>Camera:</strong>
-          <span
-            [class]="
-              'badge ms-1 ' +
-              (hasPermission ? 'bg-success' : permissionDenied ? 'bg-danger' : 'bg-warning')
-            "
-          >
-            {{ permissionStates.camera }}
-          </span>
-        </div>
-        <div class="col-md-6">
-          <strong>Microphone:</strong>
-          <span
-            [class]="
-              'badge ms-1 ' +
-              (permissionStates.microphone === 'granted'
-                ? 'bg-success'
-                : permissionStates.microphone === 'denied'
-                ? 'bg-danger'
-                : 'bg-warning')
-            "
-          >
-            {{ permissionStates.microphone }}
-          </span>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div *ngIf="capabilities" class="card mb-3">
-    <div class="card-body">
-      <h3 class="h5 mb-3">Device Capabilities</h3>
-      <pre class="p-3 bg-light rounded"><code>{{ capabilities | json }}</code></pre>
-    </div>
-  </div>
-
-  <div *ngIf="resolutionSupport" class="card">
-    <div class="card-body">
-      <h3 class="h5 mb-3">Supported Resolutions</h3>
-      <div class="table-responsive">
-        <table class="table table-striped table-hover">
-          <thead class="table-light">
-            <tr>
-              <th>Name</th>
-              <th>Resolution</th>
-              <th>Aspect Ratio</th>
-              <th>Supported</th>
+  <!-- Supported Resolutions Section -->
+  <section class="bg-white border border-gray-200 rounded-lg p-4">
+    <h3 class="text-lg font-semibold text-gray-800 mb-2 flex items-center gap-2">
+      Supported Resolutions
+      <span *ngIf="!resolutionSupport" class="text-xs text-gray-400">(กรุณาเลือกกล้อง)</span>
+    </h3>
+    <div *ngIf="resolutionSupport">
+      <div class="overflow-x-auto">
+        <table class="min-w-full text-sm">
+          <thead>
+            <tr class="bg-gray-100 text-gray-700">
+              <th class="px-3 py-2 text-left font-semibold text-base">Name</th>
+              <th class="px-3 py-2 text-left font-semibold text-base">Resolution</th>
+              <th class="px-3 py-2 text-left font-semibold text-base">Aspect Ratio</th>
+              <th class="px-3 py-2 text-left font-semibold text-base">Supported</th>
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let res of resolutionSupport.resolutions" [class.supported]="res.supported">
-              <td>{{ res.name }}</td>
-              <td>{{ res.width }} × {{ res.height }}</td>
-              <td>{{ res.aspectRatio | number : '1.2-2' }}</td>
-              <td>
-                <span
-                  class="badge"
-                  [class.bg-success]="res.supported"
-                  [class.bg-danger]="!res.supported"
+            <tr *ngFor="let res of resolutionSupport.resolutions" [ngClass]="{ 'bg-green-50': res.supported, 'bg-red-50': !res.supported }">
+              <td class="px-3 py-2 text-base">{{ res.name }}</td>
+              <td class="px-3 py-2 text-base">{{ res.width }} × {{ res.height }}</td>
+              <td class="px-3 py-2 text-base">{{ res.aspectRatio | number : '1.2-2' }}</td>
+              <td class="px-3 py-2">
+                <span class="px-2 py-1 rounded text-xs font-semibold"
+                  [ngClass]="{
+                    'bg-green-200 text-green-800': res.supported,
+                    'bg-red-200 text-red-800': !res.supported
+                  }"
                 >
                   {{ res.supported ? 'Yes' : 'No' }}
                 </span>
@@ -204,5 +230,6 @@
         </table>
       </div>
     </div>
-  </div>
+    <div *ngIf="!resolutionSupport" class="text-gray-400 text-sm italic">No resolution test results.</div>
+  </section>
 </div>
