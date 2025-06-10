@@ -36,6 +36,9 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
   resolutions: Resolution[] = [];
   resolutionSupport: ResolutionSupportInfo | null = null;
 
+  lastError: WebcamError | null = null;
+  lastAction: (() => Promise<void>) | null = null;
+
   constructor(private readonly webcamService: WebcamService) {}
 
   // ====================
@@ -189,7 +192,7 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
       alert('Please select a device first');
       return;
     }
-
+    this.lastAction = this.startWebcam.bind(this);
     try {
       this.isLoading = true;
 
@@ -212,7 +215,9 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
 
       // Update current resolution
       this.updateCurrentResolution();
+      this.lastError = null;
     } catch (error) {
+      this.lastError = error as WebcamError;
       console.error('Failed to start webcam:', error);
     } finally {
       this.isLoading = false;
@@ -224,7 +229,7 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
       alert('Please select a device first');
       return;
     }
-
+    this.lastAction = this.startWebcamForIdCard.bind(this);
     try {
       this.isLoading = true;
 
@@ -252,7 +257,9 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
 
       // Update current resolution
       this.updateCurrentResolution();
+      this.lastError = null;
     } catch (error) {
+      this.lastError = error as WebcamError;
       console.error('Failed to start webcam:', error);
     } finally {
       this.isLoading = false;
@@ -346,6 +353,12 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
 
   clearError(): void {
     this.webcamService.clearError();
+  }
+
+  retryLastAction(): void {
+    if (this.lastAction) {
+      this.lastAction();
+    }
   }
 
   // ====================

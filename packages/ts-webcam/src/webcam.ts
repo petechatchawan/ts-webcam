@@ -7,6 +7,7 @@ import {
   Resolution,
   ResolutionSupportInfo,
   WebcamConfiguration,
+  WebcamErrorCode,
   WebcamError,
   WebcamState,
   WebcamStatus
@@ -58,7 +59,7 @@ export class Webcam {
       return videoDevices;
     } catch (error) {
       const webcamError = this.createError(
-        'DEVICE_LIST_ERROR',
+        WebcamErrorCode.DEVICES_ERROR,
         'Failed to get video devices',
         error
       );
@@ -82,7 +83,11 @@ export class Webcam {
           label: device.label
         }));
     } catch (error) {
-      throw this.createError('DEVICE_LIST_ERROR', 'Failed to get audio input devices', error);
+      throw this.createError(
+        WebcamErrorCode.DEVICES_ERROR,
+        'Failed to get audio input devices',
+        error
+      );
     }
   }
 
@@ -101,7 +106,11 @@ export class Webcam {
           label: device.label
         }));
     } catch (error) {
-      throw this.createError('DEVICE_LIST_ERROR', 'Failed to get audio output devices', error);
+      throw this.createError(
+        WebcamErrorCode.DEVICES_ERROR,
+        'Failed to get audio output devices',
+        error
+      );
     }
   }
 
@@ -118,7 +127,7 @@ export class Webcam {
         label: device.label
       }));
     } catch (error) {
-      throw this.createError('DEVICE_LIST_ERROR', 'Failed to get all devices', error);
+      throw this.createError(WebcamErrorCode.DEVICES_ERROR, 'Failed to get all devices', error);
     }
   }
 
@@ -168,7 +177,10 @@ export class Webcam {
         );
         if (!currentDeviceExists && this.stream) {
           this.stop();
-          const error = this.createError('DEVICE_DISCONNECTED', 'Current device was disconnected');
+          const error = this.createError(
+            WebcamErrorCode.DEVICE_NOT_FOUND,
+            'Current device was disconnected'
+          );
           this.configuration!.onError!(error);
         }
       });
@@ -257,9 +269,17 @@ export class Webcam {
     } catch (error: any) {
       if (error.name === 'NotAllowedError') {
         this.state.permissionStates.camera = 'denied';
-        throw this.createError('PERMISSION_DENIED', 'User denied camera access', error);
+        throw this.createError(
+          WebcamErrorCode.PERMISSION_DENIED,
+          'User denied camera access',
+          error
+        );
       }
-      throw this.createError('PERMISSION_DENIED', 'Failed to request permissions', error);
+      throw this.createError(
+        WebcamErrorCode.PERMISSION_DENIED,
+        'Failed to request permissions',
+        error
+      );
     }
   }
 
@@ -293,7 +313,7 @@ export class Webcam {
    */
   async start(): Promise<void> {
     if (!this.configuration) {
-      throw this.createError('NOT_INITIALIZED', 'Webcam is not properly initialized');
+      throw this.createError(WebcamErrorCode.INVALID_CONFIG, 'Webcam is not properly initialized');
     }
 
     this.state.status = 'initializing';
@@ -310,7 +330,7 @@ export class Webcam {
           this.currentDeviceId = this.configuration.deviceInfo.deviceId;
         } else {
           throw this.createError(
-            'NO_PREFERRED_RESOLUTION',
+            WebcamErrorCode.INVALID_CONFIG,
             'No preferredResolutions specified and allowAnyResolution is false'
           );
         }
@@ -354,7 +374,7 @@ export class Webcam {
             this.currentDeviceId = this.configuration.deviceInfo.deviceId;
           } else {
             throw this.createError(
-              'RESOLUTION_NOT_SUPPORTED',
+              WebcamErrorCode.RESOLUTION_NOT_SUPPORTED,
               'None of the preferredResolutions are supported',
               lastError
             );
@@ -387,17 +407,29 @@ export class Webcam {
       let webcamError: WebcamError;
 
       if (error.name === 'NotAllowedError') {
-        webcamError = this.createError('PERMISSION_DENIED', 'Please allow webcam access', error);
+        webcamError = this.createError(
+          WebcamErrorCode.PERMISSION_DENIED,
+          'Please allow webcam access',
+          error
+        );
       } else if (error.name === 'NotFoundError') {
-        webcamError = this.createError('DEVICE_NOT_FOUND', 'No webcam device found', error);
+        webcamError = this.createError(
+          WebcamErrorCode.DEVICE_NOT_FOUND,
+          'No webcam device found',
+          error
+        );
       } else if (error.name === 'NotReadableError') {
         webcamError = this.createError(
-          'DEVICE_IN_USE',
+          WebcamErrorCode.DEVICE_BUSY,
           'Webcam is in use by another application',
           error
         );
       } else {
-        webcamError = this.createError('STREAM_ERROR', 'Failed to start webcam', error);
+        webcamError = this.createError(
+          WebcamErrorCode.STREAM_FAILED,
+          'Failed to start webcam',
+          error
+        );
       }
 
       this.state.lastError = webcamError;
@@ -447,11 +479,11 @@ export class Webcam {
    */
   async setZoomLevel(level: number): Promise<void> {
     if (!this.stream) {
-      throw this.createError('NO_STREAM', 'No video stream available');
+      throw this.createError(WebcamErrorCode.STREAM_FAILED, 'No video stream available');
     }
 
     if (!this.isZoomSupported()) {
-      throw this.createError('ZOOM_NOT_SUPPORTED', 'Zoom is not supported on this device');
+      throw this.createError(WebcamErrorCode.NOT_SUPPORTED, 'Zoom is not supported on this device');
     }
 
     try {
@@ -460,7 +492,7 @@ export class Webcam {
         advanced: [{ zoom: level } as any]
       });
     } catch (error) {
-      throw this.createError('SETTINGS_ERROR', 'Failed to set zoom level', error);
+      throw this.createError(WebcamErrorCode.CONTROL_ERROR, 'Failed to set zoom level', error);
     }
   }
 
@@ -476,11 +508,14 @@ export class Webcam {
    */
   async enableTorch(enabled: boolean): Promise<void> {
     if (!this.stream) {
-      throw this.createError('NO_STREAM', 'No video stream available');
+      throw this.createError(WebcamErrorCode.STREAM_FAILED, 'No video stream available');
     }
 
     if (!this.isTorchSupported()) {
-      throw this.createError('TORCH_NOT_SUPPORTED', 'Torch is not supported on this device');
+      throw this.createError(
+        WebcamErrorCode.NOT_SUPPORTED,
+        'Torch is not supported on this device'
+      );
     }
 
     try {
@@ -489,7 +524,7 @@ export class Webcam {
         advanced: [{ torch: enabled } as any]
       });
     } catch (error) {
-      throw this.createError('SETTINGS_ERROR', 'Failed to control torch', error);
+      throw this.createError(WebcamErrorCode.CONTROL_ERROR, 'Failed to control torch', error);
     }
   }
 
@@ -505,11 +540,14 @@ export class Webcam {
    */
   async setFocusMode(mode: string): Promise<void> {
     if (!this.stream) {
-      throw this.createError('NO_STREAM', 'No video stream available');
+      throw this.createError(WebcamErrorCode.STREAM_FAILED, 'No video stream available');
     }
 
     if (!this.isFocusSupported()) {
-      throw this.createError('FOCUS_NOT_SUPPORTED', 'Focus mode is not supported on this device');
+      throw this.createError(
+        WebcamErrorCode.NOT_SUPPORTED,
+        'Focus mode is not supported on this device'
+      );
     }
 
     try {
@@ -518,7 +556,7 @@ export class Webcam {
         advanced: [{ focusMode: mode } as any]
       });
     } catch (error) {
-      throw this.createError('SETTINGS_ERROR', 'Failed to set focus mode', error);
+      throw this.createError(WebcamErrorCode.CONTROL_ERROR, 'Failed to set focus mode', error);
     }
   }
 
@@ -658,24 +696,24 @@ export class Webcam {
    */
   captureImage(options: CaptureOptions = {}): string {
     if (!this.videoElement) {
-      throw this.createError('NO_STREAM', 'No video element available');
+      throw this.createError(WebcamErrorCode.STREAM_FAILED, 'No video element available');
     }
 
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d');
 
     if (!context) {
-      throw this.createError('CANVAS_ERROR', 'Failed to get canvas context');
+      throw this.createError(WebcamErrorCode.CANVAS_ERROR, 'Failed to get canvas context');
     }
 
-    const scale = options.scale || 1.0;
+    const scale = options.scale ?? 1.0;
     canvas.width = this.videoElement.videoWidth * scale;
     canvas.height = this.videoElement.videoHeight * scale;
 
     context.drawImage(this.videoElement, 0, 0, canvas.width, canvas.height);
 
-    const mediaType = options.mediaType || 'image/jpeg';
-    const quality = options.quality || 0.8;
+    const mediaType = options.mediaType ?? 'image/jpeg';
+    const quality = options.quality ?? 0.8;
 
     return canvas.toDataURL(mediaType, quality);
   }
@@ -701,10 +739,10 @@ export class Webcam {
 
       const deviceCapability: DeviceCapability = {
         deviceId,
-        maxWidth: capabilities.width?.max || 1920,
-        maxHeight: capabilities.height?.max || 1080,
-        minWidth: capabilities.width?.min || 320,
-        minHeight: capabilities.height?.min || 240,
+        maxWidth: capabilities.width?.max ?? 1920,
+        maxHeight: capabilities.height?.max ?? 1080,
+        minWidth: capabilities.width?.min ?? 320,
+        minHeight: capabilities.height?.min ?? 240,
         hasZoom: 'zoom' in capabilities,
         hasTorch: 'torch' in capabilities,
         hasFocus: 'focusMode' in capabilities,
@@ -712,7 +750,7 @@ export class Webcam {
         minZoom: (capabilities as any).zoom?.min,
         supportedFocusModes: (capabilities as any).focusMode,
         supportedFrameRates: capabilities.frameRate
-          ? [capabilities.frameRate.min || 0, capabilities.frameRate.max || 30]
+          ? [capabilities.frameRate.min ?? 0, capabilities.frameRate.max ?? 30]
           : undefined
       };
 
@@ -723,7 +761,7 @@ export class Webcam {
       return deviceCapability;
     } catch (error) {
       throw this.createError(
-        'DEVICE_CAPABILITIES_ERROR',
+        WebcamErrorCode.DEVICES_ERROR,
         'Failed to get device capabilities',
         error
       );
@@ -746,7 +784,7 @@ export class Webcam {
   ): ResolutionSupportInfo {
     const capability = capabilities[0];
     if (!capability) {
-      throw this.createError('INVALID_DEVICE_ID', 'No device capabilities provided');
+      throw this.createError(WebcamErrorCode.INVALID_CONFIG, 'No device capabilities provided');
     }
 
     const supportedResolutions = resolutions.map((resolution) => ({
@@ -789,7 +827,7 @@ export class Webcam {
 
   private buildConstraints(): MediaStreamConstraints {
     if (!this.configuration) {
-      throw this.createError('NOT_INITIALIZED', 'Configuration not set');
+      throw this.createError(WebcamErrorCode.INVALID_CONFIG, 'Configuration not set');
     }
 
     const videoConstraints: MediaTrackConstraints = {
@@ -815,10 +853,13 @@ export class Webcam {
     };
   }
 
-  private createError(code: string, message: string, originalError?: any): WebcamError {
-    const error = new Error(message) as WebcamError;
-    error.code = code;
-    error.originalError = originalError;
-    return error;
+  private createError(
+    code: WebcamErrorCode,
+    message: string,
+    context?: any,
+    suggestions?: string[],
+    canRetry?: boolean
+  ): WebcamError {
+    return new WebcamError(code, message, context, suggestions, canRetry);
   }
 }

@@ -85,6 +85,31 @@
     <button class="btn btn-sm btn-outline-danger ms-2" (click)="clearError()">Clear</button>
   </div>
 
+  <!-- Error Block -->
+  <div
+    *ngIf="hasError"
+    class="error-block"
+    style="
+      color: #b71c1c;
+      background: #fff3f3;
+      border: 1px solid #f44336;
+      padding: 1em;
+      margin-bottom: 1em;
+    "
+  >
+    <b>Error:</b> {{ error?.code }}<br />
+    <span>{{ error?.message }}</span>
+    <div *ngIf="error?.suggestions?.length">
+      <b>Suggestions:</b>
+      <ul>
+        <li *ngFor="let s of error.suggestions">{{ s }}</li>
+      </ul>
+    </div>
+    <div *ngIf="error?.canRetry">
+      <button (click)="retryLastAction()">Retry</button>
+    </div>
+  </div>
+
   <!-- Additional Controls (when webcam is ready) -->
   <div *ngIf="isWebcamReady" class="card mb-3">
     <div class="card-body">
