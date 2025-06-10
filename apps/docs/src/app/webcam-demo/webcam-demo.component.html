@@ -1,0 +1,183 @@
+<div class="card">
+  <h2>Webcam Demo</h2>
+
+  <div class="status mb-3">
+    <strong>Status:</strong>
+    <span [class]="'status-badge ' + status.toLowerCase()">
+      {{ status }}
+    </span>
+  </div>
+
+  <!-- Permission Request Section -->
+  <div *ngIf="needsPermissionRequest()" class="card mb-3">
+    <div class="card-body">
+      <div class="alert alert-warning">
+        <strong>Camera Permission Required</strong>
+        <p>This demo requires access to your camera. Please grant permission to continue.</p>
+        <button class="btn btn-primary mt-2" (click)="requestPermissions()">
+          Grant Camera Access
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="video-container card mb-3">
+    <video #videoElement autoplay playsinline muted class="w-100"></video>
+  </div>
+
+  <div class="card mb-3">
+    <div class="card-body">
+      <div class="form-group mb-3">
+        <label for="deviceSelect" class="form-label">Select Camera:</label>
+        <select
+          id="deviceSelect"
+          class="form-control"
+          [value]="selectedDevice?.deviceId || ''"
+          (change)="onDeviceChange($event)"
+          [disabled]="status === 'initializing'"
+        >
+          <option value="" disabled>Select a camera</option>
+          <option *ngFor="let device of devices" [value]="device.deviceId">
+            {{ device.label || 'Camera ' + device.deviceId.substring(0, 8) }}
+          </option>
+        </select>
+      </div>
+
+      <div class="d-flex gap-2">
+        <button
+          class="btn btn-primary"
+          (click)="startWebcam()"
+          [disabled]="
+            !selectedDevice ||
+            status === 'initializing' ||
+            status === 'ready' ||
+            needsPermissionRequest()
+          "
+        >
+          {{ status === 'initializing' ? 'Initializing...' : 'Start Camera' }}
+        </button>
+
+        <button
+          class="btn btn-primary"
+          (click)="startWebcamForIdCard()"
+          [disabled]="
+            !selectedDevice ||
+            status === 'initializing' ||
+            status === 'ready' ||
+            needsPermissionRequest()
+          "
+        >
+          {{ status === 'initializing' ? 'Initializing...' : 'Start Camera for ID Card' }}
+        </button>
+
+        <button class="btn btn-danger" (click)="stopWebcam()" [disabled]="status !== 'ready'">
+          Stop Camera
+        </button>
+        <button class="btn btn-success" (click)="captureImage()" [disabled]="status !== 'ready'">
+          Capture Image
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="error" class="alert alert-danger mb-3">
+    <strong>Error:</strong> {{ error.message || error }}
+    <button class="btn btn-sm btn-outline-danger ms-2" (click)="clearError()">Clear</button>
+  </div>
+
+  <!-- Additional Controls (when webcam is ready) -->
+  <div *ngIf="isWebcamReady" class="card mb-3">
+    <div class="card-body">
+      <h3 class="h5 mb-3">Webcam Controls</h3>
+
+      <div *ngIf="currentResolution" class="mb-3">
+        <strong>Current Resolution:</strong> {{ currentResolution.width }} ×
+        {{ currentResolution.height }}
+      </div>
+
+      <div class="d-flex gap-2 flex-wrap">
+        <button class="btn btn-outline-primary" (click)="toggleMirror()">Toggle Mirror</button>
+        <button class="btn btn-outline-secondary" (click)="loadDeviceCapabilities()">
+          Refresh Capabilities
+        </button>
+        <button class="btn btn-outline-info" (click)="testResolutions()">Test Resolutions</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Permission Status -->
+  <div *ngIf="!needsPermissionRequest()" class="card mb-3">
+    <div class="card-body">
+      <h3 class="h5 mb-3">Permission Status</h3>
+      <div class="row">
+        <div class="col-md-6">
+          <strong>Camera:</strong>
+          <span
+            [class]="
+              'badge ms-1 ' +
+              (hasPermission ? 'bg-success' : permissionDenied ? 'bg-danger' : 'bg-warning')
+            "
+          >
+            {{ permissionStates.camera }}
+          </span>
+        </div>
+        <div class="col-md-6">
+          <strong>Microphone:</strong>
+          <span
+            [class]="
+              'badge ms-1 ' +
+              (permissionStates.microphone === 'granted'
+                ? 'bg-success'
+                : permissionStates.microphone === 'denied'
+                ? 'bg-danger'
+                : 'bg-warning')
+            "
+          >
+            {{ permissionStates.microphone }}
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="capabilities" class="card mb-3">
+    <div class="card-body">
+      <h3 class="h5 mb-3">Device Capabilities</h3>
+      <pre class="p-3 bg-light rounded"><code>{{ capabilities | json }}</code></pre>
+    </div>
+  </div>
+
+  <div *ngIf="resolutionSupport" class="card">
+    <div class="card-body">
+      <h3 class="h5 mb-3">Supported Resolutions</h3>
+      <div class="table-responsive">
+        <table class="table table-striped table-hover">
+          <thead class="table-light">
+            <tr>
+              <th>Name</th>
+              <th>Resolution</th>
+              <th>Aspect Ratio</th>
+              <th>Supported</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let res of resolutionSupport.resolutions" [class.supported]="res.supported">
+              <td>{{ res.name }}</td>
+              <td>{{ res.width }} × {{ res.height }}</td>
+              <td>{{ res.aspectRatio | number : '1.2-2' }}</td>
+              <td>
+                <span
+                  class="badge"
+                  [class.bg-success]="res.supported"
+                  [class.bg-danger]="!res.supported"
+                >
+                  {{ res.supported ? 'Yes' : 'No' }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

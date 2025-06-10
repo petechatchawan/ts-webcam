@@ -4,20 +4,15 @@
   "scripts": {
     "build": "turbo run build",
     "lint": "turbo run lint",
-    "format": "prettier --write \"./**/*.{html,ts,scss}\"",
-    "start": "turbo run start --filter=docs",
-    "deploy": "pnpm build --filter=docs && firebase deploy --only hosting:ts-webcam",
-    "deploy:preview": "pnpm build --filter=docs && firebase hosting:channel:deploy preview --only ts-webcam"
+    "format": "prettier --write \"**/*.{ts,tsx,md}\""
   },
   "engines": {
     "node": ">=18"
   },
   "packageManager": "pnpm@8.14.0",
   "devDependencies": {
-    "@repo/eslint-config": "workspace:*",
     "eslint": "^8.57.0",
-    "turbo": "^2.5.3",
-    "prettier": "^3.5.3",
-    "prettier-plugin-tailwindcss": "^0.6.11"
+    "prettier": "^2.8.8",
+    "turbo": "^2.5.4"
   }
 }

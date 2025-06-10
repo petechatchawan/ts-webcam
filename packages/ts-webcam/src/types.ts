@@ -1,73 +1,93 @@
-// ===== Permission Types =====
+// Core types for the simple API matching npm package exactly
 
-/**
- * Represents the permission state for device access
- * - 'granted': Permission has been granted
- * - 'denied': Permission has been denied
- * - 'prompt': Permission has not been requested yet
- */
-export type PermissionStatus = "granted" | "denied" | "prompt";
+// Permission status type
+export type PermissionStatus = 'granted' | 'denied' | 'prompt';
 
-// ===== Error Types =====
+// Webcam status enum
+export type WebcamStatus = 'idle' | 'initializing' | 'ready' | 'error';
 
-/**
- * Standardized error codes for webcam operations
- *
- * - PERMISSION_DENIED: Camera or microphone permission was denied
- * - PERMISSION_PROMPT_BLOCKED: Permission prompt was blocked by the browser
- * - DEVICE_NOT_FOUND: No camera device was found or specified device is unavailable
- * - RESOLUTION_UNSUPPORTED: The requested resolution is not supported by the device
- * - STREAM_ERROR: Error occurred while accessing or manipulating the media stream
- * - NOT_INITIALIZED: Webcam was not properly initialized before use
- * - UNKNOWN_ERROR: An unexpected error occurred
- */
-export type WebcamErrorCode =
-	| "PERMISSION_DENIED"
-	| "PERMISSION_PROMPT_BLOCKED"
-	| "DEVICE_NOT_FOUND"
-	| "RESOLUTION_UNSUPPORTED"
-	| "STREAM_ERROR"
-	| "NOT_INITIALIZED"
-	| "UNKNOWN_ERROR";
+// Resolution interface
+export interface Resolution {
+  name: string;
+  width: number;
+  height: number;
+  aspectRatio?: number;
+  supported?: boolean;
+}
 
-// ===== Device Types =====
+// Device capability interface
+export interface DeviceCapability {
+  deviceId: string;
+  maxWidth: number;
+  maxHeight: number;
+  minWidth: number;
+  minHeight: number;
+  hasZoom?: boolean;
+  hasTorch?: boolean;
+  hasFocus?: boolean;
+  maxZoom?: number;
+  minZoom?: number;
+  supportedFocusModes?: string[];
+  supportedFrameRates?: number[];
+}
 
-/**
- * Represents the possible device orientations
- *
- * - 'portrait-primary': Device is in portrait mode (normal)
- * - 'portrait-secondary': Device is in portrait mode (upside down)
- * - 'landscape-primary': Device is in landscape mode (normal)
- * - 'landscape-secondary': Device is in landscape mode (upside down)
- * - 'unknown': Device orientation could not be determined
- */
-export type DeviceOrientation =
-	| "portrait-primary"
-	| "portrait-secondary"
-	| "landscape-primary"
-	| "landscape-secondary"
-	| "unknown";
+// Device info from getUserMedia
+export interface DeviceInfo {
+  deviceId: string;
+  groupId: string;
+  kind: MediaDeviceKind;
+  label: string;
+}
 
-// ===== Status Types =====
+// Permission states for camera and microphone
+export interface PermissionStates {
+  camera: PermissionStatus;
+  microphone: PermissionStatus;
+}
 
-/**
- * Enum representing the possible states of a webcam
- *
- * - IDLE: Webcam is not active
- * - INITIALIZING: Webcam is in the process of starting
- * - READY: Webcam is active and ready to use
- * - ERROR: An error occurred while using the webcam
- */
-export enum WebcamStatus {
-	/** Webcam is not active */
-	IDLE = "idle",
+// Error interface
+export interface WebcamError extends Error {
+  code: string;
+  originalError?: Error;
+}
 
-	/** Webcam is in the process of starting */
-	INITIALIZING = "initializing",
+// Configuration options for setupConfiguration
+export interface WebcamConfiguration {
+  deviceInfo: DeviceInfo;
+  preferredResolutions?: Resolution | Resolution[];
+  videoElement?: HTMLVideoElement;
+  enableAudio?: boolean;
+  enableMirror?: boolean;
+  allowFallbackResolution?: boolean;
+  allowAutoRotateResolution?: boolean;
+  debug?: boolean;
+  onStart?: () => void;
+  onError?: (error: WebcamError) => void;
+}
 
-	/** Webcam is active and ready to use */
-	READY = "ready",
+// State interface
+export interface WebcamState {
+  status: WebcamStatus;
+  deviceCapabilities: DeviceCapability | null;
+  lastError: WebcamError | null;
+  permissionStates: PermissionStates;
+}
 
-	/** An error occurred while using the webcam */
-	ERROR = "error",
+// Capture options
+export interface CaptureOptions {
+  scale?: number;
+  mediaType?: 'image/jpeg' | 'image/png';
+  quality?: number;
+}
+
+// Resolution support info
+export interface ResolutionSupportInfo {
+  resolutions: Resolution[];
+  deviceInfo: {
+    deviceId: string;
+    maxWidth: number;
+    maxHeight: number;
+    minWidth: number;
+    minHeight: number;
+  };
 }

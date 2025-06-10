@@ -1,8 +1,8 @@
 {
 	"name": "ts-webcam",
-	"version": "1.5.9",
+	"version": "2.0.0",
 	"private": false,
-	"description": "A TypeScript library for managing webcam access using the MediaDevices API",
+	"description": "A simple, type-safe TypeScript library for webcam access using the MediaDevices API. Provides a clean interface for initializing and controlling webcam streams in web applications.",
 	"author": "Pete Chatchawan",
 	"homepage": "https://ts-webcam.web.app",
 	"repository": {
@@ -19,21 +19,25 @@
 		"stream",
 		"getUserMedia"
 	],
-	"main": "./lib/index.js",
-	"module": "./lib/index.mjs",
-	"types": "./lib/index.d.ts",
+	"main": "./dist/index.js",
+	"module": "./dist/index.mjs",
+	"types": "./dist/index.d.ts",
 	"sideEffects": false,
 	"license": "MIT",
 	"files": [
-		"lib/**",
+		"dist/**",
 		"README.md",
+		"README_NEW.md",
+		"COMPLETION_REPORT_FINAL.md",
+		"demo.html",
+		"example.ts",
 		"LICENSE"
 	],
 	"scripts": {
-		"build": "tsup src/index.ts --format esm,cjs --dts --outDir lib",
-		"dev": "tsup src/index.ts --format esm,cjs --watch --dts --outDir lib",
+		"build": "tsup src/index.ts --format esm,cjs --dts --outDir dist",
+		"dev": "tsup src/index.ts --format esm,cjs --watch --dts --outDir dist",
 		"lint": "eslint src/",
-		"clean": "rm -rf .turbo && rm -rf node_modules && rm -rf lib",
+		"clean": "rm -rf .turbo && rm -rf node_modules && rm -rf dist",
 		"prepublishOnly": "pnpm run build",
 		"release": "npm publish",
 		"release:dry": "npm publish --dry-run",
@@ -41,9 +45,6 @@
 		"pack": "npm pack"
 	},
 	"devDependencies": {
-		"@repo/eslint-config": "workspace:*",
-		"@types/node": "^20.10.6",
-		"eslint": "^8.57.0",
 		"tsup": "^8.0.1",
 		"typescript": "^5.3.3",
 		"ua-info": "1.0.5"
