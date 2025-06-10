@@ -21,8 +21,11 @@
     "@angular/platform-browser": "^17.3.0",
     "@angular/platform-browser-dynamic": "^17.3.0",
     "@angular/router": "^17.3.0",
-    "ts-webcam": "workspace:*",
+    "@tailwindcss/postcss": "^4.1.8",
+    "postcss": "^8.5.4",
     "rxjs": "~7.8.0",
+    "tailwindcss": "^4.1.8",
+    "ts-webcam": "workspace:*",
     "tslib": "^2.3.0",
     "zone.js": "~0.14.3"
   },
