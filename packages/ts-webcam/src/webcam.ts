@@ -7,8 +7,8 @@ import {
   Resolution,
   ResolutionSupportInfo,
   WebcamConfiguration,
-  WebcamErrorCode,
   WebcamError,
+  WebcamErrorCode,
   WebcamState,
   WebcamStatus
 } from './types';
