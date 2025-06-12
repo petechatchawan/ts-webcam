@@ -1,2 +1,23 @@
 /* You can add global styles to this file, and also import other style files */
 @import 'tailwindcss';
+
+/* Base styles */
+:root {
+  html,
+  body {
+    font-family: 'Kanit', sans-serif;
+    font-style: normal;
+    font-weight: 400;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  * {
+    font-family: 'Kanit', sans-serif;
+  }
+
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+}

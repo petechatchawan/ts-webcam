@@ -1,42 +1,14 @@
 <div class="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-  <div class="max-w-7xl mx-auto p-3 md:p-6 space-y-4 md:space-y-6">
-    <!-- Header Section -->
-    <div class="text-center py-4 md:py-6">
-      <h1
-        class="text-2xl md:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-3"
-      >
-        Webcam Demo
-      </h1>
-      <div class="inline-flex items-center gap-2 bg-white px-4 py-2 rounded-full">
-        <span class="text-xs md:text-sm font-medium text-gray-600">Status:</span>
-        <span
-          class="px-2 py-1 rounded-full text-xs md:text-sm font-semibold"
-          [ngClass]="{
-            'bg-green-100 text-green-700': status === 'ready',
-            'bg-yellow-100 text-yellow-700': status === 'initializing',
-            'bg-gray-100 text-gray-600': status === 'idle',
-            'bg-red-100 text-red-700': status === 'error'
-          }"
-        >
-          {{ status }}
-        </span>
-      </div>
-    </div>
-
+  <div class="max-w-4xl mx-auto p-2 md:p-4 space-y-2 md:space-y-3">
     <!-- Permission Request Section -->
-    <div *ngIf="needsPermissionRequest()" class="flex justify-center px-3">
+    <div *ngIf="needsPermissionRequest()" class="flex justify-center px-2">
       <div
-        class="bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl md:rounded-2xl p-4 md:p-6 max-w-sm md:max-w-md w-full text-center"
+        class="bg-gradient-to-r from-amber-50 to-orange-50 rounded-lg p-3 max-w-sm w-full text-center"
       >
         <div
-          class="w-12 h-12 md:w-16 md:h-16 bg-amber-100 rounded-full mx-auto mb-3 md:mb-4 flex items-center justify-center"
+          class="w-8 h-8 bg-amber-100 rounded-full mx-auto mb-2 flex items-center justify-center"
         >
-          <svg
-            class="w-6 h-6 md:w-8 md:h-8 text-amber-600"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
+          <svg class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               stroke-linecap="round"
               stroke-linejoin="round"
@@ -45,13 +17,12 @@
             ></path>
           </svg>
         </div>
-        <h3 class="text-lg md:text-xl font-bold text-amber-800 mb-2">Camera Permission Required</h3>
-        <p class="text-sm md:text-base text-amber-700 mb-4 md:mb-6 leading-relaxed">
-          This demo requires access to your camera to function properly. Your privacy is important
-          to us.
+        <h3 class="text-sm font-bold text-amber-800 mb-1">Camera Permission Required</h3>
+        <p class="text-xs text-amber-700 mb-3 leading-relaxed">
+          This demo requires access to your camera to function properly.
         </p>
         <button
-          class="px-6 py-2 md:px-8 md:py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg md:rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-200 font-semibold transform hover:-translate-y-0.5 text-sm md:text-base"
+          class="px-4 py-1.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 font-semibold text-xs"
           (click)="requestPermissions()"
         >
           Grant Camera Access
@@ -60,30 +31,47 @@
     </div>
 
     <!-- Video Section -->
-    <div class="bg-white rounded-2xl md:rounded-3xl p-3 md:p-6">
+    <div class="bg-white rounded-lg p-2">
       <div class="relative">
         <div
-          class="aspect-video w-full bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl md:rounded-2xl overflow-hidden"
+          class="aspect-video w-full bg-gradient-to-br from-gray-900 to-gray-800 rounded-lg overflow-hidden"
         >
+          <div
+            class="absolute top-2 right-2 z-50 inline-flex items-center gap-2 bg-white px-3 py-1 rounded-full"
+          >
+            <span class="text-xs font-medium text-gray-600">Status:</span>
+            <span
+              class="px-2 py-0.5 rounded-full text-xs font-semibold"
+              [ngClass]="{
+                'bg-green-100 text-green-700': status === 'ready',
+                'bg-yellow-100 text-yellow-700': status === 'initializing',
+                'bg-gray-100 text-gray-600': status === 'idle',
+                'bg-red-100 text-red-700': status === 'error'
+              }"
+            >
+              {{ status }}
+            </span>
+          </div>
+
           <video
             #videoElement
             autoplay
             playsinline
             muted
-            class="w-full h-full object-cover"
+            class="w-full h-full object-contain"
           ></video>
           <div *ngIf="status !== 'ready'" class="absolute inset-0 flex items-center justify-center">
             <div class="text-center text-white">
               <div
-                class="w-12 h-12 md:w-16 md:h-16 border-4 border-white border-t-transparent rounded-full animate-spin mx-auto mb-3 md:mb-4"
+                class="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin mx-auto mb-2"
                 *ngIf="status === 'initializing'"
               ></div>
               <div
-                class="w-12 h-12 md:w-16 md:h-16 bg-white/10 rounded-full mx-auto mb-3 md:mb-4 flex items-center justify-center"
+                class="w-8 h-8 bg-white/10 rounded-full mx-auto mb-2 flex items-center justify-center"
                 *ngIf="status === 'idle'"
               >
                 <svg
-                  class="w-6 h-6 md:w-8 md:h-8 text-white/60"
+                  class="w-4 h-4 text-white/60"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -96,7 +84,29 @@
                   ></path>
                 </svg>
               </div>
-              <p class="text-sm md:text-lg font-medium opacity-80">{{ statusText }}</p>
+              <div
+                class="w-8 h-8 bg-red-500/20 rounded-full mx-auto mb-2 flex items-center justify-center"
+                *ngIf="status === 'error'"
+              >
+                <svg
+                  class="w-4 h-4 text-red-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  ></path>
+                </svg>
+              </div>
+              <p class="text-xs font-medium opacity-80">{{ statusText }}</p>
+              <p *ngIf="status === 'idle'" class="text-xs opacity-60 mt-1">Camera not started</p>
+              <p *ngIf="status === 'error'" class="text-xs opacity-60 mt-1">
+                {{ lastError?.message || 'Camera error' }}
+              </p>
             </div>
           </div>
         </div>
@@ -104,14 +114,9 @@
     </div>
 
     <!-- Camera Controls Section -->
-    <div class="bg-white rounded-xl md:rounded-2xl p-4 md:p-6">
-      <h3 class="text-lg md:text-xl font-bold text-gray-800 mb-4 md:mb-6 flex items-center gap-2">
-        <svg
-          class="w-5 h-5 md:w-6 md:h-6 text-blue-600"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
+    <div class="bg-white rounded-lg p-3">
+      <h3 class="text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
+        <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
             stroke-linecap="round"
             stroke-linejoin="round"
@@ -122,18 +127,15 @@
         Camera Controls
       </h3>
 
-      <div class="space-y-4 md:space-y-6">
+      <div class="space-y-3">
         <!-- Device Selection -->
         <div>
-          <label
-            for="deviceSelect"
-            class="block text-xs md:text-sm font-semibold text-gray-700 mb-2 md:mb-3"
-          >
+          <label for="deviceSelect" class="block text-xs font-semibold text-gray-700 mb-1">
             Select Camera Device
           </label>
           <select
             id="deviceSelect"
-            class="w-full bg-gray-50 rounded-lg md:rounded-xl px-3 py-2 md:px-4 md:py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm md:text-base"
+            class="w-full bg-gray-50 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-xs"
             [value]="selectedDevice?.deviceId || ''"
             (change)="onDeviceChange($event)"
             [disabled]="status === 'initializing'"
@@ -146,23 +148,26 @@
         </div>
 
         <!-- Action Buttons -->
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-3">
+        <div class="grid grid-cols-2 gap-2">
           <button
-            class="px-3 py-2 md:px-4 md:py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg md:rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-semibold text-xs md:text-sm"
+            class="px-3 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-semibold text-xs"
             (click)="startWebcam()"
-            [disabled]="
-              !selectedDevice ||
-              status === 'initializing' ||
-              status === 'ready' ||
-              needsPermissionRequest()
-            "
+            [disabled]="!selectedDevice || status === 'initializing'"
           >
+            <svg class="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
+              ></path>
+            </svg>
             <span *ngIf="status === 'initializing'">Starting...</span>
             <span *ngIf="status !== 'initializing'">Start Camera</span>
           </button>
 
           <button
-            class="px-3 py-2 md:px-4 md:py-3 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white rounded-lg md:rounded-xl hover:from-indigo-700 hover:to-indigo-800 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-semibold text-xs md:text-sm"
+            class="px-3 py-2 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white rounded-lg hover:from-indigo-700 hover:to-indigo-800 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-semibold text-xs"
             (click)="startWebcamForIdCard()"
             [disabled]="
               !selectedDevice ||
@@ -176,7 +181,7 @@
           </button>
 
           <button
-            class="px-3 py-2 md:px-4 md:py-3 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-lg md:rounded-xl hover:from-red-700 hover:to-red-800 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-semibold text-xs md:text-sm"
+            class="px-3 py-2 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-lg hover:from-red-700 hover:to-red-800 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-semibold text-xs"
             (click)="stopWebcam()"
             [disabled]="status !== 'ready'"
           >
@@ -184,7 +189,7 @@
           </button>
 
           <button
-            class="px-3 py-2 md:px-4 md:py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg md:rounded-xl hover:from-green-700 hover:to-green-800 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-semibold text-xs md:text-sm"
+            class="px-3 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-semibold text-xs"
             (click)="captureImage()"
             [disabled]="status !== 'ready'"
           >
@@ -194,22 +199,122 @@
       </div>
     </div>
 
-    <!-- Error Sections -->
-    <div
-      *ngIf="error || hasError"
-      class="bg-gradient-to-r from-red-50 to-pink-50 rounded-xl md:rounded-2xl p-4 md:p-6"
-    >
-      <div class="flex items-start gap-3 md:gap-4">
-        <div class="flex-shrink-0">
-          <div
-            class="w-8 h-8 md:w-10 md:h-10 bg-red-100 rounded-full flex items-center justify-center"
-          >
-            <svg
-              class="w-4 h-4 md:w-5 md:h-5 text-red-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+    <!-- Debug Section -->
+    <div class="bg-white rounded-lg p-3">
+      <h3 class="text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
+        <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+          ></path>
+        </svg>
+        Debug Information
+      </h3>
+
+      <div class="space-y-2 text-xs">
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <span class="font-semibold text-gray-600">Status:</span>
+            <span
+              class="ml-1 px-2 py-0.5 rounded text-xs font-semibold"
+              [ngClass]="{
+                'bg-green-100 text-green-700': status === 'ready',
+                'bg-yellow-100 text-yellow-700': status === 'initializing',
+                'bg-gray-100 text-gray-600': status === 'idle',
+                'bg-red-100 text-red-700': status === 'error'
+              }"
             >
+              {{ status }}
+            </span>
+          </div>
+          <div>
+            <span class="font-semibold text-gray-600">Permission:</span>
+            <span
+              class="ml-1 px-2 py-0.5 rounded text-xs font-semibold"
+              [ngClass]="{
+                'bg-green-100 text-green-700': permissionStates.camera === 'granted',
+                'bg-yellow-100 text-yellow-700': permissionStates.camera === 'prompt',
+                'bg-red-100 text-red-700': permissionStates.camera === 'denied'
+              }"
+            >
+              {{ permissionStates.camera }}
+            </span>
+          </div>
+        </div>
+
+        <div>
+          <span class="font-semibold text-gray-600">Selected Device:</span>
+          <span class="ml-1 text-gray-700">
+            {{ selectedDevice?.label || selectedDevice?.deviceId || 'None' }}
+          </span>
+        </div>
+
+        <div>
+          <span class="font-semibold text-gray-600">Available Devices:</span>
+          <span class="ml-1 text-gray-700">{{ devices.length }}</span>
+        </div>
+
+        <div>
+          <span class="font-semibold text-gray-600">Has Capabilities:</span>
+          <span class="ml-1 text-gray-700">{{ capabilities ? 'Yes' : 'No' }}</span>
+          <span *ngIf="isLoadingCapabilities" class="ml-1 text-blue-600">(Loading...)</span>
+        </div>
+
+        <div>
+          <span class="font-semibold text-gray-600">Has Resolution Support:</span>
+          <span class="ml-1 text-gray-700">{{ resolutionSupport ? 'Yes' : 'No' }}</span>
+          <span *ngIf="isLoadingResolutions" class="ml-1 text-blue-600">(Testing...)</span>
+        </div>
+
+        <div *ngIf="lastError" class="bg-red-50 rounded p-2 border border-red-200">
+          <span class="font-semibold text-red-600">Last Error:</span>
+          <div class="text-red-700 text-xs mt-1">{{ lastError.message }}</div>
+        </div>
+
+        <div class="flex gap-2 pt-2">
+          <button
+            class="px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors font-medium text-xs"
+            (click)="debugCameraState()"
+          >
+            🐛 Debug Log
+          </button>
+          <button
+            class="px-2 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200 transition-colors font-medium text-xs"
+            (click)="requestPermissions()"
+            *ngIf="permissionStates.camera !== 'granted'"
+          >
+            🔐 Request Permission
+          </button>
+          <button
+            class="px-2 py-1 bg-purple-100 text-purple-700 rounded hover:bg-purple-200 transition-colors font-medium text-xs disabled:opacity-50"
+            (click)="loadDeviceCapabilities()"
+            [disabled]="isLoadingCapabilities"
+            *ngIf="selectedDevice && permissionStates.camera === 'granted'"
+          >
+            <span *ngIf="isLoadingCapabilities">⏳ Loading...</span>
+            <span *ngIf="!isLoadingCapabilities">🔧 Load Capabilities</span>
+          </button>
+          <button
+            class="px-2 py-1 bg-orange-100 text-orange-700 rounded hover:bg-orange-200 transition-colors font-medium text-xs disabled:opacity-50"
+            (click)="testResolutions()"
+            [disabled]="isLoadingResolutions"
+            *ngIf="capabilities"
+          >
+            <span *ngIf="isLoadingResolutions">⏳ Testing...</span>
+            <span *ngIf="!isLoadingResolutions">📊 Test Resolutions</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Error Sections -->
+    <div *ngIf="error || hasError" class="bg-gradient-to-r from-red-50 to-pink-50 rounded-lg p-3">
+      <div class="flex items-start gap-2">
+        <div class="flex-shrink-0">
+          <div class="w-6 h-6 bg-red-100 rounded-full flex items-center justify-center">
+            <svg class="w-3 h-3 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 stroke-linecap="round"
                 stroke-linejoin="round"
@@ -220,37 +325,37 @@
           </div>
         </div>
         <div class="flex-1">
-          <h4 class="text-base md:text-lg font-bold text-red-800 mb-2">
+          <h4 class="text-sm font-bold text-red-800 mb-1">
             <span *ngIf="error && error.code">Error: {{ error.code }}</span>
             <span *ngIf="!error || !error.code">Error Occurred</span>
           </h4>
-          <p class="text-sm md:text-base text-red-700 mb-3 md:mb-4">
+          <p class="text-xs text-red-700 mb-2">
             {{ error?.message || error }}
           </p>
 
-          <div *ngIf="error && error.suggestions && error.suggestions.length" class="mb-3 md:mb-4">
-            <h5 class="font-semibold text-red-800 mb-2 text-sm md:text-base">Suggestions:</h5>
+          <div *ngIf="error && error.suggestions && error.suggestions.length" class="mb-2">
+            <h5 class="font-semibold text-red-800 mb-1 text-xs">Suggestions:</h5>
             <ul class="space-y-1">
               <li
                 *ngFor="let suggestion of error.suggestions"
-                class="text-xs md:text-sm text-red-700 flex items-start gap-2"
+                class="text-xs text-red-700 flex items-start gap-1"
               >
-                <span class="text-red-500 mt-1">•</span>
+                <span class="text-red-500 mt-0.5">•</span>
                 <span>{{ suggestion }}</span>
               </li>
             </ul>
           </div>
 
-          <div class="flex gap-2 md:gap-3">
+          <div class="flex gap-2">
             <button
               *ngIf="error?.canRetry"
-              class="px-3 py-1.5 md:px-4 md:py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors font-medium text-xs md:text-sm"
+              class="px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors font-medium text-xs"
               (click)="retryLastAction()"
             >
               Try Again
             </button>
             <button
-              class="px-3 py-1.5 md:px-4 md:py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors font-medium text-xs md:text-sm"
+              class="px-2 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors font-medium text-xs"
               (click)="clearError()"
             >
               Clear Error
@@ -261,14 +366,9 @@
     </div>
 
     <!-- Webcam Controls Section -->
-    <div *ngIf="isWebcamReady" class="bg-white rounded-xl md:rounded-2xl p-4 md:p-6">
-      <h3 class="text-lg md:text-xl font-bold text-gray-800 mb-4 md:mb-6 flex items-center gap-2">
-        <svg
-          class="w-5 h-5 md:w-6 md:h-6 text-purple-600"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
+    <div *ngIf="isWebcamReady" class="bg-white rounded-lg p-3">
+      <h3 class="text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
+        <svg class="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
             stroke-linecap="round"
             stroke-linejoin="round"
@@ -281,10 +381,10 @@
 
       <div
         *ngIf="currentResolution"
-        class="mb-4 md:mb-6 p-3 md:p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg md:rounded-xl"
+        class="mb-3 p-2 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg"
       >
         <div class="flex items-center gap-2 text-blue-800">
-          <svg class="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               stroke-linecap="round"
               stroke-linejoin="round"
@@ -292,44 +392,39 @@
               d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
             ></path>
           </svg>
-          <span class="font-semibold text-sm md:text-base">Current Resolution:</span>
-          <span class="font-mono text-sm md:text-base"
+          <span class="font-semibold text-xs">Current Resolution:</span>
+          <span class="font-mono text-xs"
             >{{ currentResolution.width }} × {{ currentResolution.height }}</span
           >
         </div>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-2 md:gap-3">
+      <div class="grid grid-cols-3 gap-2">
         <button
-          class="px-3 py-2 md:px-4 md:py-3 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-lg md:rounded-xl hover:from-purple-700 hover:to-purple-800 transition-all duration-200 font-semibold text-xs md:text-sm"
+          class="px-2 py-1.5 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-lg hover:from-purple-700 hover:to-purple-800 transition-all duration-200 font-semibold text-xs"
           (click)="toggleMirror()"
         >
-          🔄 Toggle Mirror
+          🔄 Mirror
         </button>
         <button
-          class="px-3 py-2 md:px-4 md:py-3 bg-gradient-to-r from-cyan-600 to-cyan-700 text-white rounded-lg md:rounded-xl hover:from-cyan-700 hover:to-cyan-800 transition-all duration-200 font-semibold text-xs md:text-sm"
+          class="px-2 py-1.5 bg-gradient-to-r from-cyan-600 to-cyan-700 text-white rounded-lg hover:from-cyan-700 hover:to-cyan-800 transition-all duration-200 font-semibold text-xs"
           (click)="loadDeviceCapabilities()"
         >
-          🔄 Refresh Capabilities
+          🔄 Refresh
         </button>
         <button
-          class="px-3 py-2 md:px-4 md:py-3 bg-gradient-to-r from-orange-600 to-orange-700 text-white rounded-lg md:rounded-xl hover:from-orange-700 hover:to-orange-800 transition-all duration-200 font-semibold text-xs md:text-sm"
+          class="px-2 py-1.5 bg-gradient-to-r from-orange-600 to-orange-700 text-white rounded-lg hover:from-orange-700 hover:to-orange-800 transition-all duration-200 font-semibold text-xs"
           (click)="testResolutions()"
         >
-          🧪 Test Resolutions
+          🧪 Test
         </button>
       </div>
     </div>
 
-    <!-- Permission Status Section -->
-    <div *ngIf="!needsPermissionRequest()" class="bg-white rounded-xl md:rounded-2xl p-4 md:p-6">
-      <h3 class="text-lg md:text-xl font-bold text-gray-800 mb-4 md:mb-6 flex items-center gap-2">
-        <svg
-          class="w-5 h-5 md:w-6 md:h-6 text-green-600"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
+    <!-- Permission Status Section - Hidden on mobile -->
+    <div *ngIf="!needsPermissionRequest()" class="bg-white rounded-lg p-3 hidden md:block">
+      <h3 class="text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
+        <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
             stroke-linecap="round"
             stroke-linejoin="round"
@@ -340,12 +435,12 @@
         Permission Status
       </h3>
 
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-        <div class="p-3 md:p-4 rounded-lg md:rounded-xl bg-gray-50">
+      <div class="grid grid-cols-2 gap-3">
+        <div class="p-2 rounded-lg bg-gray-50">
           <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2 md:gap-3">
+            <div class="flex items-center gap-2">
               <svg
-                class="w-6 h-6 md:w-8 md:h-8 text-gray-600"
+                class="w-4 h-4 text-gray-600"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -357,10 +452,10 @@
                   d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
                 ></path>
               </svg>
-              <span class="font-semibold text-gray-800 text-sm md:text-base">Camera</span>
+              <span class="font-semibold text-gray-800 text-xs">Camera</span>
             </div>
             <span
-              class="px-2 py-1 md:px-3 md:py-1 rounded-full text-xs md:text-sm font-semibold"
+              class="px-2 py-0.5 rounded-full text-xs font-semibold"
               [ngClass]="{
                 'bg-green-100 text-green-700': hasPermission,
                 'bg-red-100 text-red-700': permissionDenied,
@@ -372,11 +467,11 @@
           </div>
         </div>
 
-        <div class="p-3 md:p-4 rounded-lg md:rounded-xl bg-gray-50">
+        <div class="p-2 rounded-lg bg-gray-50">
           <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2 md:gap-3">
+            <div class="flex items-center gap-2">
               <svg
-                class="w-6 h-6 md:w-8 md:h-8 text-gray-600"
+                class="w-4 h-4 text-gray-600"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -388,10 +483,10 @@
                   d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"
                 ></path>
               </svg>
-              <span class="font-semibold text-gray-800 text-sm md:text-base">Microphone</span>
+              <span class="font-semibold text-gray-800 text-xs">Microphone</span>
             </div>
             <span
-              class="px-2 py-1 md:px-3 md:py-1 rounded-full text-xs md:text-sm font-semibold"
+              class="px-2 py-0.5 rounded-full text-xs font-semibold"
               [ngClass]="{
                 'bg-green-100 text-green-700': permissionStates.microphone === 'granted',
                 'bg-red-100 text-red-700': permissionStates.microphone === 'denied',
@@ -406,14 +501,9 @@
     </div>
 
     <!-- Device Capabilities Section -->
-    <div *ngIf="capabilities" class="bg-white rounded-xl md:rounded-2xl p-4 md:p-6">
-      <h3 class="text-lg md:text-xl font-bold text-gray-800 mb-4 md:mb-6 flex items-center gap-2">
-        <svg
-          class="w-5 h-5 md:w-6 md:h-6 text-indigo-600"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
+    <div *ngIf="capabilities" class="bg-white rounded-lg p-3">
+      <h3 class="text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
+        <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
             stroke-linecap="round"
             stroke-linejoin="round"
@@ -428,23 +518,53 @@
           ></path>
         </svg>
         Device Capabilities
+        <span *ngIf="lastError" class="text-xs font-normal text-orange-600 ml-2"
+          >(Using Fallback)</span
+        >
       </h3>
-      <div class="bg-gradient-to-r from-gray-50 to-slate-50 rounded-lg md:rounded-xl p-3 md:p-4">
+
+      <!-- Capability Summary for Mobile -->
+      <div class="mb-3 md:hidden">
+        <div class="grid grid-cols-2 gap-2 text-xs">
+          <div class="bg-gray-50 rounded p-2">
+            <span class="font-semibold text-gray-600">Max Resolution:</span>
+            <div class="text-gray-700">
+              {{ capabilities.maxWidth }} × {{ capabilities.maxHeight }}
+            </div>
+          </div>
+          <div class="bg-gray-50 rounded p-2">
+            <span class="font-semibold text-gray-600">Min Resolution:</span>
+            <div class="text-gray-700">
+              {{ capabilities.minWidth }} × {{ capabilities.minHeight }}
+            </div>
+          </div>
+          <div class="bg-gray-50 rounded p-2">
+            <span class="font-semibold text-gray-600">Zoom:</span>
+            <div [ngClass]="capabilities.hasZoom ? 'text-green-600' : 'text-gray-500'">
+              {{ capabilities.hasZoom ? '✓ Supported' : '✗ Not Supported' }}
+            </div>
+          </div>
+          <div class="bg-gray-50 rounded p-2">
+            <span class="font-semibold text-gray-600">Torch:</span>
+            <div [ngClass]="capabilities.hasTorch ? 'text-green-600' : 'text-gray-500'">
+              {{ capabilities.hasTorch ? '✓ Supported' : '✗ Not Supported' }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Full JSON for Desktop -->
+      <div class="bg-gradient-to-r from-gray-50 to-slate-50 rounded-lg p-2 hidden md:block">
         <pre
-          class="text-xs md:text-sm text-gray-700 overflow-x-auto whitespace-pre-wrap font-mono"
+          class="text-xs text-gray-700 overflow-x-auto whitespace-pre-wrap font-mono max-h-32 overflow-y-auto"
         ><code>{{ capabilities | json }}</code></pre>
       </div>
     </div>
 
     <!-- Supported Resolutions Section -->
-    <div *ngIf="resolutionSupport" class="bg-white rounded-xl md:rounded-2xl p-4 md:p-6">
-      <h3 class="text-lg md:text-xl font-bold text-gray-800 mb-4 md:mb-6 flex items-center gap-2">
-        <svg
-          class="w-5 h-5 md:w-6 md:h-6 text-emerald-600"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
+    <div *ngIf="resolutionSupport" class="bg-white rounded-lg p-3">
+      <h3 class="text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
+        <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
             stroke-linecap="round"
             stroke-linejoin="round"
@@ -455,31 +575,43 @@
         Supported Resolutions
       </h3>
 
-      <div class="overflow-hidden rounded-lg md:rounded-xl">
-        <div class="overflow-x-auto">
-          <table class="min-w-full">
-            <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
+      <!-- Mobile Grid View -->
+      <div class="grid grid-cols-1 gap-2 md:hidden">
+        <div
+          *ngFor="let res of resolutionSupport.resolutions; let i = index"
+          class="p-2 rounded border"
+          [ngClass]="{
+            'bg-green-50 border-green-200': res.supported,
+            'bg-red-50 border-red-200': !res.supported
+          }"
+        >
+          <div class="flex justify-between items-center">
+            <div>
+              <div class="font-medium text-xs">{{ res.name }}</div>
+              <div class="text-xs text-gray-600 font-mono">{{ res.width }} × {{ res.height }}</div>
+            </div>
+            <span
+              class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold"
+              [ngClass]="{
+                'bg-green-100 text-green-800': res.supported,
+                'bg-red-100 text-red-800': !res.supported
+              }"
+            >
+              {{ res.supported ? '✓' : '✗' }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Desktop Table View -->
+      <div class="overflow-hidden rounded-lg hidden md:block">
+        <div class="max-h-48 overflow-y-auto">
+          <table class="min-w-full text-xs">
+            <thead class="bg-gradient-to-r from-gray-50 to-gray-100 sticky top-0">
               <tr>
-                <th
-                  class="px-3 py-2 md:px-6 md:py-4 text-left font-semibold text-gray-700 text-xs md:text-sm"
-                >
-                  Name
-                </th>
-                <th
-                  class="px-3 py-2 md:px-6 md:py-4 text-left font-semibold text-gray-700 text-xs md:text-sm"
-                >
-                  Resolution
-                </th>
-                <th
-                  class="px-3 py-2 md:px-6 md:py-4 text-left font-semibold text-gray-700 text-xs md:text-sm"
-                >
-                  Aspect Ratio
-                </th>
-                <th
-                  class="px-3 py-2 md:px-6 md:py-4 text-center font-semibold text-gray-700 text-xs md:text-sm"
-                >
-                  Status
-                </th>
+                <th class="px-2 py-1 text-left font-semibold text-gray-700">Name</th>
+                <th class="px-2 py-1 text-left font-semibold text-gray-700">Resolution</th>
+                <th class="px-2 py-1 text-center font-semibold text-gray-700">Status</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-200">
@@ -492,61 +624,104 @@
                 }"
                 class="transition-colors duration-200"
               >
-                <td class="px-3 py-2 md:px-6 md:py-4 font-medium text-gray-900 text-xs md:text-sm">
-                  {{ res.name }}
-                </td>
-                <td class="px-3 py-2 md:px-6 md:py-4 text-gray-700 font-mono text-xs md:text-sm">
+                <td class="px-2 py-1 font-medium text-gray-900">{{ res.name }}</td>
+                <td class="px-2 py-1 text-gray-700 font-mono">
                   {{ res.width }} × {{ res.height }}
                 </td>
-                <td class="px-3 py-2 md:px-6 md:py-4 text-gray-700 font-mono text-xs md:text-sm">
-                  {{ res.aspectRatio | number : '1.2-2' }}
-                </td>
-                <td class="px-3 py-2 md:px-6 md:py-4 text-center">
+                <td class="px-2 py-1 text-center">
                   <span
-                    class="inline-flex items-center px-2 py-1 md:px-3 md:py-1 rounded-full text-xs md:text-sm font-semibold"
+                    class="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-semibold"
                     [ngClass]="{
                       'bg-green-100 text-green-800': res.supported,
                       'bg-red-100 text-red-800': !res.supported
                     }"
                   >
-                    <svg
-                      *ngIf="res.supported"
-                      class="w-3 h-3 md:w-4 md:h-4 mr-1"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M5 13l4 4L19 7"
-                      ></path>
-                    </svg>
-                    <svg
-                      *ngIf="!res.supported"
-                      class="w-3 h-3 md:w-4 md:h-4 mr-1"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M6 18L18 6M6 6l12 12"
-                      ></path>
-                    </svg>
-                    <span class="hidden sm:inline">{{
-                      res.supported ? 'Supported' : 'Not Supported'
-                    }}</span>
-                    <span class="sm:hidden">{{ res.supported ? 'Yes' : 'No' }}</span>
+                    {{ res.supported ? 'Yes' : 'No' }}
                   </span>
                 </td>
               </tr>
             </tbody>
           </table>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Image Preview Modal -->
+  <div
+    *ngIf="showImagePreview && capturedImage"
+    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2"
+  >
+    <div class="bg-white rounded-xl max-w-sm md:max-w-2xl w-full max-h-[90vh] overflow-hidden">
+      <!-- Modal Header -->
+      <div class="flex justify-between items-center p-3 border-b">
+        <h3 class="text-sm md:text-lg font-bold text-gray-800">Captured Image</h3>
+        <button
+          (click)="showImagePreview = false"
+          class="w-6 h-6 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
+        >
+          <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M6 18L18 6M6 6l12 12"
+            ></path>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Image Display -->
+      <div class="p-3 text-center">
+        <img
+          [src]="capturedImage"
+          alt="Captured image"
+          class="max-w-full max-h-[50vh] object-contain mx-auto rounded-lg"
+        />
+      </div>
+
+      <!-- Modal Actions -->
+      <div class="flex justify-center gap-2 p-3 border-t">
+        <button
+          (click)="downloadImage()"
+          class="px-3 py-1.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 font-semibold text-xs flex items-center gap-1"
+        >
+          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+            ></path>
+          </svg>
+          Download
+        </button>
+        <button
+          (click)="retakePhoto()"
+          class="px-3 py-1.5 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 transition-all duration-200 font-semibold text-xs flex items-center gap-1"
+        >
+          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
+            ></path>
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
+            ></path>
+          </svg>
+          Retake
+        </button>
+        <button
+          (click)="showImagePreview = false"
+          class="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all duration-200 font-semibold text-xs"
+        >
+          Close
+        </button>
       </div>
     </div>
   </div>
