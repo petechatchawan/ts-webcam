@@ -1,21 +1,61 @@
-/* Styles for webcam-demo.component.css - Rely primarily on Tailwind CSS classes in the HTML. */
-/* Add any component-specific custom styles here if they cannot be achieved with Tailwind. */
+/* Modern, clean styling for webcam demo */
 
-/* Example of using @apply for a custom utility, if needed: */
-/* .custom-text-style {
-  @apply text-lg font-semibold text-purple-700;
-} */
+/* Custom animations */
+@keyframes pulse-scale {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.8;
+  }
+}
 
-/* Most styles from the previous CSS file have been removed as they are now handled by Tailwind utility classes
-   in the webcam-demo.component.html file. This includes:
-   - .status-badge and its variants (handled by ngClass with Tailwind bg/text colors and other utilities)
-   - .video-container and video (handled by aspect-video, bg-black, rounded-lg, object-contain, etc.)
-   - .card, .card-body (handled by bg-white, rounded-xl, shadow-lg, p-4, etc.)
-   - .form-group, .form-label, .form-control (handled by block, font-medium, mb-1, border, rounded, focus:ring, etc.)
-   - .btn and its variants (handled by px-4, py-2, bg-blue-600, text-white, rounded, hover:bg-blue-700, etc.)
-   - .alert and .alert-danger (handled by bg-red-50, border, text-red-700, etc.)
-   - .table and its sub-styles (handled by min-w-full, text-sm, bg-gray-100, px-3, py-2, etc.)
-   - pre and code (handled by bg-gray-100, rounded, p-3, text-xs, etc. in the HTML)
-   - Responsive utilities like .d-flex, .gap-2, .mb-3, .table-responsive (handled by Tailwind's flex, gap, m, and overflow utilities)
-   - Media queries for responsive adjustments (handled by Tailwind's responsive prefixes like md:, sm:)
-*/
+.pulse-scale {
+  animation: pulse-scale 2s infinite;
+}
+
+/* Enhanced backdrop blur for modals */
+.modal-backdrop {
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* Custom scrollbar for code blocks */
+pre::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+
+pre::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+pre::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+pre::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Enhanced focus states */
+button:focus-visible,
+select:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* Smooth transitions */
+.transition-all {
+  transition: all 0.2s ease-in-out;
+}
+
+/* Prevent video flickering during transitions */
+video {
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+}
