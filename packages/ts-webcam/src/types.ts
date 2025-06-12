@@ -31,14 +31,6 @@ export interface DeviceCapability {
   supportedFrameRates?: number[];
 }
 
-// Device info from getUserMedia
-export interface DeviceInfo {
-  deviceId: string;
-  groupId: string;
-  kind: MediaDeviceKind;
-  label: string;
-}
-
 // Permission states for camera and microphone
 export interface PermissionStates {
   camera: PermissionStatus;
@@ -106,7 +98,7 @@ export class WebcamError extends Error {
 
 // Configuration options for setupConfiguration
 export interface WebcamConfiguration {
-  deviceInfo: DeviceInfo;
+  deviceInfo: MediaDeviceInfo;
   preferredResolutions?: Resolution | Resolution[];
   videoElement?: HTMLVideoElement;
   enableAudio?: boolean;
@@ -126,8 +118,8 @@ export interface WebcamConfiguration {
 export interface WebcamState {
   status: WebcamStatus;
   deviceCapabilities: DeviceCapability | null;
+  permission: PermissionStates;
   lastError: WebcamError | null;
-  permissionStates: PermissionStates;
 }
 
 // Capture options

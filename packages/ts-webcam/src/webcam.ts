@@ -1,7 +1,6 @@
 import {
   CaptureOptions,
   DeviceCapability,
-  DeviceInfo,
   PermissionStates,
   PermissionStatus,
   Resolution,
@@ -22,7 +21,7 @@ export class Webcam {
   private stream: MediaStream | null = null;
   private videoElement: HTMLVideoElement | null = null;
   private currentDeviceId: string | null = null;
-  private devices: DeviceInfo[] = [];
+  private devices: MediaDeviceInfo[] = [];
   private changeListenerActive = false;
 
   constructor() {
@@ -30,7 +29,7 @@ export class Webcam {
       status: 'idle',
       deviceCapabilities: null,
       lastError: null,
-      permissionStates: {
+      permission: {
         camera: 'prompt',
         microphone: 'prompt'
       }
@@ -44,17 +43,10 @@ export class Webcam {
   /**
    * Get available video devices
    */
-  async getVideoDevices(): Promise<DeviceInfo[]> {
+  async getVideoDevices(): Promise<MediaDeviceInfo[]> {
     try {
       const devices = await navigator.mediaDevices.enumerateDevices();
-      const videoDevices = devices
-        .filter((device) => device.kind === 'videoinput')
-        .map((device) => ({
-          deviceId: device.deviceId,
-          groupId: device.groupId,
-          kind: device.kind,
-          label: device.label
-        }));
+      const videoDevices = devices.filter((device) => device.kind === 'videoinput');
       this.devices = videoDevices;
       return videoDevices;
     } catch (error) {
@@ -71,17 +63,10 @@ export class Webcam {
   /**
    * Get available audio input devices
    */
-  async getAudioInputDevices(): Promise<DeviceInfo[]> {
+  async getAudioInputDevices(): Promise<MediaDeviceInfo[]> {
     try {
       const devices = await navigator.mediaDevices.enumerateDevices();
-      return devices
-        .filter((device) => device.kind === 'audioinput')
-        .map((device) => ({
-          deviceId: device.deviceId,
-          groupId: device.groupId,
-          kind: device.kind,
-          label: device.label
-        }));
+      return devices.filter((device) => device.kind === 'audioinput');
     } catch (error) {
       throw this.createError(
         WebcamErrorCode.DEVICES_ERROR,
@@ -94,17 +79,10 @@ export class Webcam {
   /**
    * Get available audio output devices
    */
-  async getAudioOutputDevices(): Promise<DeviceInfo[]> {
+  async getAudioOutputDevices(): Promise<MediaDeviceInfo[]> {
     try {
       const devices = await navigator.mediaDevices.enumerateDevices();
-      return devices
-        .filter((device) => device.kind === 'audiooutput')
-        .map((device) => ({
-          deviceId: device.deviceId,
-          groupId: device.groupId,
-          kind: device.kind,
-          label: device.label
-        }));
+      return devices.filter((device) => device.kind === 'audiooutput');
     } catch (error) {
       throw this.createError(
         WebcamErrorCode.DEVICES_ERROR,
@@ -117,15 +95,9 @@ export class Webcam {
   /**
    * Get all available devices
    */
-  async getAllDevices(): Promise<DeviceInfo[]> {
+  async getAllDevices(): Promise<MediaDeviceInfo[]> {
     try {
-      const devices = await navigator.mediaDevices.enumerateDevices();
-      return devices.map((device) => ({
-        deviceId: device.deviceId,
-        groupId: device.groupId,
-        kind: device.kind,
-        label: device.label
-      }));
+      return await navigator.mediaDevices.enumerateDevices();
     } catch (error) {
       throw this.createError(WebcamErrorCode.DEVICES_ERROR, 'Failed to get all devices', error);
     }
@@ -134,7 +106,7 @@ export class Webcam {
   /**
    * Get current active device
    */
-  getCurrentDevice(): DeviceInfo | null {
+  getCurrentDevice(): MediaDeviceInfo | null {
     if (!this.currentDeviceId) return null;
     return this.devices.find((device) => device.deviceId === this.currentDeviceId) || null;
   }
@@ -196,8 +168,8 @@ export class Webcam {
    */
   needsPermissionRequest(): { camera: boolean; microphone: boolean } {
     return {
-      camera: this.state.permissionStates.camera === 'prompt',
-      microphone: this.state.permissionStates.microphone === 'prompt'
+      camera: this.state.permission.camera === 'prompt',
+      microphone: this.state.permission.microphone === 'prompt'
     };
   }
 
@@ -211,7 +183,7 @@ export class Webcam {
       }
       const permission = await navigator.permissions.query({ name: 'camera' as PermissionName });
       const status = permission.state as PermissionStatus;
-      this.state.permissionStates.camera = status;
+      this.state.permission.camera = status;
       return status;
     } catch (error) {
       return 'prompt';
@@ -230,7 +202,7 @@ export class Webcam {
         name: 'microphone' as PermissionName
       });
       const status = permission.state as PermissionStatus;
-      this.state.permissionStates.microphone = status;
+      this.state.permission.microphone = status;
       return status;
     } catch (error) {
       return 'prompt';
@@ -241,7 +213,7 @@ export class Webcam {
    * Get current permission states
    */
   getPermissionStates(): PermissionStates {
-    return { ...this.state.permissionStates };
+    return { ...this.state.permission };
   }
 
   /**
@@ -257,18 +229,18 @@ export class Webcam {
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
 
       // Update permission states
-      this.state.permissionStates.camera = 'granted';
+      this.state.permission.camera = 'granted';
       if (constraints.audio) {
-        this.state.permissionStates.microphone = 'granted';
+        this.state.permission.microphone = 'granted';
       }
 
       // Stop the temporary stream
       stream.getTracks().forEach((track) => track.stop());
 
-      return { ...this.state.permissionStates };
+      return { ...this.state.permission };
     } catch (error: any) {
       if (error.name === 'NotAllowedError') {
-        this.state.permissionStates.camera = 'denied';
+        this.state.permission.camera = 'denied';
         throw this.createError(
           WebcamErrorCode.PERMISSION_DENIED,
           'User denied camera access',
@@ -288,8 +260,7 @@ export class Webcam {
    */
   hasPermissionDenied(): boolean {
     return (
-      this.state.permissionStates.camera === 'denied' ||
-      this.state.permissionStates.microphone === 'denied'
+      this.state.permission.camera === 'denied' || this.state.permission.microphone === 'denied'
     );
   }
 
