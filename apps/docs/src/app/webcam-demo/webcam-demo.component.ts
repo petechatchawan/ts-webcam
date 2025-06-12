@@ -40,15 +40,11 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
   isRecording = false;
   recordedVideo: string | null = null;
   showVideoPreview = false;
-  private mediaRecorder: MediaRecorder | null = null;
-  private recordedChunks: Blob[] = [];
   recordingDuration = 0;
-  private recordingTimer: number | null = null;
 
   // Resolution testing
   resolutions: Resolution[] = [];
   resolutionSupport: ResolutionSupportInfo | null = null;
-
   capabilities: DeviceCapability | null = null;
 
   // Loading states
@@ -105,53 +101,6 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
   async init(): Promise<void> {
     // Initialize common resolutions
     this.resolutions = this.webcamService.createCommonResolutions();
-
-    // Load initial data
-    await this.initializeDemo();
-  }
-
-  // ====================
-  // INITIALIZATION
-  // ====================
-
-  private async initializeDemo(): Promise<void> {
-    try {
-      this.isLoading = true;
-      console.log('Starting demo initialization...');
-
-      // Check permissions
-      await this.checkPermissions();
-      console.log('Permission states after check:', this.permissionStates);
-
-      // Load devices if permission granted
-      if (this.permissionStates.camera === 'granted') {
-        console.log('Camera permission granted, loading devices...');
-        await this.loadDevices();
-        console.log('Devices loaded:', this.devices);
-
-        // Auto-select first device if available
-        if (this.devices.length > 0 && !this.selectedDevice) {
-          this.selectedDevice = this.devices[0];
-          console.log('Auto-selected first device:', this.selectedDevice);
-          await this.loadDeviceCapabilities();
-
-          // Auto-start camera if permission is already granted
-          if (this.hasPermission) {
-            console.log('Permission already granted, auto-starting camera...');
-            setTimeout(() => {
-              this.startWebcam();
-            }, 500);
-          }
-        }
-      } else {
-        console.log('Camera permission not granted:', this.permissionStates.camera);
-      }
-    } catch (error) {
-      console.error('Initialization error:', error);
-      this.lastError = error as WebcamError;
-    } finally {
-      this.isLoading = false;
-    }
   }
 
   // ====================
@@ -250,11 +199,11 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
       console.log('No selected device for capabilities loading');
       return;
     }
-    
+
     try {
       this.isLoadingCapabilities = true;
       console.log('Loading device capabilities for:', this.selectedDevice.deviceId);
-      
+
       // Check if we have camera permission
       if (!this.hasPermission) {
         console.log('No camera permission, requesting...');
@@ -263,17 +212,17 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
           throw new Error('Camera permission required to load capabilities');
         }
       }
-      
+
       this.capabilities = await this.webcamService.getDeviceCapabilities(
         this.selectedDevice.deviceId
       );
       console.log('Device capabilities loaded:', this.capabilities);
-      
+
       await this.testResolutions();
     } catch (error) {
       this.lastError = error as WebcamError;
       console.error('Failed to load capabilities:', error);
-      
+
       // Create fallback capabilities based on common camera specs
       console.log('Creating fallback capabilities...');
       this.capabilities = {
@@ -286,7 +235,7 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
         hasTorch: false,
         hasFocus: false
       };
-      
+
       console.log('Using fallback capabilities:', this.capabilities);
       await this.testResolutions();
     } finally {
@@ -300,17 +249,17 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
       this.resolutionSupport = null;
       return;
     }
-    
+
     try {
       this.isLoadingResolutions = true;
       console.log('Testing resolutions with capabilities:', this.capabilities);
       console.log('Available resolutions to test:', this.resolutions);
-      
+
       this.resolutionSupport = this.webcamService.checkSupportedResolutions(
         [this.capabilities],
         this.resolutions
       );
-      
+
       console.log('Resolution support result:', this.resolutionSupport);
     } catch (error) {
       this.lastError = error as WebcamError;
@@ -406,13 +355,13 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
 
       // Update current resolution
       this.updateCurrentResolution();
-      
+
       // Load capabilities if not already loaded
       if (!this.capabilities) {
         console.log('Loading capabilities after webcam start...');
         await this.loadDeviceCapabilities();
       }
-      
+
       this.lastError = null;
     } catch (error) {
       this.lastError = error as WebcamError;
