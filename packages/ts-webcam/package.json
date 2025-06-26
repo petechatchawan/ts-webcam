@@ -1,6 +1,6 @@
 {
 	"name": "ts-webcam",
-	"version": "2.0.0",
+	"version": "2.0.1",
 	"private": false,
 	"description": "A simple, type-safe TypeScript library for webcam access using the MediaDevices API. Provides a clean interface for initializing and controlling webcam streams in web applications.",
 	"author": "Pete Chatchawan",

@@ -5,19 +5,11 @@ import {
   OnDestroy,
   OnInit,
   ViewChild,
-  computed,
-  signal
+  signal,
+  effect
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import {
-  DeviceCapability,
-  PermissionStates,
-  Resolution,
-  ResolutionSupportInfo,
-  WebcamConfiguration,
-  WebcamError
-} from 'ts-webcam';
-import { WebcamService } from '../services/webcam.service';
+import { Webcam, WebcamConfiguration, Resolution, DeviceCapability } from 'ts-webcam';
 
 @Component({
   selector: 'app-webcam-demo',
@@ -30,106 +22,58 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
   @ViewChild('videoElement', { static: false })
   private readonly videoElement!: ElementRef<HTMLVideoElement>;
 
-  // Signals for reactive state management
+  // Core webcam instance
+  private webcam = new Webcam();
+
+  // Reactive signals
+  status = signal<'idle' | 'initializing' | 'ready' | 'error'>('idle');
   devices = signal<MediaDeviceInfo[]>([]);
   selectedDevice = signal<MediaDeviceInfo | null>(null);
-  isLoading = signal(true);
+  permissionGranted = signal(false);
+  error = signal<string | null>(null);
   currentResolution = signal<Resolution | null>(null);
-  capturedImage = signal<string | null>(null);
-  showImagePreview = signal(false);
-  resolutions = signal<Resolution[]>([]);
-  resolutionSupport = signal<ResolutionSupportInfo | null>(null);
   capabilities = signal<DeviceCapability | null>(null);
-  isLoadingCapabilities = signal(false);
-  isLoadingResolutions = signal(false);
-  lastError = signal<WebcamError | null>(null);
-  currentTab = signal<'camera' | 'testing'>('camera');
+  isLoading = signal(false);
+  selectedResolution = signal<Resolution | null>(null);
 
-  // Permission states as signal instead of computed
-  permissionStates = signal<PermissionStates>({ camera: 'prompt', microphone: 'prompt' });
+  // Available resolutions
+  availableResolutions = signal<Resolution[]>([
+    { name: 'QVGA', width: 320, height: 240 },
+    { name: 'VGA', width: 640, height: 480 },
+    { name: 'HD', width: 1280, height: 720 },
+    { name: 'Full HD', width: 1920, height: 1080 },
+    { name: '2K', width: 2560, height: 1440 },
+    { name: '4K', width: 3840, height: 2160 }
+  ]);
 
   // Computed properties
-  status = computed(() => this.webcamService.status);
-  error = computed(() => this.webcamService.lastError);
-  isWebcamReady = computed(() => this.status() === 'ready');
-  hasError = computed(() => this.error() !== null);
-  hasPermission = computed(() => this.permissionStates().camera === 'granted');
-  permissionDenied = computed(() => this.permissionStates().camera === 'denied');
-  closeImagePreview = () => {
-    this.showImagePreview.set(false);
-    this.capturedImage.set(null);
-  };
+  hasDevices = signal(false);
+  canStart = signal(false);
 
-  statusText = computed(() => {
-    switch (this.status()) {
-      case 'idle':
-        return 'Idle';
-      case 'initializing':
-        return 'Initializing...';
-      case 'ready':
-        return 'Ready';
-      case 'error':
-        return 'Error';
-      default:
-        return this.status();
-    }
-  });
-
-  // Computed properties for resolution support filtering
-  supportedResolutions = computed(() => {
-    const support = this.resolutionSupport();
-    return support?.resolutions?.filter((r) => r.supported) || [];
-  });
-
-  unsupportedResolutions = computed(() => {
-    const support = this.resolutionSupport();
-    return support?.resolutions?.filter((r) => !r.supported) || [];
-  });
-
-  supportedResolutionsCount = computed(() => this.supportedResolutions().length);
-  unsupportedResolutionsCount = computed(() => this.unsupportedResolutions().length);
-  totalResolutionsCount = computed(() => {
-    const support = this.resolutionSupport();
-    return support?.resolutions?.length || 0;
-  });
-
-  constructor(private readonly webcamService: WebcamService) {}
+  constructor() {
+    // Update computed signals when dependencies change
+    effect(() => {
+      this.hasDevices.set(this.devices().length > 0);
+      this.canStart.set(
+        this.permissionGranted() && 
+        this.selectedDevice() !== null && 
+        this.status() === 'idle'
+      );
+    });
+  }
 
   async ngOnInit() {
-    await this.init();
-  }
-
-  ngOnDestroy(): void {
-    console.log('Component destroying, stopping webcam...');
-    this.stopWebcam();
-    
-    // Additional cleanup
-    if (this.webcamService) {
-      this.webcamService.stopChangeListeners();
-    }
-  }
-
-  async init(): Promise<void> {
-    // Initialize common resolutions
-    this.resolutions.set(this.webcamService.createCommonResolutions());
-
-    // ตรวจสอบ permission ที่มีอยู่แล้ว
-    console.log('Checking initial permissions...');
     await this.checkPermissions();
-
-    // ถ้ามี permission แล้ว ให้โหลด devices
-    if (this.hasPermission()) {
-      console.log('Permission already granted, loading devices...');
+    if (this.permissionGranted()) {
       await this.loadDevices();
-
-      // เลือก device แรกถ้ายังไม่มีการเลือก
-      if (this.devices().length > 0 && !this.selectedDevice()) {
+      if (this.devices().length > 0) {
         this.selectedDevice.set(this.devices()[0]);
-        console.log('Auto-selected device in init:', this.selectedDevice());
       }
     }
+  }
 
-    this.isLoading.set(false);
+  ngOnDestroy() {
+    this.stopCamera();
   }
 
   // ====================
@@ -138,81 +82,36 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
 
   async checkPermissions(): Promise<void> {
     try {
-      console.log('Checking permissions...');
-      const result = await this.webcamService.checkPermissions();
-      this.permissionStates.set(result);
-      console.log('Permission check result:', result);
+      const permissions = this.webcam.getPermissionStates();
+      this.permissionGranted.set(permissions.camera === 'granted');
     } catch (error) {
-      console.error('Permission check failed:', error);
+      console.error('Failed to check permissions:', error);
+      this.permissionGranted.set(false);
     }
   }
 
   async requestPermissions(): Promise<void> {
     try {
       this.isLoading.set(true);
-      console.log('Requesting camera permissions...');
+      this.error.set(null);
 
-      const result = await this.webcamService.requestPermissions();
-
-      // อัปเดต permission states signal
-      this.permissionStates.set(result);
-      console.log('Permission result:', result);
-
-      // หลังจาก request permission แล้ว ให้ check permission อีกครั้งเพื่อให้แน่ใจ
-      await this.checkPermissions();
-
-      // Load devices after getting permission
-      if (this.hasPermission()) {
-        console.log('Camera permission granted, loading devices...');
+      const result = await this.webcam.requestPermissions();
+      this.permissionGranted.set(result.camera === 'granted');
+      
+      if (result.camera === 'granted') {
         await this.loadDevices();
-        console.log('Devices loaded:', this.devices());
-
-        // Auto-select first device if available
-        if (this.devices().length > 0 && !this.selectedDevice()) {
+        if (this.devices().length > 0) {
           this.selectedDevice.set(this.devices()[0]);
-          console.log('Auto-selected first device:', this.selectedDevice());
-
-          // Load capabilities แล้วค่อย start camera
-          await this.loadDeviceCapabilities();
-
-          // Auto-start camera after permission granted
-          console.log('Permission granted, auto-starting camera...');
-          try {
-            await this.startWebcam();
-            console.log('Auto-start webcam completed. Status:', this.status());
-          } catch (startError) {
-            console.error('Auto-start webcam failed:', startError);
-            this.lastError.set(startError as WebcamError);
-            // แสดง error ให้ user ทราบ
-            alert(
-              `Failed to start camera automatically: ${
-                startError instanceof Error ? startError.message : 'Unknown error'
-              }`
-            );
-          }
-        } else if (this.devices().length === 0) {
-          console.log('No devices found after permission granted');
-          alert('No camera devices found. Please check your camera connection.');
         }
       } else {
-        console.log('Camera permission denied or not granted:', this.permissionStates().camera);
+        this.error.set('Camera permission denied');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Permission request failed:', error);
-      this.lastError.set(error as WebcamError);
+      this.error.set(error.message || 'Failed to request permissions');
     } finally {
       this.isLoading.set(false);
     }
-  }
-
-  needsPermissionRequest(): boolean {
-    const permissionState = this.permissionStates().camera;
-    // ใช้ service method แทนการเช็คเอง
-    return this.webcamService.needsPermissionRequest().camera;
-  }
-
-  hasPermissionDenied(): boolean {
-    return this.webcamService.hasPermissionDenied();
   }
 
   // ====================
@@ -221,426 +120,205 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
 
   async loadDevices(): Promise<void> {
     try {
-      console.log('Loading video devices...');
-      const devices = await this.webcamService.getVideoDevices();
-      this.devices.set(devices);
-      console.log('Video devices found:', devices);
-    } catch (error) {
+      const videoDevices = await this.webcam.getVideoDevices();
+      this.devices.set(videoDevices);
+      console.log('Loaded devices:', videoDevices);
+    } catch (error: any) {
       console.error('Failed to load devices:', error);
-      this.lastError.set(error as WebcamError);
+      this.error.set(error.message || 'Failed to load devices');
     }
   }
 
   async onDeviceChange(event: Event): Promise<void> {
     const select = event.target as HTMLSelectElement;
     const deviceId = select.value;
-    const device = this.devices().find((d) => d.deviceId === deviceId) || null;
-    this.selectedDevice.set(device);
-    this.resolutionSupport.set(null);
-    this.capabilities.set(null);
-    if (!device) return;
-
-    // ตรวจสอบ permission ก่อน
-    if (this.permissionStates().camera !== 'granted') {
-      alert('Please grant camera permission first.');
-      return;
+    const device = this.devices().find(d => d.deviceId === deviceId) || null;
+    
+    if (device) {
+      this.selectedDevice.set(device);
+      
+      // Stop current stream if running
+      if (this.status() === 'ready') {
+        this.stopCamera();
+      }
+      
+      // Load capabilities for new device
+      await this.loadDeviceCapabilities();
     }
+  }
 
-    // ป้องกัน stream ซ้อน
-    this.stopWebcam();
+  async onResolutionChange(event: Event): Promise<void> {
+    const select = event.target as HTMLSelectElement;
+    const [width, height] = select.value.split('x').map(Number);
+    
+    const resolution: Resolution = {
+      name: 'Custom',
+      width,
+      height
+    };
+    
+    this.selectedResolution.set(resolution);
+    
+    // If camera is running, restart with new resolution
+    if (this.status() === 'ready') {
+      console.log('Changing resolution to:', resolution);
+      await this.restartWithResolution(resolution);
+    }
+  }
 
-    // โหลด capabilities และ resolutions
-    await this.loadDeviceCapabilities();
+  async restartWithResolution(resolution: Resolution): Promise<void> {
+    try {
+      // Stop current stream
+      this.stopCamera();
+      
+      // Wait a bit for cleanup
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Start with new resolution
+      await this.startCameraWithResolution(resolution);
+    } catch (error) {
+      console.error('Failed to restart with resolution:', error);
+      this.error.set('Failed to change resolution');
+    }
   }
 
   async loadDeviceCapabilities(): Promise<void> {
-    const selectedDevice = this.selectedDevice();
-    if (!selectedDevice) {
-      console.log('No selected device for capabilities loading');
-      return;
-    }
-
-    try {
-      this.isLoadingCapabilities.set(true);
-      console.log('Loading device capabilities for:', selectedDevice.deviceId);
-      console.log('Current permission state:', this.permissionStates());
-
-      // Check if we have camera permission
-      if (!this.hasPermission()) {
-        console.log('No camera permission, requesting...');
-        const permissionResult = await this.webcamService.requestPermissions();
-
-        // ใช้ผลลัพธ์จาก requestPermissions โดยตรง
-        if (permissionResult.camera !== 'granted') {
-          console.log('Permission denied. Result:', permissionResult);
-          throw new Error('Camera permission required to load capabilities');
-        }
-
-        console.log('Permission granted successfully');
-      }
-
-      const capabilities = await this.webcamService.getDeviceCapabilities(selectedDevice.deviceId);
-      this.capabilities.set(capabilities);
-      console.log('Device capabilities loaded:', capabilities);
-
-      await this.testResolutions();
-    } catch (error) {
-      this.lastError.set(error as WebcamError);
-      console.error('Failed to load capabilities:', error);
-
-      // Create fallback capabilities based on common camera specs
-      console.log('Creating fallback capabilities...');
-      const fallbackCapabilities = {
-        deviceId: selectedDevice.deviceId,
-        maxWidth: 1920,
-        maxHeight: 1080,
-        minWidth: 320,
-        minHeight: 240,
-        hasZoom: false,
-        hasTorch: false,
-        hasFocus: false
-      };
-
-      this.capabilities.set(fallbackCapabilities);
-      console.log('Using fallback capabilities:', fallbackCapabilities);
-      await this.testResolutions();
-    } finally {
-      this.isLoadingCapabilities.set(false);
-    }
-  }
-
-  async testResolutions(): Promise<void> {
-    const capabilities = this.capabilities();
-    if (!capabilities) {
-      console.log('No capabilities available for resolution testing');
-      this.resolutionSupport.set(null);
-      return;
-    }
-
-    try {
-      this.isLoadingResolutions.set(true);
-      console.log('Testing resolutions with capabilities:', capabilities);
-      console.log('Available resolutions to test:', this.resolutions());
-
-      const support = this.webcamService.checkSupportedResolutions(
-        [capabilities],
-        this.resolutions()
-      );
-      this.resolutionSupport.set(support);
-
-      console.log('Resolution support result:', support);
-    } catch (error) {
-      this.lastError.set(error as WebcamError);
-      console.error('Resolution test failed:', error);
-      alert('Resolution test failed');
-    } finally {
-      this.isLoadingResolutions.set(false);
-    }
-  }
-
-  // ====================
-  // QUICK START METHODS
-  // ====================
-
-  async quickStart(): Promise<void> {
-    try {
-      console.log('Quick start initiated...');
-
-      // Check if we have permissions
-      if (!this.hasPermission()) {
-        console.log('No permission, requesting...');
-        await this.requestPermissions();
-        return; // requestPermissions will auto-start the camera
-      }
-
-      // Check if we have devices
-      if (this.devices().length === 0) {
-        console.log('No devices found, loading...');
-        await this.loadDevices();
-      }
-
-      // Select first device if none selected
-      if (!this.selectedDevice() && this.devices().length > 0) {
-        this.selectedDevice.set(this.devices()[0]);
-        await this.loadDeviceCapabilities();
-      }
-
-      // Start the camera
-      if (this.selectedDevice()) {
-        await this.startWebcam();
-      } else {
-        alert('No camera devices found. Please check your camera connection.');
-      }
-    } catch (error) {
-      console.error('Quick start failed:', error);
-      alert(`Failed to start camera: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-  }
-
-  // ====================
-  // WEBCAM CONTROL
-  // ====================
-
-  async startWebcam(): Promise<void> {
-    const selectedDevice = this.selectedDevice();
-    if (!selectedDevice) {
-      console.log('No selected device, available devices:', this.devices());
-      alert('Please select a device first');
-      return;
-    }
-
-    console.log('=== STARTING WEBCAM ===');
-    console.log('Selected device:', selectedDevice);
-    console.log('Current status before start:', this.status());
-    console.log('Has permission:', this.hasPermission());
-    console.log('Permission states:', this.permissionStates());
+    const device = this.selectedDevice();
+    if (!device) return;
 
     try {
       this.isLoading.set(true);
-      this.clearError();
-
-      // Ensure we have permission
-      if (!this.hasPermission()) {
-        console.log('Camera permission not granted, requesting...');
-        const permissionResult = await this.webcamService.requestPermissions();
-        if (permissionResult.camera !== 'granted') {
-          throw new Error('Camera permission is required to start webcam');
-        }
-      }
-
-      // Check if video element is available
-      if (!this.videoElement?.nativeElement) {
-        console.log('Video element not available, waiting...');
-        // Wait a bit for the DOM to update
-        await new Promise((resolve) => setTimeout(resolve, 100));
-
-        if (!this.videoElement?.nativeElement) {
-          throw new Error(
-            'Video element not found. Please ensure the camera interface is visible.'
-          );
-        }
-      }
-
-      // Setup configuration
-      const config: WebcamConfiguration = {
-        deviceInfo: selectedDevice,
-        videoElement: this.videoElement.nativeElement,
-        preferredResolutions: this.resolutions(),
-        enableMirror: true,
-        debug: true
-      };
-
-      console.log('Starting webcam with config:', config);
-      console.log('Video element:', this.videoElement.nativeElement);
-
-      // Setup configuration
-      this.webcamService.setupConfiguration(config);
-
-      // Start webcam
-      console.log('Calling webcamService.startWebcam()...');
-      await this.webcamService.startWebcam();
-      console.log('webcamService.startWebcam() completed');
-      console.log('New status after start:', this.status());
-
-      // Update current resolution
-      this.updateCurrentResolution();
-
-      // Load capabilities if not already loaded
-      if (!this.capabilities()) {
-        console.log('Loading capabilities after webcam start...');
-        await this.loadDeviceCapabilities();
-      }
-
-      this.lastError.set(null);
-      console.log('=== WEBCAM START COMPLETED ===');
-    } catch (error) {
-      console.log('=== WEBCAM START FAILED ===');
-      this.lastError.set(error as WebcamError);
-      console.error('Failed to start webcam:', error);
-      alert(`Failed to start webcam: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      const caps = await this.webcam.getDeviceCapabilities(device.deviceId);
+      this.capabilities.set(caps);
+      console.log('Device capabilities:', caps);
+    } catch (error: any) {
+      console.error('Failed to load capabilities:', error);
+      this.error.set(error.message || 'Failed to load device capabilities');
     } finally {
       this.isLoading.set(false);
     }
   }
 
-  stopWebcam(): void {
-    console.log('Stopping webcam...');
-    this.webcamService.stopWebcam();
-    this.currentResolution.set(null);
-    
-    // Additional cleanup for UI state
-    this.capturedImage.set(null);
-    this.showImagePreview.set(false);
-    
-    console.log('Webcam stopped. Status:', this.status());
-  }
-
   // ====================
-  // ADVANCED CONTROLS
-  // ====================
-
-  async setZoom(level: number): Promise<void> {
-    if (!this.webcamService.isZoomSupported()) {
-      alert('Zoom not supported on this device');
-      return;
-    }
-
-    try {
-      await this.webcamService.setZoomLevel(level);
-    } catch (error) {
-      console.error('Zoom failed:', error);
-    }
-  }
-
-  async toggleTorch(): Promise<void> {
-    if (!this.webcamService.isTorchSupported()) {
-      alert('Torch not supported on this device');
-      return;
-    }
-
-    try {
-      await this.webcamService.enableTorch(true);
-    } catch (error) {
-      console.error('Torch failed:', error);
-    }
-  }
-
-  toggleMirror(): void {
-    this.webcamService.toggleMirror();
-  }
-
-  // ====================
-  // IMAGE CAPTURE
-  // ====================
-
-  async captureImage(): Promise<void> {
-    try {
-      const imageDataUrl = this.webcamService.captureImage();
-      this.capturedImage.set(imageDataUrl);
-      this.showImagePreview.set(true);
-    } catch (error) {
-      console.error('Failed to capture image:', error);
-    }
-  }
-
-  downloadImage(): void {
-    const capturedImage = this.capturedImage();
-    if (!capturedImage) return;
-
-    const link = document.createElement('a');
-    link.href = capturedImage;
-    link.download = `webcam-capture-${new Date().getTime()}.jpg`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  }
-
-  retakePhoto(): void {
-    this.capturedImage.set(null);
-    this.showImagePreview.set(false);
-  }
-
-  // ====================
-  // UI CONTROL METHODS (for template)
+  // CAMERA CONTROL
   // ====================
 
   async startCamera(): Promise<void> {
-    await this.startWebcam();
-  }
-
-  stopCamera(): void {
-    this.stopWebcam();
-  }
-
-  async takeScreenshot(): Promise<void> {
-    await this.captureImage();
-  }
-
-  async selectDevice(event: Event): Promise<void> {
-    await this.onDeviceChange(event);
-  }
-
-  async changeResolution(event: Event): Promise<void> {
-    const select = event.target as HTMLSelectElement;
-    const [width, height] = select.value.split('x').map(Number);
-
-    if (this.status() === 'ready') {
-      // Stop current stream
-      this.stopWebcam();
-
-      // Start with new resolution
-      const device = this.selectedDevice();
-      if (device) {
-        const config: WebcamConfiguration = {
-          deviceInfo: device,
-          preferredResolutions: { name: 'custom', width, height }
-        };
-
-        this.webcamService.setupConfiguration(config);
-        await this.webcamService.startWebcam();
-        this.updateCurrentResolution();
-      }
+    const resolution = this.selectedResolution();
+    if (resolution) {
+      await this.startCameraWithResolution(resolution);
+    } else {
+      await this.startCameraWithResolution(null);
     }
   }
 
-  async testDevice(device: MediaDeviceInfo): Promise<void> {
-    this.selectedDevice.set(device);
-    await this.loadDeviceCapabilities();
+  async startCameraWithResolution(resolution: Resolution | null): Promise<void> {
+    const device = this.selectedDevice();
+    if (!device) {
+      this.error.set('Please select a camera device');
+      return;
+    }
+
+    if (!this.videoElement?.nativeElement) {
+      this.error.set('Video element not found');
+      return;
+    }
+
+    try {
+      this.status.set('initializing');
+      this.error.set(null);
+
+      // Configure webcam
+      const config: WebcamConfiguration = {
+        deviceInfo: device,
+        videoElement: this.videoElement.nativeElement,
+        enableMirror: true,
+        debug: true,
+        preferredResolutions: resolution ? [resolution] : undefined,
+        onStart: () => {
+          console.log('Webcam started successfully');
+          this.status.set('ready');
+          this.updateCurrentResolution();
+        },
+        onError: (error) => {
+          console.error('Webcam error:', error);
+          this.status.set('error');
+          this.error.set(error.message || 'Camera error occurred');
+        }
+      };
+
+      this.webcam.setupConfiguration(config);
+      await this.webcam.start();
+
+      console.log('Camera started, status:', this.status());
+    } catch (error: any) {
+      console.error('Failed to start camera:', error);
+      this.status.set('error');
+      this.error.set(error.message || 'Failed to start camera');
+    }
   }
 
-  async refreshDevices(): Promise<void> {
-    await this.loadDevices();
+  stopCamera(): void {
+    try {
+      this.webcam.stop();
+      this.status.set('idle');
+      this.currentResolution.set(null);
+      this.error.set(null);
+      console.log('Camera stopped');
+    } catch (error: any) {
+      console.error('Failed to stop camera:', error);
+    }
   }
-
-  async testAllResolutions(): Promise<void> {
-    await this.testResolutions();
-  }
-
-  // Computed property for current settings
-  currentSettings = computed(() => {
-    const resolution = this.currentResolution();
-    if (!resolution) return null;
-
-    return {
-      video: {
-        width: resolution.width,
-        height: resolution.height,
-        frameRate: 30 // Default frame rate
-      }
-    };
-  });
 
   // ====================
-  // EXISTING METHODS
+  // UTILITY METHODS
   // ====================
 
   private updateCurrentResolution(): void {
-    const resolution = this.webcamService.getCurrentResolution();
-    this.currentResolution.set(resolution);
+    try {
+      const resolution = this.webcam.getCurrentResolution();
+      this.currentResolution.set(resolution);
+      console.log('Current resolution:', resolution);
+    } catch (error) {
+      console.error('Failed to get current resolution:', error);
+    }
   }
 
-  clearError(): void {
-    this.webcamService.clearError();
-  }
-
-  setTab(tab: 'camera' | 'testing'): void {
-    this.currentTab.set(tab);
+  async captureImage(): Promise<void> {
+    try {
+      const imageDataUrl = this.webcam.captureImage();
+      
+      // Download the image
+      const link = document.createElement('a');
+      link.href = imageDataUrl;
+      link.download = `webcam-capture-${new Date().getTime()}.jpg`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error: any) {
+      console.error('Failed to capture image:', error);
+      this.error.set(error.message || 'Failed to capture image');
+    }
   }
 
   // ====================
   // DEBUG METHODS
   // ====================
 
-  debugCameraState(): void {
-    console.log('=== CAMERA DEBUG STATE ===');
+  debugStatus(): void {
+    console.log('=== WEBCAM DEBUG STATUS ===');
     console.log('Status:', this.status());
-    console.log('Permission States:', this.permissionStates());
-    console.log('Selected Device:', this.selectedDevice());
-    console.log('Available Devices:', this.devices());
-    console.log('Current Resolution:', this.currentResolution());
-    console.log('Last Error:', this.lastError());
-    console.log('Video Element:', this.videoElement?.nativeElement);
-    console.log('Video Element Source:', this.videoElement?.nativeElement?.srcObject);
-    console.log('===========================');
+    console.log('Permission granted:', this.permissionGranted());
+    console.log('Selected device:', this.selectedDevice());
+    console.log('Available devices:', this.devices());
+    console.log('Current resolution:', this.currentResolution());
+    console.log('Error:', this.error());
+    console.log('Webcam state:', this.webcam.getState());
+    console.log('Video element:', this.videoElement?.nativeElement);
+    console.log('========================');
+  }
+
+  clearError(): void {
+    this.error.set(null);
   }
 }
