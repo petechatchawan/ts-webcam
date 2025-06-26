@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
 import {
   DeviceCapability,
-  DeviceInfo,
   PermissionStates,
   Resolution,
   ResolutionSupportInfo,
@@ -38,7 +37,7 @@ export class WebcamService {
     return this.webcam.getPermissionStates();
   }
 
-  get currentDevice(): DeviceInfo | null {
+  get currentDevice(): MediaDeviceInfo | null {
     return this.webcam.getCurrentDevice();
   }
 
@@ -76,11 +75,11 @@ export class WebcamService {
   // DEVICE METHODS
   // ====================
 
-  async getVideoDevices(): Promise<DeviceInfo[]> {
+  async getVideoDevices(): Promise<MediaDeviceInfo[]> {
     return await this.webcam.getVideoDevices();
   }
 
-  async getAllDevices(): Promise<DeviceInfo[]> {
+  async getAllDevices(): Promise<MediaDeviceInfo[]> {
     return await this.webcam.getAllDevices();
   }
 
@@ -100,7 +99,7 @@ export class WebcamService {
   // WEBCAM CONTROL
   // ====================
 
-  setupConfiguration(config: Partial<WebcamConfiguration> & { deviceInfo: DeviceInfo }): void {
+  setupConfiguration(config: Partial<WebcamConfiguration> & { deviceInfo: MediaDeviceInfo }): void {
     const fullConfig: WebcamConfiguration = {
       enableAudio: false,
       enableMirror: true,

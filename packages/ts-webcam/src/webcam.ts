@@ -417,20 +417,31 @@ export class Webcam {
    * Stop the webcam
    */
   stop(): void {
+    // Stop all tracks first
     if (this.stream) {
-      this.stream.getTracks().forEach((track) => track.stop());
+      this.stream.getTracks().forEach((track) => {
+        track.stop();
+        if (this.configuration?.debug) {
+          console.log(`[Webcam] Stopped track: ${track.kind} - ${track.label}`);
+        }
+      });
       this.stream = null;
     }
 
+    // Clear video element completely
     if (this.videoElement) {
+      this.videoElement.pause();
       this.videoElement.srcObject = null;
+      this.videoElement.src = '';
+      this.videoElement.load(); // Force reload to clear any remaining references
     }
 
     this.currentDeviceId = null;
     this.state.status = 'idle';
+    this.state.deviceCapabilities = null;
 
     if (this.configuration?.debug) {
-      console.log('[Webcam] Stopped');
+      console.log('[Webcam] Stopped completely');
     }
   }
 

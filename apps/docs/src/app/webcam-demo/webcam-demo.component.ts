@@ -11,7 +11,6 @@ import {
 import { FormsModule } from '@angular/forms';
 import {
   DeviceCapability,
-  DeviceInfo,
   PermissionStates,
   Resolution,
   ResolutionSupportInfo,
@@ -32,8 +31,8 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
   private readonly videoElement!: ElementRef<HTMLVideoElement>;
 
   // Signals for reactive state management
-  devices = signal<DeviceInfo[]>([]);
-  selectedDevice = signal<DeviceInfo | null>(null);
+  devices = signal<MediaDeviceInfo[]>([]);
+  selectedDevice = signal<MediaDeviceInfo | null>(null);
   isLoading = signal(true);
   currentResolution = signal<Resolution | null>(null);
   capturedImage = signal<string | null>(null);
@@ -101,7 +100,13 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    console.log('Component destroying, stopping webcam...');
     this.stopWebcam();
+    
+    // Additional cleanup
+    if (this.webcamService) {
+      this.webcamService.stopChangeListeners();
+    }
   }
 
   async init(): Promise<void> {
@@ -459,8 +464,15 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
   }
 
   stopWebcam(): void {
+    console.log('Stopping webcam...');
     this.webcamService.stopWebcam();
     this.currentResolution.set(null);
+    
+    // Additional cleanup for UI state
+    this.capturedImage.set(null);
+    this.showImagePreview.set(false);
+    
+    console.log('Webcam stopped. Status:', this.status());
   }
 
   // ====================
@@ -571,7 +583,7 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
     }
   }
 
-  async testDevice(device: DeviceInfo): Promise<void> {
+  async testDevice(device: MediaDeviceInfo): Promise<void> {
     this.selectedDevice.set(device);
     await this.loadDeviceCapabilities();
   }
