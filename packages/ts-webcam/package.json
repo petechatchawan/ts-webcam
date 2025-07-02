@@ -1,58 +1,13 @@
 {
-	"name": "ts-webcam",
-	"version": "2.0.1",
-	"private": false,
-	"description": "A simple, type-safe TypeScript library for webcam access using the MediaDevices API. Provides a clean interface for initializing and controlling webcam streams in web applications.",
-	"author": "Pete Chatchawan",
-	"homepage": "https://ts-webcam.web.app",
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/petechatchawan/ts-webcam.git"
-	},
-	"keywords": [
-		"webcam",
-		"camera",
-		"typescript",
-		"mediadevices",
-		"browser",
-		"video",
-		"stream",
-		"getUserMedia"
-	],
-	"main": "./dist/index.js",
-	"module": "./dist/index.mjs",
-	"types": "./dist/index.d.ts",
-	"sideEffects": false,
-	"license": "MIT",
-	"files": [
-		"dist/**",
-		"README.md",
-		"README_NEW.md",
-		"COMPLETION_REPORT_FINAL.md",
-		"demo.html",
-		"example.ts",
-		"LICENSE"
-	],
-	"scripts": {
-		"build": "tsup src/index.ts --format esm,cjs --dts --outDir dist",
-		"dev": "tsup src/index.ts --format esm,cjs --watch --dts --outDir dist",
-		"lint": "eslint src/",
-		"clean": "rm -rf .turbo && rm -rf node_modules && rm -rf dist",
-		"prepublishOnly": "pnpm run build",
-		"release": "npm publish",
-		"release:dry": "npm publish --dry-run",
-		"release:beta": "npm publish --tag beta",
-		"pack": "npm pack"
-	},
-	"devDependencies": {
-		"tsup": "^8.0.1",
-		"typescript": "^5.3.3",
-		"ua-info": "1.0.5"
-	},
-	"dependencies": {
-		"ua-info": "1.0.5"
-	},
-	"publishConfig": {
-		"access": "public"
-	}
+  "name": "ts-webcam",
+  "version": "0.1.0",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.7",
+    "typescript": "^5.0.0"
+  }
 }

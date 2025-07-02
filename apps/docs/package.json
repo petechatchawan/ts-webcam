@@ -1,6 +1,5 @@
 {
   "name": "docs",
-  "type": "module",
   "version": "1.0.0",
   "private": true,
   "scripts": {
@@ -21,10 +20,11 @@
     "@angular/platform-browser": "^17.3.0",
     "@angular/platform-browser-dynamic": "^17.3.0",
     "@angular/router": "^17.3.0",
-    "@tailwindcss/postcss": "^4.1.8",
-    "postcss": "^8.5.4",
+    "@repo/ui": "workspace:*",
+    "@tailwindcss/postcss": "^4.1.11",
+    "postcss": "^8.5.6",
     "rxjs": "~7.8.0",
-    "tailwindcss": "^4.1.8",
+    "tailwindcss": "^4.1.11",
     "ts-webcam": "workspace:*",
     "tslib": "^2.3.0",
     "zone.js": "~0.14.3"
@@ -38,6 +38,7 @@
     "@angular-eslint/template-parser": "17.4.0",
     "@angular/cli": "^17.3.7",
     "@angular/compiler-cli": "^17.3.0",
+    "@repo/eslint-config": "workspace:*",
     "@types/jasmine": "~5.1.0",
     "@typescript-eslint/eslint-plugin": "7.8.0",
     "@typescript-eslint/parser": "7.8.0",

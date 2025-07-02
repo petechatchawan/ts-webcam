@@ -1,557 +1,537 @@
-<!-- Simple Webcam Demo Interface -->
-<div class="min-h-screen bg-gray-100 p-3 sm:p-6">
-  <div class="max-w-7xl mx-auto">
+<div class="min-h-screen bg-gray-50 py-6 px-4">
+  <div class="max-w-6xl mx-auto">
     <!-- Header -->
-    <div class="text-center mb-6 sm:mb-8">
-      <h1 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-800 mb-2">📹 Webcam Demo</h1>
-      <p class="text-sm sm:text-base text-gray-600">
-        Simple webcam interface using ts-webcam package
-      </p>
+    <div class="text-center mb-6">
+      <h1 class="text-3xl font-bold text-gray-900 mb-2">Webcam Demo</h1>
+      <p class="text-gray-600">TS-Webcam Library Showcase</p>
     </div>
 
-    <!-- Permission Request -->
-    <div *ngIf="!permissionGranted()" class="text-center mb-6 sm:mb-8">
-      <div class="bg-white rounded-lg shadow p-6 sm:p-8 max-w-sm sm:max-w-md mx-auto">
-        <div class="mb-4 sm:mb-6">
+    <!-- Permission Check -->
+    <div *ngIf="!permissionChecked()" class="bg-white rounded-lg shadow-sm border p-6 mb-4">
+      <div class="flex items-center justify-center gap-3 text-gray-500">
+        <svg class="animate-spin h-5 w-5 text-blue-500" viewBox="0 0 24 24">
+          <circle
+            class="opacity-25"
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            stroke-width="4"
+            fill="none"
+          ></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+        </svg>
+        <span>Checking permissions...</span>
+      </div>
+    </div>
+
+    <!-- Permission Denied -->
+    <div
+      *ngIf="permissionChecked() && isPermissionDenied()"
+      class="bg-white rounded-lg shadow-sm border p-6 mb-4"
+    >
+      <div class="text-center">
+        <div
+          class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3"
+        >
           <svg
-            class="w-12 h-12 sm:w-16 sm:h-16 mx-auto text-amber-500 mb-3 sm:mb-4"
+            class="w-6 h-6 text-red-600"
             fill="none"
             stroke="currentColor"
+            stroke-width="2"
             viewBox="0 0 24 24"
           >
             <path
               stroke-linecap="round"
               stroke-linejoin="round"
-              stroke-width="2"
-              d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
-            ></path>
+              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
+            />
           </svg>
-          <h3 class="text-lg sm:text-xl font-semibold text-gray-800 mb-2">
-            Camera Access Required
-          </h3>
-          <p class="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6">
-            Please allow camera access to use the webcam demo.
-          </p>
         </div>
+        <h3 class="text-lg font-semibold text-gray-900 mb-2">Camera Access Denied</h3>
+        <p class="text-gray-600 mb-4">Please allow camera access to use this feature</p>
+
+        <!-- Permission Options -->
+        <div class="bg-gray-50 rounded-lg p-3 mb-4">
+          <div class="flex gap-4 justify-center text-sm">
+            <label class="flex items-center gap-2">
+              <input
+                type="checkbox"
+                [checked]="permissionOptions().video"
+                (change)="onVideoPermissionChange($event)"
+                class="rounded"
+              />
+              <span>Camera</span>
+            </label>
+            <label class="flex items-center gap-2">
+              <input
+                type="checkbox"
+                [checked]="permissionOptions().audio"
+                (change)="onAudioPermissionChange($event)"
+                class="rounded"
+              />
+              <span>Microphone</span>
+            </label>
+          </div>
+        </div>
+
         <button
-          class="w-full py-2.5 sm:py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm sm:text-base"
-          (click)="requestPermissions()"
-          [disabled]="isLoading()"
+          (click)="requestPermissionsAndLoadDevices()"
+          class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
         >
-          <span *ngIf="isLoading()" class="flex items-center justify-center">
-            <div
-              class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"
-            ></div>
-            Loading...
-          </span>
-          <span *ngIf="!isLoading()">Grant Camera Permission</span>
+          <svg
+            class="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
+            />
+          </svg>
+          Request Access
         </button>
+
+        <p class="text-xs text-gray-500 mt-3">
+          If permanently denied, please check browser settings and refresh the page
+        </p>
+      </div>
+    </div>
+
+    <!-- Error Display -->
+    <div
+      *ngIf="error() && permissionChecked() && !isPermissionDenied()"
+      class="bg-red-50 border border-red-200 rounded-lg p-4 mb-4"
+    >
+      <div class="flex items-start gap-3">
+        <svg
+          class="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
+        </svg>
+        <div>
+          <h4 class="font-medium text-red-800 mb-1">Error</h4>
+          <p class="text-red-700 text-sm">{{ error() }}</p>
+        </div>
       </div>
     </div>
 
     <!-- Main Interface -->
-    <div *ngIf="permissionGranted()" class="space-y-4 sm:space-y-6">
-      <!-- Video Section -->
-      <div class="bg-white rounded-lg shadow overflow-hidden">
-        <div class="relative aspect-video bg-black flex items-center justify-center">
-          <!-- Video Element -->
-          <video
-            #videoElement
-            autoplay
-            muted
-            playsinline
-            class="w-full h-full object-cover"
-            [class.hidden]="status() !== 'ready'"
-          ></video>
+    <div
+      *ngIf="permissionChecked() && !isPermissionDenied()"
+      class="grid grid-cols-1 lg:grid-cols-3 gap-6"
+    >
+      <!-- Video Display - Takes up 2 columns -->
+      <div class="lg:col-span-2 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-lg font-semibold text-gray-900">Video Stream</h2>
 
-          <!-- Status Overlay -->
-          <div
-            *ngIf="status() !== 'ready'"
-            class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-80"
-          >
-            <div class="text-center text-white px-4">
-              <div *ngIf="status() === 'initializing'" class="mb-4">
-                <div
-                  class="w-8 h-8 sm:w-12 sm:h-12 border-4 border-white border-t-transparent rounded-full animate-spin mx-auto mb-3 sm:mb-4"
-                ></div>
-                <p class="text-base sm:text-lg">Starting Camera...</p>
-              </div>
-              <div *ngIf="status() === 'idle'" class="mb-4">
-                <svg
-                  class="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-3 sm:mb-4 text-gray-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
-                  ></path>
-                </svg>
-                <p class="text-base sm:text-lg">Camera Idle</p>
-              </div>
-              <div *ngIf="status() === 'error'" class="mb-4">
-                <svg
-                  class="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-3 sm:mb-4 text-red-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
-                  ></path>
-                </svg>
-                <p class="text-base sm:text-lg">Camera Error</p>
-                <p class="text-xs sm:text-sm text-gray-300 mt-2 break-words">{{ error() }}</p>
-              </div>
-            </div>
-          </div>
-
-          <!-- Live Indicator -->
-          <div *ngIf="status() === 'ready'" class="absolute top-2 sm:top-4 left-2 sm:left-4">
-            <div class="flex items-center bg-black bg-opacity-50 rounded-lg px-2 sm:px-3 py-1">
-              <div
-                class="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-red-500 rounded-full animate-pulse mr-1.5 sm:mr-2"
-              ></div>
-              <span class="text-white text-xs sm:text-sm font-medium">LIVE</span>
-            </div>
+          <!-- Status Badge -->
+          <div class="flex items-center gap-2">
+            <div
+              class="w-2 h-2 rounded-full"
+              [class]="
+                uiState().isReady
+                  ? 'bg-green-500'
+                  : uiState().isLoading
+                  ? 'bg-yellow-500'
+                  : 'bg-gray-400'
+              "
+            ></div>
+            <span
+              class="text-sm font-medium"
+              [class]="
+                uiState().isReady
+                  ? 'text-green-600'
+                  : uiState().isLoading
+                  ? 'text-yellow-600'
+                  : 'text-gray-500'
+              "
+            >
+              {{ uiState().isReady ? 'Active' : uiState().isLoading ? 'Starting...' : 'Inactive' }}
+            </span>
+            <!-- Debug info -->
+            <span class="text-xs text-gray-400 ml-2">({{ status() }})</span>
           </div>
         </div>
 
-        <!-- Controls -->
-        <div class="p-3 sm:p-4 border-t">
-          <!-- Mobile Layout: Stack everything vertically -->
-          <div class="block sm:hidden space-y-3">
-            <!-- Status Row -->
-            <div class="flex flex-wrap items-center gap-2 text-xs">
-              <div class="flex items-center">
-                <span class="text-gray-600 mr-1">Status:</span>
-                <span
-                  class="px-2 py-1 text-xs font-medium rounded-full"
-                  [ngClass]="{
-                    'bg-green-100 text-green-800': status() === 'ready',
-                    'bg-yellow-100 text-yellow-800': status() === 'initializing',
-                    'bg-gray-100 text-gray-800': status() === 'idle',
-                    'bg-red-100 text-red-800': status() === 'error'
-                  }"
-                >
-                  {{ status() }}
-                </span>
-              </div>
-              <div *ngIf="currentResolution()" class="flex items-center">
-                <span class="text-gray-600 mr-1">Res:</span>
-                <span class="font-medium">
-                  {{ currentResolution()?.width }}×{{ currentResolution()?.height }}
-                </span>
-              </div>
+        <div
+          class="bg-gray-900 rounded-lg overflow-hidden aspect-video mb-4 flex items-center justify-center relative"
+        >
+          <video
+            #videoElement
+            autoplay
+            playsinline
+            muted
+            [class]="'w-full h-full object-contain ' + (enableMirror() ? 'scale-x-[-1]' : '')"
+          ></video>
+
+          <!-- Placeholder when no video -->
+          <div
+            *ngIf="!uiState().isReady"
+            class="absolute inset-0 flex flex-col items-center justify-center text-gray-400 p-8"
+          >
+            <svg
+              class="w-12 h-12 mb-3"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
+              />
+            </svg>
+            <p class="text-center text-sm">Start camera to see video stream</p>
+          </div>
+        </div>
+
+        <!-- Primary Actions -->
+        <div class="flex gap-3">
+          <button
+            (click)="startCamera()"
+            [disabled]="!uiState().canStart"
+            class="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h1m4 0h1m-6-8h8a2 2 0 012 2v8a2 2 0 01-2 2H7a2 2 0 01-2-2V8a2 2 0 012-2z"
+              />
+            </svg>
+            Start Camera
+          </button>
+
+          <button
+            (click)="capture()"
+            [disabled]="!uiState().canCapture"
+            class="flex items-center justify-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
+              />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
+              />
+            </svg>
+            Capture
+          </button>
+
+          <button
+            *ngIf="hasTorch()"
+            (click)="toggleTorch()"
+            [disabled]="!uiState().isReady"
+            class="flex items-center justify-center gap-2 px-4 py-2 rounded-lg focus:outline-none focus:ring-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            [class]="
+              torchEnabled()
+                ? 'bg-yellow-500 text-white hover:bg-yellow-600 focus:ring-yellow-500'
+                : 'bg-gray-600 text-white hover:bg-gray-700 focus:ring-gray-500'
+            "
+          >
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+              />
+            </svg>
+            {{ torchEnabled() ? 'Torch On' : 'Torch' }}
+          </button>
+
+          <button
+            (click)="stopCamera()"
+            [disabled]="!uiState().canStop"
+            class="flex items-center justify-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 9l6 6m0-6l-6 6" />
+            </svg>
+            Stop
+          </button>
+        </div>
+
+        <!-- Device Info Section -->
+        <div *ngIf="uiState().isReady" class="bg-gray-50 rounded-lg p-4 mt-4">
+          <div class="flex items-center gap-2 mb-3">
+            <svg class="w-5 h-5 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
+              <path
+                fill-rule="evenodd"
+                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                clip-rule="evenodd"
+              ></path>
+            </svg>
+            <h3 class="text-sm font-semibold text-gray-900">Device Info</h3>
+          </div>
+
+          <div class="space-y-2 text-sm">
+            <div class="flex justify-between">
+              <span class="text-gray-600">Device Type</span>
+              <span class="font-medium text-gray-900">{{ getDeviceType() }}</span>
             </div>
 
-            <!-- Target Resolution -->
-            <div *ngIf="selectedResolution()" class="text-xs">
-              <span class="text-gray-600 mr-1">Target:</span>
-              <span class="font-medium text-blue-600">
-                {{ selectedResolution()?.name }} ({{ selectedResolution()?.width }}×{{
-                  selectedResolution()?.height
-                }})
+            <div class="flex justify-between">
+              <span class="text-gray-600">Current Camera</span>
+              <span
+                class="font-medium text-gray-900 text-right max-w-[200px] truncate"
+                [title]="getCurrentCameraName()"
+              >
+                {{ getCurrentCameraName() }}
               </span>
             </div>
 
-            <!-- Button Row -->
-            <div class="flex flex-wrap gap-2">
-              <!-- Start/Stop Button -->
-              <button
-                *ngIf="status() === 'idle'"
-                class="flex-1 min-w-0 px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors flex items-center justify-center text-sm"
-                (click)="startCamera()"
-                [disabled]="!selectedDevice()"
-              >
-                <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                  ></path>
-                </svg>
-                Start
-              </button>
-
-              <button
-                *ngIf="status() === 'ready'"
-                class="flex-1 min-w-0 px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors flex items-center justify-center text-sm"
-                (click)="stopCamera()"
-              >
-                <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                  ></path>
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"
-                  ></path>
-                </svg>
-                Stop
-              </button>
-
-              <!-- Capture Button -->
-              <button
-                *ngIf="status() === 'ready'"
-                class="flex-1 min-w-0 px-3 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center justify-center text-sm"
-                (click)="captureImage()"
-              >
-                <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
-                  ></path>
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
-                  ></path>
-                </svg>
-                Capture
-              </button>
-
-              <!-- Debug Button -->
-              <button
-                class="px-3 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors text-sm"
-                (click)="debugStatus()"
-              >
-                🐛
-              </button>
-            </div>
-          </div>
-
-          <!-- Desktop/Tablet Layout: Horizontal -->
-          <div class="hidden sm:flex items-center justify-between">
-            <div class="flex items-center space-x-4">
-              <!-- Status -->
-              <div class="flex items-center">
-                <span class="text-sm text-gray-600 mr-2">Status:</span>
-                <span
-                  class="px-2 py-1 text-xs font-medium rounded-full"
-                  [ngClass]="{
-                    'bg-green-100 text-green-800': status() === 'ready',
-                    'bg-yellow-100 text-yellow-800': status() === 'initializing',
-                    'bg-gray-100 text-gray-800': status() === 'idle',
-                    'bg-red-100 text-red-800': status() === 'error'
-                  }"
-                >
-                  {{ status() }}
-                </span>
-              </div>
-
-              <!-- Resolution -->
-              <div *ngIf="currentResolution()" class="flex items-center">
-                <span class="text-sm text-gray-600 mr-2">Resolution:</span>
-                <span class="text-sm font-medium">
-                  {{ currentResolution()?.width }}×{{ currentResolution()?.height }}
-                </span>
-              </div>
-
-              <!-- Selected Resolution -->
-              <div *ngIf="selectedResolution()" class="flex items-center">
-                <span class="text-sm text-gray-600 mr-2">Target:</span>
-                <span class="text-sm font-medium text-blue-600">
-                  {{ selectedResolution()?.name }} ({{ selectedResolution()?.width }}×{{
-                    selectedResolution()?.height
-                  }})
-                </span>
-              </div>
+            <div class="flex justify-between">
+              <span class="text-gray-600">Current Resolution</span>
+              <span class="font-medium text-gray-900">
+                {{ selectedResolution().width }}×{{ selectedResolution().height }}
+              </span>
             </div>
 
-            <div class="flex items-center space-x-2">
-              <!-- Start/Stop Button -->
-              <button
-                *ngIf="status() === 'idle'"
-                class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors flex items-center text-sm"
-                (click)="startCamera()"
-                [disabled]="!selectedDevice()"
+            <div class="flex justify-between">
+              <span class="text-gray-600">Status</span>
+              <span
+                class="font-medium"
+                [class]="
+                  uiState().isReady
+                    ? 'text-green-600'
+                    : uiState().isLoading
+                    ? 'text-yellow-600'
+                    : 'text-gray-500'
+                "
               >
-                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                  ></path>
-                </svg>
-                Start Camera
-              </button>
+                {{ getStatusText() }}
+              </span>
+            </div>
 
-              <button
-                *ngIf="status() === 'ready'"
-                class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors flex items-center text-sm"
-                (click)="stopCamera()"
-              >
-                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                  ></path>
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"
-                  ></path>
-                </svg>
-                Stop Camera
-              </button>
+            <div *ngIf="hasTorch()" class="flex justify-between">
+              <span class="text-gray-600">Torch Support</span>
+              <span class="font-medium text-green-600">Available</span>
+            </div>
 
-              <!-- Capture Button -->
-              <button
-                *ngIf="status() === 'ready'"
-                class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center text-sm"
-                (click)="captureImage()"
-              >
-                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
-                  ></path>
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
-                  ></path>
-                </svg>
-                Capture
-              </button>
-
-              <!-- Debug Button -->
-              <button
-                class="px-3 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors text-sm"
-                (click)="debugStatus()"
-              >
-                🐛
-              </button>
+            <div *ngIf="enableAudio()" class="flex justify-between">
+              <span class="text-gray-600">Audio</span>
+              <span class="font-medium text-blue-600">Enabled</span>
             </div>
           </div>
         </div>
       </div>
 
       <!-- Settings Panel -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-        <!-- Device Selection -->
-        <div class="bg-white rounded-lg shadow p-4 sm:p-6">
-          <h3 class="text-base sm:text-lg font-semibold text-gray-800 mb-3 sm:mb-4">
-            Camera Settings
-          </h3>
+      <div class="bg-white rounded-lg shadow-sm border border-gray-300 p-6">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">Settings</h2>
 
-          <div class="space-y-3 sm:space-y-4">
-            <!-- Device Selector -->
-            <div>
-              <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
-                Select Camera ({{ devices().length }} found)
-              </label>
-              <select
-                class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                [value]="selectedDevice()?.deviceId || ''"
-                (change)="onDeviceChange($event)"
-                [disabled]="devices().length === 0"
-              >
-                <option value="" disabled>
-                  {{ devices().length === 0 ? 'No cameras found' : 'Select a camera' }}
-                </option>
-                <option *ngFor="let device of devices(); let i = index" [value]="device.deviceId">
-                  {{ device.label || 'Camera ' + (i + 1) }}
-                </option>
-              </select>
-            </div>
-
-            <!-- Resolution Selector -->
-            <div>
-              <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
-                Resolution
-              </label>
-              <select
-                class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                [value]="
-                  selectedResolution()
-                    ? selectedResolution()?.width + 'x' + selectedResolution()?.height
-                    : ''
-                "
-                (change)="onResolutionChange($event)"
-                [disabled]="!selectedDevice()"
-              >
-                <option value="">Auto (Default)</option>
-                <option
-                  *ngFor="let res of availableResolutions()"
-                  [value]="res.width + 'x' + res.height"
-                >
-                  {{ res.name }} ({{ res.width }}×{{ res.height }})
-                </option>
-              </select>
-            </div>
-
-            <button
-              class="w-full px-3 sm:px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm"
-              (click)="loadDevices()"
-              [disabled]="isLoading()"
+        <!-- Camera Selection -->
+        <div class="space-y-4">
+          <div>
+            <label for="camera-select" class="block text-sm font-medium text-gray-700 mb-2"
+              >Camera</label
             >
-              🔄 Refresh Devices
-            </button>
+            <select
+              id="camera-select"
+              [value]="selectedDeviceId()"
+              (change)="onDeviceChange($event)"
+              [disabled]="uiState().isLoading"
+              class="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+            >
+              <option value="">Select Camera</option>
+              <option *ngFor="let device of devices()" [value]="device.deviceId">
+                {{ device.label || 'Camera ' + device.deviceId.slice(0, 8) + '...' }}
+              </option>
+            </select>
+          </div>
+
+          <div>
+            <label for="resolution-select" class="block text-sm font-medium text-gray-700 mb-2"
+              >Resolution</label
+            >
+            <select
+              id="resolution-select"
+              [value]="resolutions.indexOf(selectedResolution())"
+              (change)="onResolutionChange($event)"
+              [disabled]="uiState().isLoading"
+              class="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+            >
+              <option *ngFor="let res of resolutions; let i = index" [value]="i">
+                {{ res.name }} ({{ res.width }}×{{ res.height }})
+              </option>
+            </select>
           </div>
         </div>
 
-        <!-- Device Info -->
-        <div class="bg-white rounded-lg shadow p-4 sm:p-6">
-          <h3 class="text-base sm:text-lg font-semibold text-gray-800 mb-3 sm:mb-4">
-            Device Information
-          </h3>
+        <!-- Divider -->
+        <div class="border-t my-4"></div>
 
-          <div class="space-y-3">
-            <div *ngIf="selectedDevice(); else noDevice">
-              <div class="space-y-2 text-xs sm:text-sm">
-                <div class="break-words">
-                  <span class="font-medium text-gray-600">Name:</span>
-                  <span class="ml-2">{{ selectedDevice()?.label || 'Unknown Camera' }}</span>
-                </div>
-                <div class="break-all">
-                  <span class="font-medium text-gray-600">Device ID:</span>
-                  <span class="ml-2 font-mono text-xs">{{ selectedDevice()?.deviceId }}</span>
-                </div>
-                <div class="break-all">
-                  <span class="font-medium text-gray-600">Group ID:</span>
-                  <span class="ml-2 font-mono text-xs">{{ selectedDevice()?.groupId }}</span>
-                </div>
-              </div>
+        <!-- Options -->
+        <div class="space-y-3">
+          <label class="flex items-center gap-2">
+            <input
+              type="checkbox"
+              [checked]="enableMirror()"
+              (change)="onMirrorChange($event)"
+              class="rounded text-blue-600 focus:ring-blue-500"
+            />
+            <span class="text-sm text-gray-700">Mirror Video</span>
+          </label>
 
-              <div class="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t">
-                <button
-                  class="w-full px-3 sm:px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-sm"
-                  (click)="loadDeviceCapabilities()"
-                  [disabled]="isLoading()"
-                >
-                  📊 Load Capabilities
-                </button>
-              </div>
-
-              <!-- Capabilities -->
-              <div *ngIf="capabilities()" class="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t">
-                <h4 class="font-medium text-gray-700 mb-2 text-sm">Capabilities</h4>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                  <div>
-                    <span class="text-gray-600">Max Size:</span>
-                    <span class="ml-1"
-                      >{{ capabilities()?.maxWidth }}×{{ capabilities()?.maxHeight }}</span
-                    >
-                  </div>
-                  <div>
-                    <span class="text-gray-600">Min Size:</span>
-                    <span class="ml-1"
-                      >{{ capabilities()?.minWidth }}×{{ capabilities()?.minHeight }}</span
-                    >
-                  </div>
-                  <div>
-                    <span class="text-gray-600">Zoom:</span>
-                    <span class="ml-1">{{ capabilities()?.hasZoom ? 'Yes' : 'No' }}</span>
-                  </div>
-                  <div>
-                    <span class="text-gray-600">Torch:</span>
-                    <span class="ml-1">{{ capabilities()?.hasTorch ? 'Yes' : 'No' }}</span>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Current Settings -->
-              <div *ngIf="status() === 'ready'" class="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t">
-                <h4 class="font-medium text-gray-700 mb-2 text-sm">Current Settings</h4>
-                <div class="space-y-1 text-xs">
-                  <div *ngIf="currentResolution()">
-                    <span class="text-gray-600">Active Resolution:</span>
-                    <span class="ml-1 font-medium text-green-600">
-                      {{ currentResolution()?.width }}×{{ currentResolution()?.height }}
-                    </span>
-                  </div>
-                  <div *ngIf="selectedResolution()">
-                    <span class="text-gray-600">Target Resolution:</span>
-                    <span class="ml-1 font-medium text-blue-600 break-words">
-                      {{ selectedResolution()?.name }}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <ng-template #noDevice>
-              <div class="text-center py-6 sm:py-8 text-gray-500">
-                <svg
-                  class="w-8 h-8 sm:w-12 sm:h-12 mx-auto mb-2 sm:mb-3 text-gray-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
-                  ></path>
-                </svg>
-                <p class="text-sm">No camera selected</p>
-              </div>
-            </ng-template>
-          </div>
+          <label class="flex items-center gap-2">
+            <input
+              type="checkbox"
+              [checked]="enableAudio()"
+              (change)="onAudioChange($event)"
+              class="rounded text-blue-600 focus:ring-blue-500"
+            />
+            <span class="text-sm text-gray-700">Enable Audio</span>
+          </label>
         </div>
-      </div>
 
-      <!-- Error Display -->
-      <div *ngIf="error()" class="bg-red-50 border border-red-200 rounded-lg p-3 sm:p-4">
-        <div class="flex items-start">
+        <!-- Divider -->
+        <div class="border-t my-4"></div>
+
+        <!-- Device Test -->
+        <button
+          (click)="testDeviceCapabilities()"
+          [disabled]="!selectedDeviceId() || isLoadingCapabilities()"
+          class="w-full flex items-center justify-center gap-2 px-3 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
+        >
           <svg
-            class="w-4 h-4 sm:w-5 sm:h-5 text-red-400 mt-0.5 mr-2 sm:mr-3 flex-shrink-0"
+            *ngIf="!isLoadingCapabilities()"
+            class="w-4 h-4"
             fill="none"
             stroke="currentColor"
+            stroke-width="2"
             viewBox="0 0 24 24"
           >
             <path
               stroke-linecap="round"
               stroke-linejoin="round"
-              stroke-width="2"
-              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            ></path>
+              d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+            />
           </svg>
-          <div class="flex-1 min-w-0">
-            <h4 class="text-red-800 font-medium text-sm">Error</h4>
-            <p class="text-red-700 text-xs sm:text-sm mt-1 break-words">{{ error() }}</p>
-          </div>
-          <button class="text-red-400 hover:text-red-600 flex-shrink-0 ml-2" (click)="clearError()">
-            <svg
-              class="w-4 h-4 sm:w-5 sm:h-5"
-              fill="none"
+          <svg *ngIf="isLoadingCapabilities()" class="animate-spin w-4 h-4" viewBox="0 0 24 24">
+            <circle
+              class="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
               stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M6 18L18 6M6 6l12 12"
-              ></path>
-            </svg>
-          </button>
+              stroke-width="4"
+              fill="none"
+            ></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+          </svg>
+          {{ isLoadingCapabilities() ? 'Testing...' : 'Test Device' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Captured Image -->
+    <div
+      *ngIf="capturedImageUrl()"
+      class="bg-white rounded-lg shadow-sm border border-gray-300 p-6 mt-6"
+    >
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-semibold text-gray-900">Captured Image</h3>
+        <button
+          (click)="clearCapturedImage()"
+          class="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+        >
+          Clear
+        </button>
+      </div>
+      <div class="flex justify-center">
+        <img
+          [src]="capturedImageUrl()"
+          alt="Captured Image"
+          class="max-w-full max-h-80 rounded-lg border border-gray-00"
+        />
+      </div>
+    </div>
+
+    <!-- Help Section -->
+    <div
+      *ngIf="permissionChecked() && !isPermissionDenied()"
+      class="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-6"
+    >
+      <div class="flex items-start gap-3">
+        <svg
+          class="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
+        </svg>
+        <div>
+          <h4 class="font-medium text-blue-800 mb-2">How to Use</h4>
+          <ul class="text-blue-700 text-sm space-y-1">
+            <li><strong>Start Camera</strong> - Begin webcam streaming</li>
+            <li><strong>Capture</strong> - Take a photo snapshot</li>
+            <li><strong>Torch</strong> - Toggle flash/flashlight (if available)</li>
+            <li><strong>Stop</strong> - End webcam streaming</li>
+            <li><strong>Settings</strong> - Choose camera, resolution, and options</li>
+            <li><strong>Test Device</strong> - Check device capabilities and supported features</li>
+          </ul>
         </div>
+      </div>
+    </div>
+
+    <!-- Device Capabilities -->
+    <div *ngIf="deviceCapabilities()" class="bg-white rounded-lg shadow-sm border p-6 mt-6">
+      <h3 class="text-lg font-semibold text-gray-900 mb-4">Device Capabilities</h3>
+      <div class="bg-gray-50 rounded-lg p-4 overflow-x-auto">
+        <pre class="text-xs text-gray-700">{{ deviceCapabilities() | json }}</pre>
       </div>
     </div>
   </div>
