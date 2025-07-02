@@ -9,7 +9,7 @@ A production-grade TypeScript webcam library with modern APIs, flexible permissi
 🔐 **Smart Permissions** - Granular permission control for camera and audio
 📱 **Cross-Platform** - Works on desktop and mobile browsers
 🎛️ **Advanced Controls** - Torch/flash support, device capabilities detection
-🔧 **Event-Driven** - Comprehensive event system for state management
+🔧 **Callback-Based** - Simple callback system for state management
 📦 **Modular Design** - Clean, maintainable architecture
 
 ## Installation
@@ -39,7 +39,13 @@ const devices = await webcam.getVideoDevices();
 const config = {
   deviceInfo: devices[0],
   preferredResolutions: { width: 1280, height: 720 },
-  videoElement: document.getElementById('video') as HTMLVideoElement
+  videoElement: document.getElementById('video') as HTMLVideoElement,
+  
+  // Optional callback handlers
+  onStateChange: (state) => console.log('State changed:', state.status),
+  onError: (error) => console.error('Webcam error:', error.message),
+  onStreamStart: (stream) => console.log('Stream started:', stream.id),
+  onStreamStop: () => console.log('Stream stopped')
 };
 
 await webcam.startCamera(config);
@@ -63,14 +69,16 @@ const blob = await webcam.capture();
 - `getState()` - Get current webcam state
 - `dispose()` - Clean up resources
 
-#### Events
+#### Callbacks
 
-- `stream:start` - Camera stream started
-- `stream:stop` - Camera stream stopped
-- `error` - Error occurred
-- `permission:change` - Permission status changed
-- `device:change` - Available devices changed
-- `state:change` - Webcam state changed
+The webcam configuration supports optional callback handlers for various events:
+
+- `onStateChange` - Called when webcam state changes
+- `onStreamStart` - Called when camera stream starts
+- `onStreamStop` - Called when camera stream stops
+- `onError` - Called when an error occurs
+- `onPermissionChange` - Called when permission status changes
+- `onDeviceChange` - Called when available devices change
 
 ### Types
 
@@ -84,6 +92,14 @@ interface WebcamConfiguration {
   allowAnyResolution?: boolean;
   allowAutoRotateResolution?: boolean;
   debug?: boolean;
+  
+  // Callback-based handlers (optional)
+  onStateChange?: (state: TsWebcamState) => void;
+  onStreamStart?: (stream: MediaStream) => void;
+  onStreamStop?: () => void;
+  onError?: (error: WebcamError) => void;
+  onPermissionChange?: (permissions: Record<string, PermissionState>) => void;
+  onDeviceChange?: (devices: MediaDeviceInfo[]) => void;
 }
 
 interface TsWebcamState {
@@ -104,7 +120,8 @@ interface PermissionRequestOptions {
 ## What's New in 2.0.0
 
 ### 🔥 Breaking Changes
-- **Modular Architecture**: Split into separate modules (types, errors, event-emitter, core)
+- **Modular Architecture**: Split into separate modules (types, errors, core)
+- **Callback-Based API**: Replaced event system with simple callbacks
 - **New State Management**: Unified `TsWebcamState` interface
 - **Updated API**: Simplified and more consistent method signatures
 - **Enhanced Error Handling**: Comprehensive error types and better error reporting
@@ -140,11 +157,15 @@ webcam.on('statusChange', (status) => { ... });
 webcam.on('errorChange', (error) => { ... });
 
 // After (2.0)
-webcam.on('state:change', (state: TsWebcamState) => {
-  console.log('Status:', state.status);
-  console.log('Error:', state.error);
-  console.log('Permissions:', state.permissions);
-});
+const config = {
+  // ... other config
+  onStateChange: (state: TsWebcamState) => {
+    console.log('Status:', state.status);
+    console.log('Error:', state.error);
+    console.log('Permissions:', state.permissions);
+  }
+};
+await webcam.startCamera(config);
 ```
 
 ### Permission Handling
@@ -154,6 +175,123 @@ await webcam.requestCameraPermission();
 
 // After (2.0)
 await webcam.requestPermissions({ video: true, audio: false });
+```
+
+## Advanced Examples
+
+### Complete Usage with All Callbacks
+```typescript
+import { TsWebcam, TsWebcamState, WebcamError } from 'ts-webcam';
+
+const webcam = new TsWebcam();
+
+// Request permissions first
+await webcam.requestPermissions({ video: true, audio: false });
+
+// Get available devices
+const devices = await webcam.getVideoDevices();
+console.log('Available cameras:', devices);
+
+// Configure with all callback handlers
+const config = {
+  deviceInfo: devices[0],
+  preferredResolutions: [
+    { name: 'HD', width: 1280, height: 720 },
+    { name: 'FHD', width: 1920, height: 1080 }
+  ],
+  videoElement: document.getElementById('video') as HTMLVideoElement,
+  enableMirror: true,
+  debug: true,
+  
+  // State management
+  onStateChange: (state: TsWebcamState) => {
+    console.log(`Status: ${state.status}`);
+    if (state.error) {
+      console.error('Error:', state.error.message);
+    }
+  },
+  
+  // Stream lifecycle
+  onStreamStart: (stream: MediaStream) => {
+    console.log('Camera started:', stream.getVideoTracks()[0].label);
+  },
+  
+  onStreamStop: () => {
+    console.log('Camera stopped');
+  },
+  
+  // Error handling
+  onError: (error: WebcamError) => {
+    console.error(`Webcam error [${error.code}]:`, error.message);
+  },
+  
+  // Permission changes
+  onPermissionChange: (permissions) => {
+    console.log('Permissions changed:', permissions);
+  },
+  
+  // Device hotplug
+  onDeviceChange: (devices) => {
+    console.log('Available devices changed:', devices.length);
+  }
+};
+
+// Start camera
+await webcam.startCamera(config);
+
+// Capture image
+const captureButton = document.getElementById('capture');
+captureButton?.addEventListener('click', async () => {
+  try {
+    const blob = await webcam.capture();
+    const url = URL.createObjectURL(blob);
+    
+    const img = document.getElementById('preview') as HTMLImageElement;
+    img.src = url;
+  } catch (error) {
+    console.error('Capture failed:', error);
+  }
+});
+
+// Cleanup on page unload
+window.addEventListener('beforeunload', () => {
+  webcam.dispose();
+});
+```
+
+### Device Capabilities Testing
+```typescript
+// Test what a specific camera can do
+const deviceId = devices[0].deviceId;
+const capabilities = await webcam.getDeviceCapabilities(deviceId);
+
+console.log('Device capabilities:', {
+  maxResolution: `${capabilities.maxWidth}x${capabilities.maxHeight}`,
+  hasZoom: capabilities.hasZoom,
+  hasTorch: capabilities.hasTorch,
+  supportedFocusModes: capabilities.supportedFocusModes
+});
+```
+
+### Switching Cameras
+```typescript
+let currentDeviceIndex = 0;
+
+async function switchCamera() {
+  // Stop current camera
+  webcam.stopCamera();
+  
+  // Switch to next device
+  currentDeviceIndex = (currentDeviceIndex + 1) % devices.length;
+  
+  // Start with new device
+  const newConfig = {
+    ...config,
+    deviceInfo: devices[currentDeviceIndex]
+  };
+  
+  await webcam.startCamera(newConfig);
+}
 ```
 
 ## Browser Support

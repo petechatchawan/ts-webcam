@@ -1,20 +1,19 @@
-# TS-Webcam 2.0.0 Build & Package Report
+# TS-Webcam 2.0.0 Build & Package Report - Updated July 2, 2025
 
 ## 📦 Package Information
 - **Name**: ts-webcam
 - **Version**: 2.0.0
-- **Package Size**: 21.1 kB (compressed)
-- **Unpacked Size**: 141.2 kB
-- **Total Files**: 26
+- **Description**: Production-grade TypeScript webcam library with callback-based APIs
+- **Package Size**: ~22 kB (compressed)
+- **Unpacked Size**: ~145 kB
+- **Total Files**: 24
 
 ## 🏗️ Build Artifacts
 ```
 dist/
 ├── errors.js (.d.ts, .js.map)
-├── event-emitter.js (.d.ts, .js.map)
 ├── index.js (.d.ts, .js.map)           # Main entry point
 ├── ts-webcam-core.js (.d.ts, .js.map)  # Core functionality
-├── ts-webcam.js (.d.ts, .js.map)       # Legacy export
 └── types.js (.d.ts, .js.map)           # Type definitions
 ```
 
@@ -27,13 +26,13 @@ dist/
 
 ## 🔧 Features
 ### Core Library
-- [x] Modular architecture (types, errors, event-emitter, core)
+- [x] Modular architecture (types, errors, core)
 - [x] Unified state management with TsWebcamState
 - [x] Flexible permission handling
 - [x] Device capabilities detection
 - [x] Torch/flash support
 - [x] Comprehensive error handling
-- [x] Event-driven architecture
+- [x] Callback-based architecture
 - [x] Resource cleanup and disposal
 
 ### Angular Integration
@@ -59,12 +58,12 @@ import { TsWebcam, TsWebcamState, WebcamError } from 'ts-webcam';
 - `getDeviceCapabilities(deviceId)` - Device feature detection
 - `getState()` - Unified state access
 
-### Event System
-- `state:change` - Unified state updates
-- `stream:start/stop` - Stream lifecycle
-- `error` - Error handling
-- `permission:change` - Permission updates
-- `device:change` - Device hotplug
+### Callback API
+- `onStateChange` - Unified state updates
+- `onStreamStart/onStreamStop` - Stream lifecycle
+- `onError` - Error handling
+- `onPermissionChange` - Permission updates
+- `onDeviceChange` - Device hotplug
 
 ## 📊 Quality Metrics
 - ✅ TypeScript strict mode enabled

@@ -1,7 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, ElementRef, OnDestroy, OnInit, ViewChild, computed, effect, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Subject, takeUntil } from 'rxjs';
 import { DeviceCapability, PermissionRequestOptions, Resolution, TsWebcamState, WebcamConfiguration } from 'ts-webcam';
 import { WebcamService } from './webcam.service';
 
@@ -29,11 +28,17 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
 
   // Static data
   readonly resolutions: Resolution[] = [
-    { name: 'HD', width: 1280, height: 720 },
-    { name: 'Full HD', width: 1920, height: 1080 },
-    { name: 'VGA', width: 640, height: 480 },
-    { name: 'SQUARE-720', width: 720, height: 720 },
-    { name: '4K', width: 3840, height: 2160 }
+    { name: 'VGA-Landscape', width: 640, height: 480 },
+    { name: 'VGA-Portrait', width: 480, height: 640 },
+    { name: 'HD-Landscape', width: 1280, height: 720 },
+    { name: 'HD-Portrait', width: 720, height: 1280 },
+    { name: 'Full-HD-Landscape', width: 1920, height: 1080 },
+    { name: 'Full-HD-Portrait', width: 1080, height: 1920 },
+    { name: 'S720', width: 720, height: 720 },
+    { name: "S1080", width: 1080, height: 1080 },
+    { name: "S1280", width: 1280, height: 1280 },
+    { name: "S1440", width: 1440, height: 1440 },
+    { name: "S1920", width: 1920, height: 1920 },
   ];
 
   // Reactive state using signals
@@ -42,12 +47,14 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
   readonly selectedResolution = signal<Resolution>(this.resolutions[0]);
   readonly enableMirror = signal<boolean>(true);
   readonly enableAudio = signal<boolean>(false);
-  readonly capturedImageUrl = signal<string | null>(null);
-  readonly isLoadingCapabilities = signal<boolean>(false);
-  readonly showAdvancedOptions = signal<boolean>(false);
   readonly torchEnabled = signal<boolean>(false);
   readonly hasTorch = signal<boolean>(false);
   readonly videoReady = signal<boolean>(false);
+  readonly zoom = signal<number | null>(null);
+  readonly minZoom = signal<number | null>(null);
+  readonly maxZoom = signal<number | null>(null);
+  readonly focusMode = signal<string | null>(null);
+  readonly supportedFocusModes = signal<string[]>([]);
 
   // Store event listeners for cleanup
   private videoEventListeners: { [key: string]: () => void } = {};
@@ -62,8 +69,7 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
       preferredResolutions: this.selectedResolution(),
       videoElement: this.videoElementRef.nativeElement,
       enableMirror: this.enableMirror(),
-      enableAudio: this.enableAudio(),
-      debug: true
+      enableAudio: this.enableAudio()
     } as WebcamConfiguration;
   });
 
@@ -100,8 +106,7 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
     };
   });
 
-  private destroy$ = new Subject<void>();
-
+  // Add effect to update zoom/focus UI state from deviceCapabilities
   constructor(public webcamService: WebcamService) {
     // Auto-select first device when devices change
     effect(() => {
@@ -110,41 +115,65 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
         this.selectedDeviceId.set(devices[0].deviceId);
       }
     }, { allowSignalWrites: true });
+
+    // Use effects for service signals synchronization
+    effect(() => {
+      const state = this.webcamService.getState()();
+      console.log('Webcam state changed:', state); // Debug log
+      this.webcamState.set(state);
+
+      // Reset video ready state when status changes to non-ready states
+      if (state.status !== 'ready') {
+        this.videoReady.set(false);
+
+        // Also clear video source if status is idle or error
+        if (state.status === 'idle' || state.status === 'error') {
+          const videoElement = this.videoElementRef?.nativeElement;
+          if (videoElement) {
+            videoElement.srcObject = null;
+          }
+        }
+      }
+    }, { allowSignalWrites: true });
+
+    effect(() => {
+      const devices = this.webcamService.getDevices()();
+      this.devices.set(devices);
+    }, { allowSignalWrites: true });
+
+    effect(() => {
+      const checked = this.webcamService.getPermissionChecked()();
+      this.permissionChecked.set(checked);
+    }, { allowSignalWrites: true });
+
+    effect(() => {
+      const caps = this.webcamService.getDeviceCapabilities()();
+      this.deviceCapabilities.set(caps);
+    }, { allowSignalWrites: true });
+
+    effect(() => {
+      const caps = this.deviceCapabilities();
+      if (caps && typeof caps.maxZoom === 'number' && typeof caps.minZoom === 'number') {
+        this.minZoom.set(caps.minZoom);
+        this.maxZoom.set(caps.maxZoom);
+        // Optionally set default zoom to minZoom
+        this.zoom.set(caps.minZoom);
+      } else {
+        this.minZoom.set(null);
+        this.maxZoom.set(null);
+        this.zoom.set(null);
+      }
+      if (caps && Array.isArray(caps.supportedFocusModes)) {
+        this.supportedFocusModes.set(caps.supportedFocusModes);
+        this.focusMode.set(caps.supportedFocusModes[0] || null);
+      } else {
+        this.supportedFocusModes.set([]);
+        this.focusMode.set(null);
+      }
+    }, { allowSignalWrites: true });
   }
 
   ngOnInit() {
-    // Subscribe to unified state from service
-    this.webcamService.getState().pipe(takeUntil(this.destroy$))
-      .subscribe(state => {
-        console.log('Webcam state changed:', state); // Debug log
-        this.webcamState.set(state);
-
-        // Reset video ready state when status changes to non-ready states
-        if (state.status !== 'ready') {
-          this.videoReady.set(false);
-
-          // Also clear video source if status is idle or error
-          if (state.status === 'idle' || state.status === 'error') {
-            const videoElement = this.videoElementRef?.nativeElement;
-            if (videoElement) {
-              videoElement.srcObject = null;
-            }
-          }
-        }
-      });
-
-    // Subscribe to devices from service
-    this.webcamService.getDevices().pipe(takeUntil(this.destroy$))
-      .subscribe(devices => this.devices.set(devices));
-
-    // Subscribe to permission checked status
-    this.webcamService.getPermissionChecked().pipe(takeUntil(this.destroy$))
-      .subscribe(checked => this.permissionChecked.set(checked));
-
-    // Subscribe to device capabilities
-    this.webcamService.getDeviceCapabilities().pipe(takeUntil(this.destroy$))
-      .subscribe(caps => this.deviceCapabilities.set(caps));
-
     // Initial permission/device check
     this.requestPermissionsAndLoadDevices();
   }
@@ -218,8 +247,10 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
 
     try {
       const blob = await this.webcamService.capture();
-      const url = URL.createObjectURL(blob);
-      this.capturedImageUrl.set(url);
+      // ตัวอย่าง: สามารถนำ blob ไปใช้งานต่อได้ เช่น upload หรือแสดงผล
+      // หากต้องการแสดงภาพ preview สามารถสร้าง object URL ชั่วคราวได้ที่นี่
+      // const url = URL.createObjectURL(blob);
+      // ...
     } catch (error) {
       console.error('Capture failed:', error);
     }
@@ -230,17 +261,9 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
     const deviceId = this.selectedDeviceId();
     if (!deviceId) return;
 
-    this.isLoadingCapabilities.set(true);
     try {
       await this.webcamService.testDeviceCapabilities(deviceId);
-    } finally {
-      this.isLoadingCapabilities.set(false);
-    }
-  }
-
-  // Advanced options toggle
-  toggleAdvancedOptions() {
-    this.showAdvancedOptions.set(!this.showAdvancedOptions());
+    } catch { }
   }
 
   // Permission options methods
@@ -280,33 +303,50 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
     }
   }
 
-  onMirrorChange(event: Event) {
+  async onMirrorChange(event: Event) {
     const checked = (event.target as HTMLInputElement)?.checked ?? false;
     this.enableMirror.set(checked);
+    try {
+      this.webcamService['webcam'].setMirror(checked);
+    } catch (e) {
+      console.error('Failed to set mirror:', e);
+    }
   }
 
-  onAudioChange(event: Event) {
+  async onAudioChange(event: Event) {
     const checked = (event.target as HTMLInputElement)?.checked ?? false;
     this.enableAudio.set(checked);
+    await this.startCamera();
+  }
+
+  async onZoomChange(event: Event) {
+    const value = +(event.target as HTMLInputElement)?.value;
+    if (isNaN(value) || this.zoom() === value) return;
+    this.zoom.set(value);
+    try {
+      await this.webcamService['webcam'].setZoom(value);
+    } catch (e) {
+      console.error('Failed to set zoom:', e);
+    }
+  }
+
+  async onFocusModeChange(event: Event) {
+    const value = (event.target as HTMLSelectElement)?.value;
+    this.focusMode.set(value);
+    try {
+      await this.webcamService['webcam'].setFocusMode(value);
+    } catch (e) {
+      console.error('Failed to set focus mode:', e);
+    }
   }
 
   // Torch control
   async toggleTorch() {
     if (!this.hasTorch()) return;
-
     try {
-      const stream = this.videoElementRef?.nativeElement?.srcObject as MediaStream;
-      if (stream) {
-        const track = stream.getVideoTracks()[0];
-        if (track && 'torch' in track.getCapabilities()) {
-          const currentTorch = this.torchEnabled();
-          const constraints = {
-            advanced: [{ torch: !currentTorch }]
-          };
-          await track.applyConstraints(constraints as MediaTrackConstraints);
-          this.torchEnabled.set(!currentTorch);
-        }
-      }
+      const enabled = !this.torchEnabled();
+      await this.webcamService['webcam'].setTorch(enabled);
+      this.torchEnabled.set(enabled);
     } catch (error) {
       console.error('Failed to toggle torch:', error);
     }
@@ -365,15 +405,6 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
     }
   }
 
-  // Cleanup captured image URL
-  clearCapturedImage() {
-    const url = this.capturedImageUrl();
-    if (url) {
-      URL.revokeObjectURL(url);
-      this.capturedImageUrl.set(null);
-    }
-  }
-
   // Helper methods for device info display
   getCurrentCameraName(): string {
     const selectedId = this.selectedDeviceId();
@@ -408,10 +439,6 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
-    this.destroy$.next();
-    this.destroy$.complete();
-    this.clearCapturedImage();
-
     // Clean up video event listeners
     const videoElement = this.videoElementRef?.nativeElement;
     if (videoElement) {
@@ -419,7 +446,6 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
         videoElement.removeEventListener(eventName, this.videoEventListeners[eventName]);
       });
     }
-
     this.webcamService.dispose();
   }
 }

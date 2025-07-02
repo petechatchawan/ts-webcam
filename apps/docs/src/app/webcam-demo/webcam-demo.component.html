@@ -7,7 +7,10 @@
     </div>
 
     <!-- Permission Check -->
-    <div *ngIf="!permissionChecked()" class="bg-white rounded-lg shadow-sm border p-6 mb-4">
+    <div
+      *ngIf="!permissionChecked()"
+      class="bg-white rounded-lg shadow-sm border border-gray-300 p-6 mb-4"
+    >
       <div class="flex items-center justify-center gap-3 text-gray-500">
         <svg class="animate-spin h-5 w-5 text-blue-500" viewBox="0 0 24 24">
           <circle
@@ -28,7 +31,7 @@
     <!-- Permission Denied -->
     <div
       *ngIf="permissionChecked() && isPermissionDenied()"
-      class="bg-white rounded-lg shadow-sm border p-6 mb-4"
+      class="bg-white rounded-lg shadow-sm border border-gray-300 p-6 mb-4"
     >
       <div class="text-center">
         <div
@@ -104,7 +107,7 @@
     <!-- Error Display -->
     <div
       *ngIf="error() && permissionChecked() && !isPermissionDenied()"
-      class="bg-red-50 border border-red-200 rounded-lg p-4 mb-4"
+      class="bg-red-50 border border-red-300 rounded-lg p-4 mb-4"
     >
       <div class="flex items-start gap-3">
         <svg
@@ -133,7 +136,7 @@
       class="grid grid-cols-1 lg:grid-cols-3 gap-6"
     >
       <!-- Video Display - Takes up 2 columns -->
-      <div class="lg:col-span-2 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <div class="lg:col-span-2 bg-white rounded-lg shadow-sm border border-gray-300 p-6">
         <div class="flex items-center justify-between mb-4">
           <h2 class="text-lg font-semibold text-gray-900">Video Stream</h2>
 
@@ -297,70 +300,6 @@
             Stop
           </button>
         </div>
-
-        <!-- Device Info Section -->
-        <div *ngIf="uiState().isReady" class="bg-gray-50 rounded-lg p-4 mt-4">
-          <div class="flex items-center gap-2 mb-3">
-            <svg class="w-5 h-5 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
-              <path
-                fill-rule="evenodd"
-                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-                clip-rule="evenodd"
-              ></path>
-            </svg>
-            <h3 class="text-sm font-semibold text-gray-900">Device Info</h3>
-          </div>
-
-          <div class="space-y-2 text-sm">
-            <div class="flex justify-between">
-              <span class="text-gray-600">Device Type</span>
-              <span class="font-medium text-gray-900">{{ getDeviceType() }}</span>
-            </div>
-
-            <div class="flex justify-between">
-              <span class="text-gray-600">Current Camera</span>
-              <span
-                class="font-medium text-gray-900 text-right max-w-[200px] truncate"
-                [title]="getCurrentCameraName()"
-              >
-                {{ getCurrentCameraName() }}
-              </span>
-            </div>
-
-            <div class="flex justify-between">
-              <span class="text-gray-600">Current Resolution</span>
-              <span class="font-medium text-gray-900">
-                {{ selectedResolution().width }}×{{ selectedResolution().height }}
-              </span>
-            </div>
-
-            <div class="flex justify-between">
-              <span class="text-gray-600">Status</span>
-              <span
-                class="font-medium"
-                [class]="
-                  uiState().isReady
-                    ? 'text-green-600'
-                    : uiState().isLoading
-                    ? 'text-yellow-600'
-                    : 'text-gray-500'
-                "
-              >
-                {{ getStatusText() }}
-              </span>
-            </div>
-
-            <div *ngIf="hasTorch()" class="flex justify-between">
-              <span class="text-gray-600">Torch Support</span>
-              <span class="font-medium text-green-600">Available</span>
-            </div>
-
-            <div *ngIf="enableAudio()" class="flex justify-between">
-              <span class="text-gray-600">Audio</span>
-              <span class="font-medium text-blue-600">Enabled</span>
-            </div>
-          </div>
-        </div>
       </div>
 
       <!-- Settings Panel -->
@@ -429,6 +368,49 @@
             />
             <span class="text-sm text-gray-700">Enable Audio</span>
           </label>
+
+          <!-- Torch toggle if supported -->
+          <label *ngIf="deviceCapabilities()?.hasTorch" class="flex items-center gap-2">
+            <input
+              type="checkbox"
+              [checked]="torchEnabled()"
+              (change)="toggleTorch()"
+              [disabled]="!uiState().isReady"
+              class="rounded text-yellow-500 focus:ring-yellow-500"
+            />
+            <span class="text-sm text-gray-700">Torch</span>
+          </label>
+
+          <!-- Zoom slider if supported -->
+          <div *ngIf="deviceCapabilities()?.hasZoom && minZoom() !== null && maxZoom() !== null" class="flex items-center gap-2">
+            <label for="zoom-slider" class="text-sm text-gray-700">Zoom</label>
+            <input
+              id="zoom-slider"
+              type="range"
+              [min]="minZoom()"
+              [max]="maxZoom()"
+              [step]="0.1"
+              [value]="zoom()"
+              (input)="onZoomChange($event)"
+              [disabled]="!uiState().isReady"
+              class="flex-1"
+            />
+            <span class="text-xs text-gray-600">{{ zoom() }}</span>
+          </div>
+
+          <!-- Focus mode select if supported -->
+          <div *ngIf="deviceCapabilities()?.hasFocus && supportedFocusModes().length > 0" class="flex items-center gap-2">
+            <label for="focus-mode-select" class="text-sm text-gray-700">Focus</label>
+            <select
+              id="focus-mode-select"
+              [value]="focusMode()"
+              (change)="onFocusModeChange($event)"
+              [disabled]="!uiState().isReady"
+              class="rounded border border-gray-300 px-2 py-1 text-sm"
+            >
+              <option *ngFor="let mode of supportedFocusModes()" [value]="mode">{{ mode }}</option>
+            </select>
+          </div>
         </div>
 
         <!-- Divider -->
@@ -437,11 +419,10 @@
         <!-- Device Test -->
         <button
           (click)="testDeviceCapabilities()"
-          [disabled]="!selectedDeviceId() || isLoadingCapabilities()"
+          [disabled]="!selectedDeviceId()"
           class="w-full flex items-center justify-center gap-2 px-3 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
         >
           <svg
-            *ngIf="!isLoadingCapabilities()"
             class="w-4 h-4"
             fill="none"
             stroke="currentColor"
@@ -454,50 +435,78 @@
               d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
             />
           </svg>
-          <svg *ngIf="isLoadingCapabilities()" class="animate-spin w-4 h-4" viewBox="0 0 24 24">
-            <circle
-              class="opacity-25"
-              cx="12"
-              cy="12"
-              r="10"
-              stroke="currentColor"
-              stroke-width="4"
-              fill="none"
-            ></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
-          </svg>
-          {{ isLoadingCapabilities() ? 'Testing...' : 'Test Device' }}
+          Test Device
         </button>
-      </div>
-    </div>
+        <!-- Device Info Section -->
+        <div class="bg-gray-50 rounded-lg p-4 mt-4">
+          <div class="flex items-center gap-2 mb-3">
+            <svg class="w-5 h-5 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
+              <path
+                fill-rule="evenodd"
+                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                clip-rule="evenodd"
+              ></path>
+            </svg>
+            <h3 class="text-sm font-semibold text-gray-900">Device Info</h3>
+          </div>
 
-    <!-- Captured Image -->
-    <div
-      *ngIf="capturedImageUrl()"
-      class="bg-white rounded-lg shadow-sm border border-gray-300 p-6 mt-6"
-    >
-      <div class="flex items-center justify-between mb-4">
-        <h3 class="text-lg font-semibold text-gray-900">Captured Image</h3>
-        <button
-          (click)="clearCapturedImage()"
-          class="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
-        >
-          Clear
-        </button>
-      </div>
-      <div class="flex justify-center">
-        <img
-          [src]="capturedImageUrl()"
-          alt="Captured Image"
-          class="max-w-full max-h-80 rounded-lg border border-gray-00"
-        />
+          <div class="space-y-2 text-sm">
+            <div class="flex justify-between">
+              <span class="text-gray-600">Device Type</span>
+              <span class="font-medium text-gray-900">{{ getDeviceType() }}</span>
+            </div>
+
+            <div class="flex justify-between">
+              <span class="text-gray-600">Current Camera</span>
+              <span
+                class="font-medium text-gray-900 text-right max-w-[200px] truncate"
+                [title]="getCurrentCameraName()"
+              >
+                {{ getCurrentCameraName() }}
+              </span>
+            </div>
+
+            <div class="flex justify-between">
+              <span class="text-gray-600">Current Resolution</span>
+              <span class="font-medium text-gray-900">
+                {{ selectedResolution().width }}×{{ selectedResolution().height }}
+              </span>
+            </div>
+
+            <div class="flex justify-between">
+              <span class="text-gray-600">Status</span>
+              <span
+                class="font-medium"
+                [class]="
+                  uiState().isReady
+                    ? 'text-green-600'
+                    : uiState().isLoading
+                    ? 'text-yellow-600'
+                    : 'text-gray-500'
+                "
+              >
+                {{ getStatusText() }}
+              </span>
+            </div>
+
+            <div *ngIf="hasTorch()" class="flex justify-between">
+              <span class="text-gray-600">Torch Support</span>
+              <span class="font-medium text-green-600">Available</span>
+            </div>
+
+            <div *ngIf="enableAudio()" class="flex justify-between">
+              <span class="text-gray-600">Audio</span>
+              <span class="font-medium text-blue-600">Enabled</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
     <!-- Help Section -->
     <div
       *ngIf="permissionChecked() && !isPermissionDenied()"
-      class="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-6"
+      class="bg-blue-50 border border-blue-300 rounded-lg p-4 mt-6"
     >
       <div class="flex items-start gap-3">
         <svg
@@ -524,14 +533,6 @@
             <li><strong>Test Device</strong> - Check device capabilities and supported features</li>
           </ul>
         </div>
-      </div>
-    </div>
-
-    <!-- Device Capabilities -->
-    <div *ngIf="deviceCapabilities()" class="bg-white rounded-lg shadow-sm border p-6 mt-6">
-      <h3 class="text-lg font-semibold text-gray-900 mb-4">Device Capabilities</h3>
-      <div class="bg-gray-50 rounded-lg p-4 overflow-x-auto">
-        <pre class="text-xs text-gray-700">{{ deviceCapabilities() | json }}</pre>
       </div>
     </div>
   </div>

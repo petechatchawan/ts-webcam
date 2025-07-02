@@ -9,6 +9,7 @@ export enum WebcamErrorCode {
   DEVICE_NOT_FOUND = 'DEVICE_NOT_FOUND',
   DEVICE_BUSY = 'DEVICE_BUSY',
   DEVICES_ERROR = 'DEVICES_ERROR',
+  OVERCONSTRAINED = 'OVERCONSTRAINED',
 
   // Configuration Issues
   INVALID_CONFIG = 'INVALID_CONFIG',
@@ -60,6 +61,7 @@ export function getWebcamErrorMessage(error: WebcamError, locale: string = 'th')
       [WebcamErrorCode.VIDEO_ELEMENT_NOT_SET]: 'ไม่ได้ระบุ video element',
       [WebcamErrorCode.INVALID_VIDEO_ELEMENT]: 'video element ไม่ถูกต้อง',
       [WebcamErrorCode.STREAM_FAILED]: 'ไม่สามารถเปิดกล้องได้',
+      [WebcamErrorCode.OVERCONSTRAINED]: 'กล้องไม่สามารถตอบสนองความต้องการได้',
       [WebcamErrorCode.RESOLUTION_NOT_SUPPORTED]: 'ความละเอียดนี้ไม่รองรับ',
       [WebcamErrorCode.RESOLUTION_FAILED]: 'เปลี่ยนความละเอียดไม่สำเร็จ',
       [WebcamErrorCode.ZOOM_NOT_SUPPORTED]: 'กล้องนี้ไม่รองรับการซูม',
@@ -80,6 +82,7 @@ export function getWebcamErrorMessage(error: WebcamError, locale: string = 'th')
       [WebcamErrorCode.VIDEO_ELEMENT_NOT_SET]: 'Video element not set',
       [WebcamErrorCode.INVALID_VIDEO_ELEMENT]: 'Invalid video element',
       [WebcamErrorCode.STREAM_FAILED]: 'Failed to start camera',
+      [WebcamErrorCode.OVERCONSTRAINED]: 'Camera constraints not satisfied',
       [WebcamErrorCode.RESOLUTION_NOT_SUPPORTED]: 'Resolution not supported',
       [WebcamErrorCode.RESOLUTION_FAILED]: 'Failed to change resolution',
       [WebcamErrorCode.ZOOM_NOT_SUPPORTED]: 'Zoom not supported',

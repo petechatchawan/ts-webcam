@@ -1,5 +1,6 @@
 // Type definitions for ts-webcam
-import { WebcamError } from './errors';
+
+import { WebcamError } from "./errors";
 
 export interface Resolution {
   name: string;
@@ -36,9 +37,15 @@ export interface WebcamConfiguration {
   videoElement?: HTMLVideoElement;
   enableAudio?: boolean;
   enableMirror?: boolean;
-  allowAnyResolution?: boolean;
-  allowAutoRotateResolution?: boolean;
   debug?: boolean;
+
+  // Callback-based handlers (optional)
+  onStateChange?: (state: TsWebcamState) => void;
+  onStreamStart?: (stream: MediaStream) => void;
+  onStreamStop?: () => void;
+  onError?: (error: WebcamError) => void;
+  onPermissionChange?: (permissions: Record<string, PermissionState>) => void;
+  onDeviceChange?: (devices: MediaDeviceInfo[]) => void;
 }
 
 export type TsWebcamStatus = 'idle' | 'initializing' | 'ready' | 'error';
@@ -55,14 +62,3 @@ export interface TsWebcamStateInternal {
 
 // Public state (readonly for outside)
 export type TsWebcamState = Readonly<TsWebcamStateInternal>;
-
-// Event types for TsWebcam
-export interface TsWebcamEvents {
-  'stream:start': MediaStream;
-  'stream:stop': void;
-  'error': WebcamError;
-  'permission:change': PermissionStatus;
-  'device:change': MediaDeviceInfo[];
-  'device:hotplug': MediaDeviceInfo[];
-  'state:change': TsWebcamState;
-}

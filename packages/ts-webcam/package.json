@@ -1,7 +1,7 @@
 {
   "name": "ts-webcam",
   "version": "2.0.0",
-  "description": "A production-grade TypeScript webcam library with modern APIs, flexible permission handling, and comprehensive device support",
+  "description": "A production-grade TypeScript webcam library with callback-based APIs, flexible permission handling, and comprehensive device support",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
@@ -17,7 +17,12 @@
     "video",
     "capture",
     "permissions",
-    "device-detection"
+    "device-detection",
+    "callback-api",
+    "modern",
+    "angular",
+    "torch",
+    "capabilities"
   ],
   "author": "TS-Webcam Team",
   "license": "MIT",
