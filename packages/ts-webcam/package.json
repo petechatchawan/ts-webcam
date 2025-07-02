@@ -1,10 +1,37 @@
 {
   "name": "ts-webcam",
-  "version": "0.1.0",
+  "version": "2.0.0",
+  "description": "A production-grade TypeScript webcam library with modern APIs, flexible permission handling, and comprehensive device support",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "files": [
+    "dist/**/*",
+    "README.md"
+  ],
+  "keywords": [
+    "webcam",
+    "camera",
+    "typescript",
+    "webrtc",
+    "mediastream",
+    "video",
+    "capture",
+    "permissions",
+    "device-detection"
+  ],
+  "author": "TS-Webcam Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/ts-webcam.git"
+  },
+  "homepage": "https://ts-webcam.web.app",
+  "bugs": {
+    "url": "https://github.com/your-org/ts-webcam/issues"
+  },
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "prepublishOnly": "npm run build"
   },
   "devDependencies": {
     "@types/node": "^24.0.7",
