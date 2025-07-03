@@ -9,16 +9,13 @@ import {
 
 @Injectable({ providedIn: 'root' })
 export class WebcamService {
-  // Shared webcam instance and signals for all components
   webcam = new TsWebcam();
   state = signal<TsWebcamState>(this.webcam.getState());
   devices = signal<MediaDeviceInfo[]>([]);
   permissionChecked = signal<boolean>(false);
   deviceCapabilities = signal<DeviceCapability | null>(null);
 
-  constructor() {
-    // All state/signals are public for multi-component reactivity
-  }
+  constructor() { }
 
   getState(): Signal<TsWebcamState> {
     return this.state.asReadonly();
@@ -93,10 +90,13 @@ export class WebcamService {
         onStateChange: (state: TsWebcamState) => {
           this.state.set(state);
         },
-        onStreamStart: (stream: MediaStream) => {},
-        onStreamStop: () => {},
+        onStreamStart: (stream: MediaStream) => { console.log('Stream started:', stream); },
+        onStreamStop: () => { console.log('Stream stopped'); },
         onError: (error) => { console.error('Webcam error:', error); },
-        onPermissionChange: (permissions) => { this.permissionChecked.set(true); },
+        onPermissionChange: (permissions) => {
+          console.log('Permissions changed:', permissions);
+          this.permissionChecked.set(true);
+        },
         onDeviceChange: (devices) => { this.devices.set(devices); }
       };
 

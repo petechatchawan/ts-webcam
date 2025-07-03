@@ -405,7 +405,6 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
         const streamActive = hasStream && (videoElement.srcObject as MediaStream).active;
         const isPlaying = !videoElement.paused && !videoElement.ended;
         const hasActiveTracks = hasStream && (videoElement.srcObject as MediaStream).getVideoTracks().length > 0;
-
         this.videoReady.set(hasStream && streamActive && isPlaying && hasActiveTracks);
       };
 
