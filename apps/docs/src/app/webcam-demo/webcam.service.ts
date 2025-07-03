@@ -30,6 +30,11 @@ export class WebcamService {
     return this.deviceCapabilities.asReadonly();
   }
 
+  /** Type-safe getter for the underlying TsWebcam instance */
+  get webcamInstance(): TsWebcam {
+    return this.webcam;
+  }
+
   /**
    * Requests permissions and loads available devices
    * @param options Permission options for video and audio access

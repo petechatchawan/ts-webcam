@@ -404,4 +404,95 @@ export class TsWebcam {
             }, 'image/jpeg', 0.9);
         });
     }
+
+    /** Mirror control (CSS only, always supported if video element present) */
+    setMirror(mirror: boolean): void {
+        if (this.state.videoElement) {
+            this.state.videoElement.style.transform = mirror ? 'scaleX(-1)' : '';
+        }
+    }
+    /** Get current mirror state */
+    getMirror(): boolean {
+        return !!(this.state.videoElement && this.state.videoElement.style.transform === 'scaleX(-1)');
+    }
+    /** Check if mirror is supported */
+    isMirrorSupported(): boolean {
+        return !!this.state.videoElement;
+    }
+    /** Torch control (if supported) */
+    async setTorch(enabled: boolean): Promise<void> {
+        const track = this._getActiveVideoTrack();
+        if (this.isTorchSupported()) {
+            // @ts-ignore
+            await track.applyConstraints({ advanced: [{ torch: enabled }] });
+        } else {
+            throw new Error('Torch is not supported on this device');
+        }
+    }
+    /** Get current torch state (if supported) */
+    getTorch(): boolean | undefined {
+        const track = this._getActiveVideoTrack();
+        if (this.isTorchSupported()) {
+            // @ts-ignore
+            return track.getSettings().torch;
+        }
+        return undefined;
+    }
+    /** Check if torch is supported */
+    isTorchSupported(): boolean {
+        const track = this._getActiveVideoTrack();
+        return !!(track && 'torch' in track.getCapabilities());
+    }
+    /** Zoom control (if supported) */
+    async setZoom(zoom: number): Promise<void> {
+        const track = this._getActiveVideoTrack();
+        if (this.isZoomSupported()) {
+            // @ts-ignore
+            await track.applyConstraints({ advanced: [{ zoom }] });
+        } else {
+            throw new Error('Zoom is not supported on this device');
+        }
+    }
+    /** Get current zoom level (if supported) */
+    getZoom(): number | undefined {
+        const track = this._getActiveVideoTrack();
+        if (this.isZoomSupported()) {
+            // @ts-ignore
+            return track.getSettings().zoom;
+        }
+        return undefined;
+    }
+    /** Check if zoom is supported */
+    isZoomSupported(): boolean {
+        const track = this._getActiveVideoTrack();
+        return !!(track && 'zoom' in track.getCapabilities());
+    }
+    /** Focus mode control (if supported) */
+    async setFocusMode(mode: string): Promise<void> {
+        const track = this._getActiveVideoTrack();
+        if (this.isFocusSupported()) {
+            // @ts-ignore
+            await track.applyConstraints({ advanced: [{ focusMode: mode }] });
+        } else {
+            throw new Error('Focus mode is not supported on this device');
+        }
+    }
+    /** Get current focus mode (if supported) */
+    getFocusMode(): string | undefined {
+        const track = this._getActiveVideoTrack();
+        if (this.isFocusSupported()) {
+            // @ts-ignore
+            return track.getSettings().focusMode;
+        }
+        return undefined;
+    }
+    /** Check if focus mode is supported */
+    isFocusSupported(): boolean {
+        const track = this._getActiveVideoTrack();
+        return !!(track && 'focusMode' in track.getCapabilities());
+    }
+    /** Helper: get the active video track */
+    private _getActiveVideoTrack(): MediaStreamTrack | undefined {
+        return this.state.activeStream?.getVideoTracks()[0];
+    }
 }

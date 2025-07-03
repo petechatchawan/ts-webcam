@@ -329,7 +329,7 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
     const checked = (event.target as HTMLInputElement)?.checked ?? false;
     this.enableMirror.set(checked);
     try {
-      this.webcamService['webcam'].setMirror(checked);
+      this.webcamService.webcamInstance.setMirror(checked);
     } catch (e) {
       console.error('Failed to set mirror:', e);
     }
@@ -346,7 +346,7 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
     if (isNaN(value) || this.zoom() === value) return;
     this.zoom.set(value);
     try {
-      await this.webcamService['webcam'].setZoom(value);
+      await this.webcamService.webcamInstance.setZoom(value);
     } catch (e) {
       console.error('Failed to set zoom:', e);
     }
@@ -356,7 +356,7 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
     const value = (event.target as HTMLSelectElement)?.value;
     this.focusMode.set(value);
     try {
-      await this.webcamService['webcam'].setFocusMode(value);
+      await this.webcamService.webcamInstance.setFocusMode(value);
     } catch (e) {
       console.error('Failed to set focus mode:', e);
     }
@@ -367,7 +367,7 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
     if (!this.hasTorch()) return;
     try {
       const enabled = !this.torchEnabled();
-      await this.webcamService['webcam'].setTorch(enabled);
+      await this.webcamService.webcamInstance.setTorch(enabled);
       this.torchEnabled.set(enabled);
     } catch (error) {
       console.error('Failed to toggle torch:', error);
