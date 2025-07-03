@@ -55,6 +55,8 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
   readonly maxZoom = signal<number | null>(null);
   readonly focusMode = signal<string | null>(null);
   readonly supportedFocusModes = signal<string[]>([]);
+  readonly capturedImageUrl = signal<string | null>(null);
+  readonly lastTestedDeviceCapabilities = signal<DeviceCapability | null>(null);
 
   // Store event listeners for cleanup
   private videoEventListeners: { [key: string]: () => void } = {};
@@ -247,12 +249,21 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
 
     try {
       const blob = await this.webcamService.capture();
-      // ตัวอย่าง: สามารถนำ blob ไปใช้งานต่อได้ เช่น upload หรือแสดงผล
-      // หากต้องการแสดงภาพ preview สามารถสร้าง object URL ชั่วคราวได้ที่นี่
-      // const url = URL.createObjectURL(blob);
-      // ...
+      if (blob) {
+        // Create a temporary object URL for preview
+        const url = URL.createObjectURL(blob);
+        this.capturedImageUrl.set(url);
+      }
     } catch (error) {
       console.error('Capture failed:', error);
+    }
+  }
+
+  clearCapturedImage() {
+    const url = this.capturedImageUrl();
+    if (url) {
+      URL.revokeObjectURL(url);
+      this.capturedImageUrl.set(null);
     }
   }
 
@@ -262,8 +273,19 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
     if (!deviceId) return;
 
     try {
+      // Stop camera if running
+      if (this.uiState().isReady) {
+        this.stopCamera();
+      }
+      // Test device capabilities via service
       await this.webcamService.testDeviceCapabilities(deviceId);
-    } catch { }
+      // Store the result for display
+      this.lastTestedDeviceCapabilities.set(this.deviceCapabilities());
+      // Optionally, start camera again after testing
+      await this.startCamera();
+    } catch (e) {
+      console.error('Test device capabilities failed:', e);
+    }
   }
 
   // Permission options methods

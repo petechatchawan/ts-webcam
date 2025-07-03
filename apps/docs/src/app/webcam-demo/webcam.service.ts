@@ -9,49 +9,26 @@ import {
 
 @Injectable({ providedIn: 'root' })
 export class WebcamService {
-  private webcam = new TsWebcam();
-  private state = signal<TsWebcamState>(this.webcam.getState());
-  private devices = signal<MediaDeviceInfo[]>([]);
-  private permissionChecked = signal<boolean>(false);
-  private deviceCapabilities = signal<DeviceCapability | null>(null);
+  // Shared webcam instance and signals for all components
+  webcam = new TsWebcam();
+  state = signal<TsWebcamState>(this.webcam.getState());
+  devices = signal<MediaDeviceInfo[]>([]);
+  permissionChecked = signal<boolean>(false);
+  deviceCapabilities = signal<DeviceCapability | null>(null);
 
   constructor() {
-    // No more event listeners needed - we'll use callbacks in configuration
+    // All state/signals are public for multi-component reactivity
   }
 
-  /**
-   * Gets the current webcam state
-   * @returns Signal<TsWebcamState> - Reactive state signal
-   * @example
-   * const state = service.getState()();
-   * if (state.status === 'ready') {
-   *   console.log('Webcam is ready!');
-   * }
-   */
   getState(): Signal<TsWebcamState> {
     return this.state.asReadonly();
   }
-
-  /**
-   * Gets available video devices
-   * @returns Signal<MediaDeviceInfo[]> - Signal of available devices
-   */
   getDevices(): Signal<MediaDeviceInfo[]> {
     return this.devices.asReadonly();
   }
-
-  /**
-   * Checks if permissions have been requested
-   * @returns Signal<boolean> - Permission check status
-   */
   getPermissionChecked(): Signal<boolean> {
     return this.permissionChecked.asReadonly();
   }
-
-  /**
-   * Gets device capabilities for testing
-   * @returns Signal<DeviceCapability | null> - Device capabilities or null
-   */
   getDeviceCapabilities(): Signal<DeviceCapability | null> {
     return this.deviceCapabilities.asReadonly();
   }
@@ -114,26 +91,13 @@ export class WebcamService {
       const configWithCallbacks: WebcamConfiguration = {
         ...config,
         onStateChange: (state: TsWebcamState) => {
-          console.debug('Webcam state changed:', state);
           this.state.set(state);
         },
-        onStreamStart: (stream: MediaStream) => {
-          console.debug('Webcam stream started:', stream);
-        },
-        onStreamStop: () => {
-          console.debug('Webcam stream stopped');
-        },
-        onError: (error) => {
-          console.error('Webcam error:', error);
-        },
-        onPermissionChange: (permissions) => {
-          console.debug('Webcam permission changed:', permissions);
-          this.permissionChecked.set(true);
-        },
-        onDeviceChange: (devices) => {
-          console.debug('Webcam devices changed:', devices);
-          this.devices.set(devices);
-        }
+        onStreamStart: (stream: MediaStream) => {},
+        onStreamStop: () => {},
+        onError: (error) => { console.error('Webcam error:', error); },
+        onPermissionChange: (permissions) => { this.permissionChecked.set(true); },
+        onDeviceChange: (devices) => { this.devices.set(devices); }
       };
 
       await this.webcam.startCamera(configWithCallbacks);
@@ -164,19 +128,6 @@ export class WebcamService {
       console.error('Capture failed:', errorMessage);
       throw new Error(errorMessage);
     }
-  }
-
-  captureImage(): Promise<Blob | null> {
-    return new Promise((resolve, reject) => {
-      this.webcam.capture()
-        .then((imageUrl) => {
-          resolve(imageUrl);
-        })
-        .catch((error) => {
-          console.error('Capture failed:', error);
-          reject(error);
-        });
-    });
   }
 
   dispose() {

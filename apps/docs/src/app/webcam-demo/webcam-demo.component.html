@@ -124,8 +124,17 @@
           />
         </svg>
         <div>
-          <h4 class="font-medium text-red-800 mb-1">Error</h4>
-          <p class="text-red-700 text-sm">{{ error() }}</p>
+          <h4 class="font-medium text-red-800 mb-1">Error while starting camera</h4>
+          <div
+            *ngIf="selectedDeviceId() && selectedResolution()"
+            class="mb-1 text-xs text-gray-700"
+          >
+            Device: <span class="font-semibold">{{ getCurrentCameraName() }}</span> | Resolution:
+            <span class="font-semibold"
+              >{{ selectedResolution().width }}×{{ selectedResolution().height }}</span
+            >
+          </div>
+          <p class="text-red-700 text-sm whitespace-pre-line">{{ error() }}</p>
         </div>
       </div>
     </div>
@@ -382,7 +391,10 @@
           </label>
 
           <!-- Zoom slider if supported -->
-          <div *ngIf="deviceCapabilities()?.hasZoom && minZoom() !== null && maxZoom() !== null" class="flex items-center gap-2">
+          <div
+            *ngIf="deviceCapabilities()?.hasZoom && minZoom() !== null && maxZoom() !== null"
+            class="flex items-center gap-2"
+          >
             <label for="zoom-slider" class="text-sm text-gray-700">Zoom</label>
             <input
               id="zoom-slider"
@@ -399,7 +411,10 @@
           </div>
 
           <!-- Focus mode select if supported -->
-          <div *ngIf="deviceCapabilities()?.hasFocus && supportedFocusModes().length > 0" class="flex items-center gap-2">
+          <div
+            *ngIf="deviceCapabilities()?.hasFocus && supportedFocusModes().length > 0"
+            class="flex items-center gap-2"
+          >
             <label for="focus-mode-select" class="text-sm text-gray-700">Focus</label>
             <select
               id="focus-mode-select"
@@ -416,27 +431,6 @@
         <!-- Divider -->
         <div class="border-t my-4"></div>
 
-        <!-- Device Test -->
-        <button
-          (click)="testDeviceCapabilities()"
-          [disabled]="!selectedDeviceId()"
-          class="w-full flex items-center justify-center gap-2 px-3 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
-        >
-          <svg
-            class="w-4 h-4"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-            />
-          </svg>
-          Test Device
-        </button>
         <!-- Device Info Section -->
         <div class="bg-gray-50 rounded-lg p-4 mt-4">
           <div class="flex items-center gap-2 mb-3">
@@ -500,39 +494,70 @@
             </div>
           </div>
         </div>
+
+        <!-- Divider -->
+        <div class="border-t my-4"></div>
+
+        <!-- Device Test -->
+        <button
+          (click)="testDeviceCapabilities()"
+          [disabled]="!selectedDeviceId()"
+          class="w-full flex items-center justify-center gap-2 px-3 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
+        >
+          <svg
+            class="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+            />
+          </svg>
+          Test Device
+        </button>
+        <!-- Show last tested device capabilities -->
+        <div *ngIf="lastTestedDeviceCapabilities()" class="bg-gray-50 rounded-lg p-4 mt-4">
+          <div class="flex items-center gap-2 mb-3">
+            <svg class="w-5 h-5 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
+              <path
+                fill-rule="evenodd"
+                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                clip-rule="evenodd"
+              ></path>
+            </svg>
+            <h3 class="text-sm font-semibold text-gray-900">Last Tested Device Capabilities</h3>
+          </div>
+          <div class="bg-gray-100 rounded p-2 overflow-x-auto">
+            <pre class="text-xs text-gray-700">{{ lastTestedDeviceCapabilities() | json }}</pre>
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- Help Section -->
+    <!-- Captured Image -->
     <div
-      *ngIf="permissionChecked() && !isPermissionDenied()"
-      class="bg-blue-50 border border-blue-300 rounded-lg p-4 mt-6"
+      *ngIf="capturedImageUrl()"
+      class="bg-white rounded-lg shadow-sm border border-gray-300 p-6 mt-6"
     >
-      <div class="flex items-start gap-3">
-        <svg
-          class="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          viewBox="0 0 24 24"
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-semibold text-gray-900">Captured Image</h3>
+        <button
+          (click)="clearCapturedImage()"
+          class="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
         >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-          />
-        </svg>
-        <div>
-          <h4 class="font-medium text-blue-800 mb-2">How to Use</h4>
-          <ul class="text-blue-700 text-sm space-y-1">
-            <li><strong>Start Camera</strong> - Begin webcam streaming</li>
-            <li><strong>Capture</strong> - Take a photo snapshot</li>
-            <li><strong>Torch</strong> - Toggle flash/flashlight (if available)</li>
-            <li><strong>Stop</strong> - End webcam streaming</li>
-            <li><strong>Settings</strong> - Choose camera, resolution, and options</li>
-            <li><strong>Test Device</strong> - Check device capabilities and supported features</li>
-          </ul>
-        </div>
+          Clear
+        </button>
+      </div>
+      <div class="flex justify-center">
+        <img
+          [src]="capturedImageUrl()"
+          alt="Captured Image"
+          class="max-w-full max-h-80 rounded-lg border border-gray-300"
+        />
       </div>
     </div>
   </div>
