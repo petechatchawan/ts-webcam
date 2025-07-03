@@ -18,7 +18,6 @@ export class TsWebcam {
     private _deviceChangeListener?: () => void;
     private _disposed = false;
     private _config?: WebcamConfiguration;
-    private _mirror = false;
 
     constructor() {
         // Simple callback-based approach
@@ -164,7 +163,7 @@ export class TsWebcam {
             this._callStateChange();
 
         } catch (error) {
-            const webcamError = this._handleStartCameraError(error);
+            const webcamError = this._handleStartCameraError(error, config);
             this._setError(webcamError);
             this._callError(webcamError);
             this._callStateChange();
@@ -282,98 +281,6 @@ export class TsWebcam {
         this._config = undefined;
     }
 
-    /** Mirror control (CSS only, always supported if video element present) */
-    setMirror(mirror: boolean): void {
-        this._mirror = mirror;
-        if (this.state.videoElement) {
-            this.state.videoElement.style.transform = mirror ? 'scaleX(-1)' : '';
-        }
-    }
-    /** Get current mirror state */
-    getMirror(): boolean {
-        return this._mirror;
-    }
-    /** Check if mirror is supported */
-    isMirrorSupported(): boolean {
-        return !!this.state.videoElement;
-    }
-    /** Torch control (if supported) */
-    async setTorch(enabled: boolean): Promise<void> {
-        const track = this._getActiveVideoTrack();
-        if (this.isTorchSupported()) {
-            // @ts-ignore
-            await track.applyConstraints({ advanced: [{ torch: enabled }] });
-        } else {
-            throw new Error('Torch is not supported on this device');
-        }
-    }
-    /** Get current torch state (if supported) */
-    getTorch(): boolean | undefined {
-        const track = this._getActiveVideoTrack();
-        if (this.isTorchSupported()) {
-            // @ts-ignore
-            return track.getSettings().torch;
-        }
-        return undefined;
-    }
-    /** Check if torch is supported */
-    isTorchSupported(): boolean {
-        const track = this._getActiveVideoTrack();
-        return !!(track && 'torch' in track.getCapabilities());
-    }
-    /** Zoom control (if supported) */
-    async setZoom(zoom: number): Promise<void> {
-        const track = this._getActiveVideoTrack();
-        if (this.isZoomSupported()) {
-            // @ts-ignore
-            await track.applyConstraints({ advanced: [{ zoom }] });
-        } else {
-            throw new Error('Zoom is not supported on this device');
-        }
-    }
-    /** Get current zoom level (if supported) */
-    getZoom(): number | undefined {
-        const track = this._getActiveVideoTrack();
-        if (this.isZoomSupported()) {
-            // @ts-ignore
-            return track.getSettings().zoom;
-        }
-        return undefined;
-    }
-    /** Check if zoom is supported */
-    isZoomSupported(): boolean {
-        const track = this._getActiveVideoTrack();
-        return !!(track && 'zoom' in track.getCapabilities());
-    }
-    /** Focus mode control (if supported) */
-    async setFocusMode(mode: string): Promise<void> {
-        const track = this._getActiveVideoTrack();
-        if (this.isFocusSupported()) {
-            // @ts-ignore
-            await track.applyConstraints({ advanced: [{ focusMode: mode }] });
-        } else {
-            throw new Error('Focus mode is not supported on this device');
-        }
-    }
-    /** Get current focus mode (if supported) */
-    getFocusMode(): string | undefined {
-        const track = this._getActiveVideoTrack();
-        if (this.isFocusSupported()) {
-            // @ts-ignore
-            return track.getSettings().focusMode;
-        }
-        return undefined;
-    }
-    /** Check if focus mode is supported */
-    isFocusSupported(): boolean {
-        const track = this._getActiveVideoTrack();
-        return !!(track && 'focusMode' in track.getCapabilities());
-    }
-    /** Helper: get the active video track */
-    private _getActiveVideoTrack(): MediaStreamTrack | undefined {
-        return this.state.activeStream?.getVideoTracks()[0];
-    }
-
     // --- Private Helper Methods ---
     private _ensureNotDisposed(): void {
         if (this._disposed) {
@@ -396,6 +303,7 @@ export class TsWebcam {
 
     private _buildConstraints(config: WebcamConfiguration): MediaStreamConstraints {
         const { deviceInfo, preferredResolutions, enableAudio } = config;
+        // รองรับทั้งแบบ array และเดี่ยว
         const resolution = Array.isArray(preferredResolutions)
             ? preferredResolutions[0]
             : preferredResolutions;
@@ -415,43 +323,48 @@ export class TsWebcam {
         };
     }
 
-    private _handleStartCameraError(error: any): WebcamError {
+    private _handleStartCameraError(error: any, config?: WebcamConfiguration): WebcamError {
+        // Extract device and resolution info
+        let deviceLabel = config?.deviceInfo?.label || config?.deviceInfo?.deviceId || 'Unknown device';
+        let resolution = Array.isArray(config?.preferredResolutions)
+            ? config?.preferredResolutions[0]
+            : config?.preferredResolutions;
+        let resolutionText = resolution ? `${resolution.width}x${resolution.height}` : 'Unknown resolution';
+        let context = 'startCamera';
+
         if (error instanceof WebcamError) {
+            // Add context if not present
+            error.message = `[${context}] ${error.message} (Device: ${deviceLabel}, Resolution: ${resolutionText})`;
             return error;
         }
 
-        // Gather more context for error message
-        let deviceLabel = this.state.deviceInfo?.label || this.state.deviceInfo?.deviceId || 'Unknown device';
-        let resolution = '';
-        if (this._config && this._config.preferredResolutions) {
-            const res = Array.isArray(this._config.preferredResolutions)
-                ? this._config.preferredResolutions[0]
-                : this._config.preferredResolutions;
-            if (res) {
-                resolution = `${res.width}x${res.height}`;
-            }
-        }
-
-        let baseMsg = `Failed to start camera`;
-        if (deviceLabel !== 'Unknown device' || resolution) {
-            baseMsg += ` on device: ${deviceLabel}`;
-            if (resolution) baseMsg += ` at resolution: ${resolution}`;
-        }
-
+        let baseMsg = `[${context}] `;
         if (error?.name === 'NotAllowedError') {
-            return new WebcamError(`${baseMsg} - Camera access denied by user/browser.`, WebcamErrorCode.PERMISSION_DENIED);
+            return new WebcamError(
+                `${baseMsg}Camera access denied (Device: ${deviceLabel}, Resolution: ${resolutionText})`,
+                WebcamErrorCode.PERMISSION_DENIED
+            );
         }
 
         if (error?.name === 'NotFoundError') {
-            return new WebcamError(`${baseMsg} - Camera device not found.`, WebcamErrorCode.DEVICE_NOT_FOUND);
+            return new WebcamError(
+                `${baseMsg}Camera device not found (Device: ${deviceLabel}, Resolution: ${resolutionText})`,
+                WebcamErrorCode.DEVICE_NOT_FOUND
+            );
         }
 
         if (error?.name === 'NotReadableError') {
-            return new WebcamError(`${baseMsg} - Camera is already in use or not readable.`, WebcamErrorCode.DEVICE_BUSY);
+            return new WebcamError(
+                `${baseMsg}Camera is already in use (Device: ${deviceLabel}, Resolution: ${resolutionText})`,
+                WebcamErrorCode.DEVICE_BUSY
+            );
         }
 
         if (error?.name === 'OverconstrainedError') {
-            return new WebcamError(`${baseMsg} - Camera constraints not satisfied (requested resolution or settings not supported).`, WebcamErrorCode.OVERCONSTRAINED);
+            return new WebcamError(
+                `${baseMsg}Camera constraints not satisfied (Device: ${deviceLabel}, Resolution: ${resolutionText})`,
+                WebcamErrorCode.OVERCONSTRAINED
+            );
         }
 
         // เพิ่มรายละเอียด error message
@@ -464,7 +377,7 @@ export class TsWebcam {
         ].filter(Boolean).join(' | ');
 
         return new WebcamError(
-            `${baseMsg}${details ? ' | Details: ' + details : ''}`,
+            `${baseMsg}Failed to start camera: ${details || 'Unknown error'} (Device: ${deviceLabel}, Resolution: ${resolutionText})`,
             WebcamErrorCode.UNKNOWN_ERROR
         );
     }
@@ -472,6 +385,7 @@ export class TsWebcam {
     private async _captureFromVideoElement(videoElement: HTMLVideoElement): Promise<Blob> {
         const canvas = document.createElement('canvas');
         const context = canvas.getContext('2d');
+
         if (!context) {
             throw new Error('Could not get canvas context');
         }
