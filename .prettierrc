@@ -1,6 +1,16 @@
 {
-  "singleQuote": true,
-  "trailingComma": "none",
-  "quoteProps": "consistent",
-  "printWidth": 100
+  "$schema": "https://json.schemastore.org/prettierrc.json",
+  "tabWidth": 2,
+  "printWidth": 100,
+  "semi": true,
+  "useTabs": true,
+  "singleQuote": false,
+  "bracketSpacing": true,
+  "endOfLine": "auto",
+  "arrowParens": "always",
+  "trailingComma": "all",
+  "bracketSameLine": true,
+  "htmlWhitespaceSensitivity": "ignore",
+  "embeddedLanguageFormatting": "auto",
+  "quoteProps": "consistent"
 }
