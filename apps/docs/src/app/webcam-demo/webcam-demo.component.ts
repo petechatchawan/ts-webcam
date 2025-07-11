@@ -1,7 +1,22 @@
 import { CommonModule } from "@angular/common";
-import { Component, ElementRef, OnDestroy, OnInit, ViewChild, computed, effect, signal } from "@angular/core";
+import {
+	Component,
+	ElementRef,
+	OnDestroy,
+	OnInit,
+	ViewChild,
+	computed,
+	effect,
+	signal,
+} from "@angular/core";
 import { FormsModule } from "@angular/forms";
-import { DeviceCapability, PermissionRequestOptions, Resolution, WebcamState, WebcamConfiguration } from "ts-webcam";
+import {
+	DeviceCapability,
+	PermissionRequestOptions,
+	Resolution,
+	WebcamState,
+	WebcamConfiguration,
+} from "ts-webcam";
 import { WebcamService } from "./webcam.service";
 
 interface UiState {
@@ -63,7 +78,9 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
 
 	// Reactive computed properties
 	readonly currentConfig = computed(() => {
-		const deviceInfo = this.devices().find((d: MediaDeviceInfo) => d.deviceId === this.selectedDeviceId());
+		const deviceInfo = this.devices().find(
+			(d: MediaDeviceInfo) => d.deviceId === this.selectedDeviceId(),
+		);
 		if (!deviceInfo || !this.videoElementRef?.nativeElement) return null;
 
 		return {
@@ -100,7 +117,8 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
 			isLoading,
 			isReady,
 			isError,
-			canStart: isPermissionGranted && hasSelectedDevice && hasVideoElement && !isLoading && !isReady,
+			canStart:
+				isPermissionGranted && hasSelectedDevice && hasVideoElement && !isLoading && !isReady,
 			canStop: isReady,
 			canCapture: isReady,
 			canSwitchDevice: hasSelectedDevice && !isLoading,
@@ -193,9 +211,10 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
 		);
 	}
 
-	ngOnInit() {
+	async ngOnInit() {
 		// Initial permission/device check
 		this.requestPermissionsAndLoadDevices();
+		await this.webcamService.loadDevices();
 	}
 
 	// Permission methods
@@ -422,7 +441,8 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
 				const hasStream = !!videoElement.srcObject;
 				const streamActive = hasStream && (videoElement.srcObject as MediaStream).active;
 				const isPlaying = !videoElement.paused && !videoElement.ended;
-				const hasActiveTracks = hasStream && (videoElement.srcObject as MediaStream).getVideoTracks().length > 0;
+				const hasActiveTracks =
+					hasStream && (videoElement.srcObject as MediaStream).getVideoTracks().length > 0;
 				this.videoReady.set(hasStream && streamActive && isPlaying && hasActiveTracks);
 			};
 

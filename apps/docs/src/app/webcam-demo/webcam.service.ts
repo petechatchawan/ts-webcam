@@ -1,5 +1,11 @@
 import { Injectable, signal, Signal } from "@angular/core";
-import { DeviceCapability, PermissionRequestOptions, Webcam, WebcamState, WebcamConfiguration } from "ts-webcam";
+import {
+	DeviceCapability,
+	PermissionRequestOptions,
+	Webcam,
+	WebcamState,
+	WebcamConfiguration,
+} from "ts-webcam";
 
 @Injectable({ providedIn: "root" })
 export class WebcamService {
@@ -14,12 +20,15 @@ export class WebcamService {
 	getState(): Signal<WebcamState> {
 		return this.state.asReadonly();
 	}
+
 	getDevices(): Signal<MediaDeviceInfo[]> {
 		return this.devices.asReadonly();
 	}
+
 	getPermissionChecked(): Signal<boolean> {
 		return this.permissionChecked.asReadonly();
 	}
+
 	getDeviceCapabilities(): Signal<DeviceCapability | null> {
 		return this.deviceCapabilities.asReadonly();
 	}
@@ -40,7 +49,9 @@ export class WebcamService {
 	 * // Request both camera and microphone
 	 * await service.requestPermissionsAndLoadDevices({ video: true, audio: true });
 	 */
-	async requestPermissionsAndLoadDevices(options: PermissionRequestOptions = { video: true, audio: false }) {
+	async requestPermissionsAndLoadDevices(
+		options: PermissionRequestOptions = { video: true, audio: false },
+	) {
 		try {
 			const perms = await this.webcam.requestPermissions(options);
 			this.permissionChecked.set(true);
@@ -64,13 +75,19 @@ export class WebcamService {
 	 */
 	isPermissionDenied(perms?: Record<string, PermissionState>): boolean {
 		const p = perms || this.state().permissions;
-		return p["camera"] === "denied" || p["microphone"] === "denied" || p["camera"] === "prompt" || p["microphone"] === "prompt";
+		return (
+			p["camera"] === "denied" ||
+			p["microphone"] === "denied" ||
+			p["camera"] === "prompt" ||
+			p["microphone"] === "prompt"
+		);
 	}
 
 	async loadDevices() {
 		try {
 			const devices = await this.webcam.getVideoDevices();
 			this.devices.set(devices);
+			console.log("Devices:", this.devices());
 		} catch (e) {
 			console.error("Load devices failed:", e);
 		}
