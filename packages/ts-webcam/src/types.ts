@@ -40,7 +40,7 @@ export interface WebcamConfiguration {
 	debug?: boolean;
 
 	// Callback-based handlers (optional)
-	onStateChange?: (state: TsWebcamState) => void;
+	onStateChange?: (state: WebcamState) => void;
 	onStreamStart?: (stream: MediaStream) => void;
 	onStreamStop?: () => void;
 	onError?: (error: WebcamError) => void;
@@ -48,11 +48,11 @@ export interface WebcamConfiguration {
 	onDeviceChange?: (devices: MediaDeviceInfo[]) => void;
 }
 
-export type TsWebcamStatus = "idle" | "initializing" | "ready" | "error";
+export type WebcamStatus = "idle" | "initializing" | "ready" | "error";
 
 // State interface (internal, not readonly)
-export interface TsWebcamStateInternal {
-	status: TsWebcamStatus;
+export interface WebcamStateInternal {
+	status: WebcamStatus;
 	activeStream: MediaStream | null;
 	permissions: Record<string, PermissionState>;
 	videoElement?: HTMLVideoElement;
@@ -61,4 +61,4 @@ export interface TsWebcamStateInternal {
 }
 
 // Public state (readonly for outside)
-export type TsWebcamState = Readonly<TsWebcamStateInternal>;
+export type WebcamState = Readonly<WebcamStateInternal>;

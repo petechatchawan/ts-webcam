@@ -1,15 +1,20 @@
-// Main TsWebcam class with callback-based approach
 import { WebcamError, WebcamErrorCode } from "./errors";
-import { DeviceCapability, PermissionRequestOptions, TsWebcamState, TsWebcamStateInternal, WebcamConfiguration } from "./types";
+import { DeviceCapability, PermissionRequestOptions, WebcamState, WebcamStateInternal, WebcamConfiguration } from "./types";
 
-export class TsWebcam {
-	private state: TsWebcamStateInternal = {
+export class Webcam {
+	/**
+	 * Initializes the webcam state
+	 */
+	private state: WebcamStateInternal = {
 		status: "idle",
 		activeStream: null,
 		permissions: {},
 		error: null,
 	};
 
+	/**
+	 * Listener for device changes
+	 */
 	private _deviceChangeListener?: () => void;
 	private _disposed = false;
 	private _config?: WebcamConfiguration;
@@ -19,50 +24,19 @@ export class TsWebcam {
 		// todo: set default config like debug mode
 	}
 
-	// Helper methods for calling callbacks
-	private _callStateChange() {
-		if (this._config?.onStateChange) {
-			this._config.onStateChange(this.getState());
-		}
-	}
-
-	private _callStreamStart(stream: MediaStream) {
-		if (this._config?.onStreamStart) {
-			this._config.onStreamStart(stream);
-		}
-	}
-
-	private _callStreamStop() {
-		if (this._config?.onStreamStop) {
-			this._config.onStreamStop();
-		}
-	}
-
-	private _callError(error: WebcamError) {
-		if (this._config?.onError) {
-			this._config.onError(error);
-		}
-	}
-
-	private _callPermissionChange(permissions: Record<string, PermissionState>) {
-		if (this._config?.onPermissionChange) {
-			this._config.onPermissionChange(permissions);
-		}
-	}
-
-	private _callDeviceChange(devices: MediaDeviceInfo[]) {
-		if (this._config?.onDeviceChange) {
-			this._config.onDeviceChange(devices);
-		}
-	}
-
-	// --- 1. State ---
-	getState(): TsWebcamState {
+	/**
+	 * Get the current state of the webcam.
+	 * @returns WebcamState
+	 */
+	getState(): WebcamState {
 		this._ensureNotDisposed();
 		return { ...this.state };
 	}
 
-	// --- 2. Permissions & Device Enumeration ---
+	/**
+	 * Check the current permissions of the user.
+	 * @returns Record<string, PermissionState>
+	 */
 	async checkPermissions(): Promise<Record<string, PermissionState>> {
 		this._ensureNotDisposed();
 		const permissions: Record<string, PermissionState> = {};
@@ -89,6 +63,11 @@ export class TsWebcam {
 		return permissions;
 	}
 
+	/**
+	 * Request permissions from the user.
+	 * @param options PermissionRequestOptions
+	 * @returns Record<string, PermissionState>
+	 */
 	async requestPermissions(options: PermissionRequestOptions = { video: true, audio: false }): Promise<Record<string, PermissionState>> {
 		this._ensureNotDisposed();
 
@@ -111,6 +90,10 @@ export class TsWebcam {
 		}
 	}
 
+	/**
+	 * Get a list of available video devices.
+	 * @returns Promise<MediaDeviceInfo[]>
+	 */
 	async getVideoDevices(): Promise<MediaDeviceInfo[]> {
 		this._ensureNotDisposed();
 
@@ -127,7 +110,11 @@ export class TsWebcam {
 		}
 	}
 
-	// --- 3. Camera Operations ---
+	/**
+	 * Start the camera with the provided configuration.
+	 * @param config WebcamConfiguration
+	 * @returns Promise<void>
+	 */
 	async startCamera(config: WebcamConfiguration): Promise<void> {
 		this._ensureNotDisposed();
 		this._config = config; // Store config for callbacks
@@ -161,7 +148,10 @@ export class TsWebcam {
 		}
 	}
 
-	stopCamera(): void {
+	/**
+	 * Stop the camera and release resources.
+	 */
+	public stopCamera(): void {
 		this._ensureNotDisposed();
 
 		if (this.state.activeStream) {
@@ -181,7 +171,11 @@ export class TsWebcam {
 		this._callStateChange();
 	}
 
-	async capture(): Promise<Blob> {
+	/**
+	 * Capture an image from the webcam.
+	 * @returns A Promise that resolves with a Blob containing the captured image.
+	 */
+	async captureImage(): Promise<Blob> {
 		this._ensureNotDisposed();
 
 		if (!this.state.activeStream || this.state.status !== "ready") {
@@ -205,15 +199,17 @@ export class TsWebcam {
 		}
 	}
 
+	/**
+	 * Get the capabilities of a specific device.
+	 * @param deviceId The ID of the device to get capabilities for.
+	 * @returns A Promise that resolves with the device capabilities.
+	 */
 	async getDeviceCapabilities(deviceId: string): Promise<DeviceCapability> {
 		this._ensureNotDisposed();
 
 		try {
 			// Test stream to get capabilities
-			const testStream = await navigator.mediaDevices.getUserMedia({
-				video: { deviceId: { exact: deviceId } },
-			});
-
+			const testStream = await navigator.mediaDevices.getUserMedia({ video: { deviceId: { exact: deviceId } } });
 			const track = testStream.getVideoTracks()[0];
 			const capabilities = track.getCapabilities();
 			const settings = track.getSettings();
@@ -250,10 +246,14 @@ export class TsWebcam {
 	}
 
 	dispose(): void {
-		if (this._disposed) return;
+		if (this._disposed) {
+			return;
+		}
 
+		// Stop camera
 		this.stopCamera();
 
+		// Remove event listener
 		if (this._deviceChangeListener) {
 			navigator.mediaDevices.removeEventListener("devicechange", this._deviceChangeListener);
 			this._deviceChangeListener = undefined;
@@ -270,19 +270,93 @@ export class TsWebcam {
 		}
 	}
 
-	private _setStatus(status: TsWebcamStateInternal["status"]): void {
+	/**
+	 * Set the status of the webcam.
+	 * @param status The new status of the webcam.
+	 */
+	private _setStatus(status: WebcamStateInternal["status"]): void {
 		this.state.status = status;
 	}
 
+	/**
+	 * Set the error state of the webcam.
+	 * @param error The new error state of the webcam.
+	 */
 	private _setError(error: WebcamError): void {
 		this.state.error = error;
 		this._setStatus("error");
 	}
 
+	/**
+	 * Clear the error state of the webcam.
+	 */
 	private _clearError(): void {
 		this.state.error = null;
 	}
 
+	/**
+	 * Call the onStateChange callback with the current state.
+	 */
+	private _callStateChange(): void {
+		if (this._config?.onStateChange) {
+			this._config.onStateChange(this.getState());
+		}
+	}
+
+	/**
+	 * Call the onStreamStart callback with the current stream.
+	 * @param stream The MediaStream that has started.
+	 */
+	private _callStreamStart(stream: MediaStream): void {
+		if (this._config?.onStreamStart) {
+			this._config.onStreamStart(stream);
+		}
+	}
+
+	/**
+	 * Call the onStreamStop callback.
+	 */
+	private _callStreamStop(): void {
+		if (this._config?.onStreamStop) {
+			this._config.onStreamStop();
+		}
+	}
+
+	/**
+	 * Call the onError callback with the current error.
+	 * @param error The WebcamError that has occurred.
+	 */
+	private _callError(error: WebcamError): void {
+		if (this._config?.onError) {
+			this._config.onError(error);
+		}
+	}
+
+	/**
+	 * Call the onPermissionChange callback with the current permissions.
+	 * @param permissions The current permissions.
+	 */
+	private _callPermissionChange(permissions: Record<string, PermissionState>): void {
+		if (this._config?.onPermissionChange) {
+			this._config.onPermissionChange(permissions);
+		}
+	}
+
+	/**
+	 * Call the onDeviceChange callback with the current devices.
+	 * @param devices The current devices.
+	 */
+	private _callDeviceChange(devices: MediaDeviceInfo[]): void {
+		if (this._config?.onDeviceChange) {
+			this._config.onDeviceChange(devices);
+		}
+	}
+
+	/**
+	 * Build the MediaStreamConstraints object based on the provided configuration.
+	 * @param config The webcam configuration.
+	 * @returns The MediaStreamConstraints object.
+	 */
 	private _buildConstraints(config: WebcamConfiguration): MediaStreamConstraints {
 		const { deviceInfo, preferredResolutions, enableAudio } = config;
 		const resolution = Array.isArray(preferredResolutions) ? preferredResolutions[0] : preferredResolutions;
@@ -381,24 +455,36 @@ export class TsWebcam {
 		});
 	}
 
-	/** Mirror control (CSS only, always supported if video element present) */
+	/**
+	 * Mirror control (CSS only, always supported if video element present).
+	 * @param mirror boolean
+	 */
 	public setMirror(mirror: boolean): void {
 		if (this.state.videoElement) {
 			this.state.videoElement.style.transform = mirror ? "scaleX(-1)" : "";
 		}
 	}
 
-	/** Get current mirror state */
+	/**
+	 * Get the current mirror state.
+	 * @returns boolean
+	 */
 	public getMirror(): boolean {
 		return !!(this.state.videoElement && this.state.videoElement.style.transform === "scaleX(-1)");
 	}
 
-	/** Check if mirror is supported */
+	/**
+	 * Check if mirror is supported.
+	 * @returns boolean
+	 */
 	public isMirrorSupported(): boolean {
 		return !!this.state.videoElement;
 	}
 
-	/** Torch control (if supported) */
+	/**
+	 * Torch control (if supported).
+	 * @param enabled boolean
+	 */
 	public async setTorch(enabled: boolean): Promise<void> {
 		const track = this._getActiveVideoTrack();
 		if (this.isTorchSupported()) {
@@ -409,7 +495,10 @@ export class TsWebcam {
 		}
 	}
 
-	/** Get current torch state (if supported) */
+	/**
+	 * Get the current torch state.
+	 * @returns boolean
+	 */
 	public getTorch(): boolean | undefined {
 		const track = this._getActiveVideoTrack();
 		if (this.isTorchSupported()) {
@@ -419,13 +508,19 @@ export class TsWebcam {
 		return undefined;
 	}
 
-	/** Check if torch is supported */
+	/**
+	 * Check if torch is supported.
+	 * @returns boolean
+	 */
 	public isTorchSupported(): boolean {
 		const track = this._getActiveVideoTrack();
 		return !!(track && "torch" in track.getCapabilities());
 	}
 
-	/** Zoom control (if supported) */
+	/**
+	 * Zoom control (if supported).
+	 * @param zoom number
+	 */
 	public async setZoom(zoom: number): Promise<void> {
 		const track = this._getActiveVideoTrack();
 		if (this.isZoomSupported()) {
@@ -436,7 +531,10 @@ export class TsWebcam {
 		}
 	}
 
-	/** Get current zoom level (if supported) */
+	/**
+	 * Get the current zoom level.
+	 * @returns number
+	 */
 	public getZoom(): number | undefined {
 		const track = this._getActiveVideoTrack();
 		if (this.isZoomSupported()) {
@@ -446,13 +544,19 @@ export class TsWebcam {
 		return undefined;
 	}
 
-	/** Check if zoom is supported */
+	/**
+	 * Check if zoom is supported.
+	 * @returns boolean
+	 */
 	public isZoomSupported(): boolean {
 		const track = this._getActiveVideoTrack();
 		return !!(track && "zoom" in track.getCapabilities());
 	}
 
-	/** Focus mode control (if supported) */
+	/**
+	 * Focus mode control (if supported).
+	 * @param mode string
+	 */
 	public async setFocusMode(mode: string): Promise<void> {
 		const track = this._getActiveVideoTrack();
 		if (this.isFocusSupported()) {
@@ -463,7 +567,10 @@ export class TsWebcam {
 		}
 	}
 
-	/** Get current focus mode (if supported) */
+	/**
+	 * Get the current focus mode.
+	 * @returns string
+	 */
 	public getFocusMode(): string | undefined {
 		const track = this._getActiveVideoTrack();
 		if (this.isFocusSupported()) {
@@ -473,13 +580,18 @@ export class TsWebcam {
 		return undefined;
 	}
 
-	/** Check if focus mode is supported */
+	/**
+	 * Check if focus mode is supported.
+	 * @returns boolean
+	 */
 	public isFocusSupported(): boolean {
 		const track = this._getActiveVideoTrack();
 		return !!(track && "focusMode" in track.getCapabilities());
 	}
 
-	/** Helper: get the active video track */
+	/**
+	 * Helper: get the active video track
+	 **/
 	private _getActiveVideoTrack(): MediaStreamTrack | undefined {
 		return this.state.activeStream?.getVideoTracks()[0];
 	}
