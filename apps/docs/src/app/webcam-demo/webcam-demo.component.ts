@@ -365,7 +365,7 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
 			// Store the result for display
 			this.lastTestedDeviceCapabilities.set(this.deviceCapabilities());
 			// Optionally, start camera again after testing
-			await this.startCamera();
+			// await this.startCamera();
 		} catch (e) {
 			console.error("Test device capabilities failed:", e);
 		}

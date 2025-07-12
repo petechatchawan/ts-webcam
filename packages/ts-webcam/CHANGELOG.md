@@ -50,15 +50,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### 🔄 Migration Guide
 
 #### Updated Imports
+
 ```typescript
 // Before (1.x)
-import { TsWebcam } from 'ts-webcam/dist/ts-webcam';
+import { TsWebcam } from "ts-webcam/dist/ts-webcam";
 
 // After (2.0)
-import { TsWebcam, TsWebcamState, WebcamError } from 'ts-webcam';
+import { TsWebcam, TsWebcamState, WebcamError } from "ts-webcam";
 ```
 
 #### State Management
+
 ```typescript
 // Before (1.x)
 webcam.on('statusChange', (status) => { ... });
@@ -73,6 +75,7 @@ webcam.on('state:change', (state: TsWebcamState) => {
 ```
 
 #### Permission Handling
+
 ```typescript
 // Before (1.x)
 await webcam.requestCameraPermission();
@@ -82,17 +85,18 @@ await webcam.requestPermissions({ video: true, audio: false });
 ```
 
 #### Configuration
+
 ```typescript
 // Before (1.x)
 await webcam.startCamera(device, resolution, videoElement);
 
 // After (2.0)
 await webcam.startCamera({
-  deviceInfo: device,
-  preferredResolutions: resolution,
-  videoElement: videoElement,
-  enableAudio: false,
-  enableMirror: true
+	deviceInfo: device,
+	preferredResolutions: resolution,
+	videoElement: videoElement,
+	enableAudio: false,
+	enableMirror: true,
 });
 ```
 

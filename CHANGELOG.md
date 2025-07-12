@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### ✨ Added
 
 - **Callback-based API**: Simple handler functions in configuration
+
   - `onStateChange` - Unified state updates
   - `onStreamStart/onStreamStop` - Stream lifecycle events
   - `onError` - Error handling
@@ -25,22 +26,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `onDeviceChange` - Device hotplug detection
 
 - **Modular Architecture**: Clean separation of concerns
+
   - `types.ts` - All type definitions
   - `errors.ts` - Error classes and handling
   - `ts-webcam-core.ts` - Core implementation
   - `index.ts` - Public exports
 
-- **Enhanced State Management**: 
+- **Enhanced State Management**:
+
   - `TsWebcamState` unified state interface
   - `TsWebcamStateInternal` for internal use
   - Readonly public state access
 
 - **Improved Permission Handling**:
+
   - `requestPermissions(options)` with granular control
   - Support for video-only, audio-only, or both
   - Permission status tracking in state
 
 - **Device Capabilities**:
+
   - `getDeviceCapabilities()` method
   - Torch/flash support detection
   - Zoom and focus capabilities
@@ -55,12 +60,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### 🛠️ Improved
 
 - **Developer Experience**:
+
   - Full TypeScript type safety
   - Comprehensive JSDoc documentation
   - Better error messages with error codes
   - Clean, readable code structure
 
 - **Performance**:
+
   - No event emitter overhead
   - Optimized resource cleanup
   - Efficient state management
@@ -116,13 +123,15 @@ const config = {
 ### From 1.x to 2.0
 
 1. **Remove Event Listeners**:
+
    ```typescript
    // Remove these
-   webcam.on('state:change', handler);
-   webcam.off('state:change', handler);
+   webcam.on("state:change", handler);
+   webcam.off("state:change", handler);
    ```
 
 2. **Add Callbacks to Configuration**:
+
    ```typescript
    // Add these to startCamera config
    const config = {
@@ -134,12 +143,13 @@ const config = {
    ```
 
 3. **Update Imports**:
+
    ```typescript
    // Old
-   import { TsWebcam, TsWebcamEvents } from 'ts-webcam';
-   
+   import { TsWebcam, TsWebcamEvents } from "ts-webcam";
+
    // New
-   import { TsWebcam, TsWebcamState } from 'ts-webcam';
+   import { TsWebcam, TsWebcamState } from "ts-webcam";
    ```
 
 4. **State Access**:

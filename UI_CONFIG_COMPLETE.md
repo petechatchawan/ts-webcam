@@ -7,18 +7,22 @@
 ได้เพิ่มการควบคุม UI สำหรับการกำหนดค่าต่อไปนี้:
 
 1. **Enable Audio** ✅ (อัปเดตแล้ว)
+
    - เปิด/ปิดเสียงใน stream
    - Default: false
 
-2. **Mirror Video** ✅ (อัปเดตแล้ว) 
+2. **Mirror Video** ✅ (อัปเดตแล้ว)
+
    - กลับภาพในแนวนอน
    - Default: true
 
 3. **Allow Any Resolution** ✅ (ใหม่)
+
    - ยอมรับความละเอียดใดๆ หากของที่ต้องการไม่มี
    - Default: true
 
 4. **Auto Rotate Resolution** ✅ (ใหม่)
+
    - อนุญาตให้หมุนความละเอียดอัตโนมัติ (portrait/landscape)
    - Default: false
 
@@ -29,6 +33,7 @@
 ### 🔄 **Auto-Restart Functionality**
 
 เมื่อเปลี่ยนค่าใดๆ ระบบจะ:
+
 1. ตรวจสอบว่ากล้องกำลังทำงานอยู่หรือไม่
 2. หากใช่ จะหยุดกล้อง
 3. รอ 100ms สำหรับการ cleanup
@@ -37,6 +42,7 @@
 ### 🏗️ **Implementation Details**
 
 #### TypeScript Changes
+
 ```typescript
 // เพิ่ม signals สำหรับการกำหนดค่าใหม่
 readonly allowAnyResolution = signal<boolean>(true);
@@ -75,36 +81,34 @@ private async restartCameraIfRunning() {
 ```
 
 #### HTML Changes
+
 ```html
 <!-- เพิ่ม checkboxes ใหม่ในส่วน Options -->
 <label class="flex items-center gap-2">
-  <input
-    type="checkbox"
-    [checked]="allowAnyResolution()"
-    (change)="onAllowAnyResolutionChange($event)"
-    class="rounded text-blue-600 focus:ring-blue-500"
-  />
-  <span class="text-sm text-gray-700">Allow Any Resolution</span>
+	<input
+		type="checkbox"
+		[checked]="allowAnyResolution()"
+		(change)="onAllowAnyResolutionChange($event)"
+		class="rounded text-blue-600 focus:ring-blue-500" />
+	<span class="text-sm text-gray-700">Allow Any Resolution</span>
 </label>
 
 <label class="flex items-center gap-2">
-  <input
-    type="checkbox"
-    [checked]="allowAutoRotateResolution()"
-    (change)="onAllowAutoRotateResolutionChange($event)"
-    class="rounded text-blue-600 focus:ring-blue-500"
-  />
-  <span class="text-sm text-gray-700">Auto Rotate Resolution</span>
+	<input
+		type="checkbox"
+		[checked]="allowAutoRotateResolution()"
+		(change)="onAllowAutoRotateResolutionChange($event)"
+		class="rounded text-blue-600 focus:ring-blue-500" />
+	<span class="text-sm text-gray-700">Auto Rotate Resolution</span>
 </label>
 
 <label class="flex items-center gap-2">
-  <input
-    type="checkbox"
-    [checked]="debug()"
-    (change)="onDebugChange($event)"
-    class="rounded text-blue-600 focus:ring-blue-500"
-  />
-  <span class="text-sm text-gray-700">Debug Logging</span>
+	<input
+		type="checkbox"
+		[checked]="debug()"
+		(change)="onDebugChange($event)"
+		class="rounded text-blue-600 focus:ring-blue-500" />
+	<span class="text-sm text-gray-700">Debug Logging</span>
 </label>
 ```
 

@@ -7,11 +7,13 @@ Successfully completed the comprehensive refactor of the ts-webcam TypeScript we
 ## Key Accomplishments
 
 ### ✅ API Migration
+
 - **Removed all event emitter/event system code** from the core library
 - **Replaced with callback-based API** using simple handler functions in `WebcamConfiguration`
 - **No more EventEmitter** - clean, simple callback system
 
 ### ✅ Core Library Refactor
+
 - **Modular architecture**: Split into `types.ts`, `errors.ts`, `ts-webcam-core.ts`, and `index.ts`
 - **Unified state management** with `TsWebcamState` as single source of truth
 - **Flexible permission API** with `requestPermissions(options)`
@@ -19,6 +21,7 @@ Successfully completed the comprehensive refactor of the ts-webcam TypeScript we
 - **Resource cleanup** and proper disposal patterns
 
 ### ✅ Angular Demo Modernization
+
 - **Modern Angular 17+ patterns** with signals, computed, and effect
 - **Clean service layer** that wraps ts-webcam in observables
 - **Reactive UI state management** with computed properties
@@ -26,6 +29,7 @@ Successfully completed the comprehensive refactor of the ts-webcam TypeScript we
 - **Device info display** with capabilities and status indicators
 
 ### ✅ Developer Experience
+
 - **Updated documentation** reflects the new callback-based API
 - **Clean TypeScript** with full type safety and intellisense
 - **No build errors** - all code compiles successfully
@@ -34,6 +38,7 @@ Successfully completed the comprehensive refactor of the ts-webcam TypeScript we
 ## Before vs After API
 
 ### Before (Event-based)
+
 ```typescript
 const webcam = new TsWebcam();
 webcam.on('state:change', (state) => { ... });
@@ -42,6 +47,7 @@ await webcam.startCamera(config);
 ```
 
 ### After (Callback-based)
+
 ```typescript
 const webcam = new TsWebcam();
 const config = {
@@ -87,6 +93,7 @@ apps/docs/src/app/webcam-demo/
 ## Ready for Production
 
 The refactored ts-webcam 2.0.0 is ready for production use with:
+
 - Clean, callback-based API
 - Modern TypeScript patterns
 - Comprehensive error handling
