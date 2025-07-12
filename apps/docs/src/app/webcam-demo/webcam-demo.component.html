@@ -1,5 +1,5 @@
 <div class="webcam-container">
-	<div class="container mx-auto max-w-4xl lg:max-w-6xl p-4 sm:p-6 lg:p-8">
+	<div class="container mx-auto max-w-4xl lg:max-w-6xl p-3 sm:p-6 lg:p-8">
 		<!-- Header -->
 		<div class="header text-center mb-6">
 			<h1 class="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-2">Webcam Demo</h1>
@@ -9,7 +9,7 @@
 		<!-- Permission Check -->
 		<div
 			*ngIf="!permissionChecked()"
-			class="bg-white rounded-lg shadow-sm border border-gray-300 p-6 mb-4">
+			class="bg-white rounded-lg shadow-sm border border-gray-300 p-4 sm:p-6 mb-4">
 			<div class="flex items-center justify-center gap-3 text-gray-500">
 				<svg class="animate-spin h-5 w-5 text-blue-500" viewBox="0 0 24 24">
 					<circle
@@ -27,7 +27,7 @@
 		</div>
 
 		<!-- Permission Denied -->
-		<div *ngIf="permissionChecked() && isPermissionDenied()" class="permission-denied">
+		<div *ngIf="permissionChecked() && isPermissionDenied()" class="permission-denied p-4 sm:p-6">
 			<div class="permission-denied-content">
 				<div
 					class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3">
@@ -42,7 +42,7 @@
 				<h3>Camera Access Denied</h3>
 				<p>Please allow camera access to use this feature</p>
 
-				<div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 my-4">
+				<div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-2 sm:p-3 my-4">
 					<div class="flex flex-wrap justify-center gap-4">
 						<label class="flex items-center gap-2">
 							<input
@@ -74,9 +74,9 @@
 		<!-- Main Interface -->
 		<div
 			*ngIf="permissionChecked() && !isPermissionDenied()"
-			class="flex flex-col lg:grid lg:grid-cols-3 gap-6">
+			class="flex flex-col lg:grid lg:grid-cols-3 gap-4 lg:gap-6">
 			<!-- Video Display - Takes up 2 columns -->
-			<div class="lg:col-span-2 bg-white rounded-lg shadow-sm border border-gray-300 p-6">
+			<div class="lg:col-span-2 bg-white rounded-lg shadow-sm border border-gray-300 p-4 sm:p-6">
 				<div class="flex items-center justify-between mb-4">
 					<h2 class="text-base sm:text-lg font-semibold text-gray-900">Video Stream</h2>
 
@@ -115,7 +115,7 @@
 							}}
 						</span>
 						<!-- Debug info -->
-						<span class="text-xs text-gray-400 ml-2">({{ status() }})</span>
+						<span class="text-xs text-gray-400">({{ status() }})</span>
 					</div>
 				</div>
 
@@ -177,7 +177,7 @@
 				</div>
 
 				<!-- Primary Actions -->
-				<div class="flex flex-wrap justify-center gap-3">
+				<div class="flex flex-wrap justify-center gap-2 sm:gap-3">
 					<button
 						(click)="startCamera()"
 						[disabled]="!uiState().canStart"
@@ -240,11 +240,11 @@
 			</div>
 
 			<!-- Settings Panel -->
-			<div class="bg-white rounded-lg shadow-sm border border-gray-300 p-6">
+			<div class="bg-white rounded-lg shadow-sm border border-gray-300 p-4 sm:p-6">
 				<h2 class="text-base sm:text-lg font-semibold text-gray-900 mb-4">Settings</h2>
 
 				<!-- Camera Selection -->
-				<div class="space-y-4 md:space-y-6">
+				<div class="space-y-3 md:space-y-4">
 					<div>
 						<label
 							for="camera-select"
@@ -355,7 +355,7 @@
 				<div class="border-t my-4"></div>
 
 				<!-- Device Info Section -->
-				<div class="bg-gray-50 rounded-lg p-4 mt-4">
+				<div class="bg-gray-50 rounded-lg p-3 sm:p-4 mt-4">
 					<div class="flex items-center gap-2 mb-3">
 						<svg class="w-5 h-5 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
 							<path
@@ -437,7 +437,7 @@
 					Test Device
 				</button>
 				<!-- Show last tested device capabilities -->
-				<div *ngIf="lastTestedDeviceCapabilities()" class="bg-gray-50 rounded-lg p-4 mt-4">
+				<div *ngIf="lastTestedDeviceCapabilities()" class="bg-gray-50 rounded-lg p-3 sm:p-4 mt-4">
 					<div class="flex items-center gap-2 mb-3">
 						<svg class="w-5 h-5 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
 							<path
@@ -459,7 +459,7 @@
 		<!-- Captured Image -->
 		<div
 			*ngIf="capturedImageUrl()"
-			class="bg-white rounded-lg shadow-sm border border-gray-300 p-6 mt-6">
+			class="bg-white rounded-lg shadow-sm border border-gray-300 p-4 sm:p-6 mt-6">
 			<div class="flex items-center justify-between mb-4">
 				<h3 class="text-base sm:text-lg font-semibold text-gray-900">Captured Image</h3>
 				<button
