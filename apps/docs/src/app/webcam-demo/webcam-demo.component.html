@@ -27,7 +27,9 @@
 		</div>
 
 		<!-- Permission Denied -->
-		<div *ngIf="permissionChecked() && isPermissionDenied()" class="permission-denied p-4 sm:p-6">
+		<div
+			*ngIf="permissionChecked() && isPermissionCameraDenied()"
+			class="permission-denied p-4 sm:p-6">
 			<div class="permission-denied-content">
 				<div
 					class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3">
@@ -73,7 +75,7 @@
 
 		<!-- Main Interface -->
 		<div
-			*ngIf="permissionChecked() && !isPermissionDenied()"
+			*ngIf="permissionChecked() && !isPermissionCameraDenied()"
 			class="flex flex-col lg:grid lg:grid-cols-3 gap-4 lg:gap-6">
 			<!-- Video Display - Takes up 2 columns -->
 			<div class="lg:col-span-2 bg-white rounded-lg shadow-sm border border-gray-300 p-4 sm:p-6">
@@ -148,7 +150,7 @@
 
 					<!-- Error Display -->
 					<div
-						*ngIf="error() && permissionChecked() && !isPermissionDenied()"
+						*ngIf="error() && permissionChecked() && !isPermissionCameraDenied()"
 						class="absolute inset-0 flex flex-col items-center justify-center bg-red-900 bg-opacity-75 text-white p-8">
 						<svg
 							class="w-12 h-12 mb-3"

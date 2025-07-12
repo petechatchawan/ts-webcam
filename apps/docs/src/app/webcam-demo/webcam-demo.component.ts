@@ -114,7 +114,7 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
 		const isReady = currentStatus === "ready";
 		const isError = currentStatus === "error";
 		const hasSelectedDevice = !!this.selectedDevice();
-		const isPermissionGranted = this.permissionChecked() && !this.isPermissionDenied();
+		const isPermissionGranted = this.permissionChecked() && !this.isPermissionCameraDenied();
 
 		return {
 			isLoading,
@@ -238,8 +238,8 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
 		await this.webcamService.getAvailableDevices();
 	}
 
-	isPermissionDenied(): boolean {
-		return this.webcamService.isPermissionDenied();
+	isPermissionCameraDenied(): boolean {
+		return this.webcamService.isPermissionCameraDenied();
 	}
 
 	// Camera control methods

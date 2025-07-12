@@ -56,7 +56,7 @@ export class WebcamService {
 			const perms = await this.webcam.requestPermissions(options);
 			console.log("Permissions:", perms);
 			this.permissionChecked.set(true);
-			return !this.isPermissionDenied(perms);
+			return !this.isPermissionCameraDenied(perms);
 		} catch (e) {
 			console.error("Permission request failed:", e);
 			this.permissionChecked.set(false);
@@ -73,14 +73,9 @@ export class WebcamService {
 	 *   console.log('Please allow camera access');
 	 * }
 	 */
-	isPermissionDenied(perms?: Record<string, PermissionState>): boolean {
+	isPermissionCameraDenied(perms?: Record<string, PermissionState>): boolean {
 		const p = perms || this.state().permissions;
-		return (
-			p["camera"] === "denied" ||
-			p["microphone"] === "denied" ||
-			p["camera"] === "prompt" ||
-			p["microphone"] === "prompt"
-		);
+		return p["camera"] === "denied" || p["camera"] === "prompt";
 	}
 
 	async getAvailableDevices() {
