@@ -241,6 +241,24 @@
 						Stop
 					</button>
 				</div>
+
+				<!-- Captured Image -->
+				<div *ngIf="capturedImageUrl()" class="bg-white rounded-lg mt-6">
+					<div class="flex items-center justify-between mb-4">
+						<h3 class="text-base sm:text-lg font-semibold text-gray-900">Captured Image</h3>
+						<button
+							(click)="clearCapturedImage()"
+							class="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
+							Clear
+						</button>
+					</div>
+					<div class="flex justify-center">
+						<img
+							[src]="capturedImageUrl()"
+							alt="Captured Image"
+							class="max-w-full h-auto rounded-lg border border-gray-300" />
+					</div>
+				</div>
 			</div>
 
 			<!-- Settings Panel -->
@@ -469,27 +487,6 @@
 						<pre class="text-xs text-gray-700">{{ webcamService.deviceCapability() | json }}</pre>
 					</div>
 				</div>
-			</div>
-		</div>
-
-		<!-- Captured Image -->
-		<div
-			*ngIf="capturedImageUrl()"
-			class="bg-white rounded-lg shadow-sm border border-gray-300 p-4 sm:p-6 mt-6">
-			<div class="flex items-center justify-between mb-4">
-				<h3 class="text-base sm:text-lg font-semibold text-gray-900">Captured Image</h3>
-				<button
-					(click)="clearCapturedImage()"
-					class="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
-					Clear
-				</button>
-			</div>
-			<div class="flex justify-center">
-				<img
-					[src]="capturedImageUrl()"
-					alt="Captured Image"
-					class="max-w-full h-auto rounded-lg border border-gray-300" />
-				ull h-auto rounded-lg border border-gray-300" />
 			</div>
 		</div>
 	</div>
