@@ -15,7 +15,7 @@ import {
 	Resolution,
 	WebcamConfiguration,
 	WebcamState,
-	WebcamStatus
+	WebcamStatus,
 } from "ts-webcam";
 import { WebcamService } from "./webcam.service";
 
