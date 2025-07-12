@@ -1,7 +1,7 @@
-<div class="min-h-screen bg-gray-50 py-6 px-4">
-	<div class="max-w-full sm:max-w-2xl md:max-w-4xl lg:max-w-6xl mx-auto p-4 sm:p-6 lg:p-8">
+<div class="webcam-container">
+	<div class="container mx-auto max-w-4xl lg:max-w-6xl p-4 sm:p-6 lg:p-8">
 		<!-- Header -->
-		<div class="text-center mb-6">
+		<div class="header text-center mb-6">
 			<h1 class="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-2">Webcam Demo</h1>
 			<p class="text-gray-600 text-sm sm:text-base">TS-Webcam Library Showcase</p>
 		</div>
@@ -27,67 +27,43 @@
 		</div>
 
 		<!-- Permission Denied -->
-		<div
-			*ngIf="permissionChecked() && isPermissionDenied()"
-			class="bg-white rounded-lg shadow-sm border border-gray-300 p-6 mb-4">
-			<div class="text-center">
+		<div *ngIf="permissionChecked() && isPermissionDenied()" class="permission-denied">
+			<div class="permission-denied-content">
 				<div
 					class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3">
-					<svg
-						class="w-6 h-6 text-red-600"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2"
-						viewBox="0 0 24 24">
+					<svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 						<path
 							stroke-linecap="round"
 							stroke-linejoin="round"
+							stroke-width="2"
 							d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
 					</svg>
 				</div>
-				<h3 class="text-base sm:text-lg font-semibold text-gray-900 mb-2">Camera Access Denied</h3>
-				<p class="text-gray-600 text-sm sm:text-base mb-4">
-					Please allow camera access to use this feature
-				</p>
+				<h3>Camera Access Denied</h3>
+				<p>Please allow camera access to use this feature</p>
 
-				<!-- Permission Options -->
-				<div class="bg-gray-50 rounded-lg p-3 mb-4">
-					<div class="flex gap-4 justify-center text-xs sm:text-sm">
+				<div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 my-4">
+					<div class="flex flex-wrap justify-center gap-4">
 						<label class="flex items-center gap-2">
 							<input
 								type="checkbox"
-								[checked]="permissionOptions().video"
 								(change)="onVideoPermissionChange($event)"
-								class="rounded" />
-							<span>Camera</span>
+								[checked]="permissionOptions().video"
+								class="form-checkbox h-4 w-4" />
+							<span>Video</span>
 						</label>
 						<label class="flex items-center gap-2">
 							<input
 								type="checkbox"
-								[checked]="permissionOptions().audio"
 								(change)="onAudioPermissionChange($event)"
-								class="rounded" />
-							<span>Microphone</span>
+								[checked]="permissionOptions().audio"
+								class="form-checkbox h-4 w-4" />
+							<span>Audio</span>
 						</label>
 					</div>
 				</div>
 
-				<button
-					(click)="requestPermissionsAndLoadDevices()"
-					class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
-					<svg
-						class="w-4 h-4"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2"
-						viewBox="0 0 24 24">
-						<path
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-					</svg>
-					Request Access
-				</button>
+				<button (click)="requestPermissionsAndLoadDevices()" class="btn btn-primary">Retry</button>
 
 				<p class="text-xs text-gray-500 mt-3">
 					If permanently denied, please check browser settings and refresh the page
@@ -113,6 +89,8 @@
 									? 'bg-green-500'
 									: uiState().isLoading
 									? 'bg-yellow-500'
+									: uiState().isError
+									? 'bg-red-500'
 									: 'bg-gray-400'
 							"></div>
 						<span
@@ -122,9 +100,19 @@
 									? 'text-green-600'
 									: uiState().isLoading
 									? 'text-yellow-600'
+									: uiState().isError
+									? 'text-red-600'
 									: 'text-gray-500'
 							">
-							{{ uiState().isReady ? "Active" : uiState().isLoading ? "Starting..." : "Inactive" }}
+							{{
+								uiState().isReady
+									? "Active"
+									: uiState().isLoading
+									? "Starting..."
+									: uiState().isError
+									? "Error"
+									: "Inactive"
+							}}
 						</span>
 						<!-- Debug info -->
 						<span class="text-xs text-gray-400 ml-2">({{ status() }})</span>
@@ -485,6 +473,7 @@
 					[src]="capturedImageUrl()"
 					alt="Captured Image"
 					class="max-w-full h-auto rounded-lg border border-gray-300" />
+				ull h-auto rounded-lg border border-gray-300" />
 			</div>
 		</div>
 	</div>
