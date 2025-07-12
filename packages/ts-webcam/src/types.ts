@@ -58,6 +58,9 @@ export interface WebcamStateInternal {
 	videoElement?: HTMLVideoElement;
 	deviceInfo?: MediaDeviceInfo;
 	error?: WebcamError | null;
+	zoom?: number;
+	focusMode?: FocusMode;
+	torch?: boolean;
 }
 
 // Public state (readonly for outside)

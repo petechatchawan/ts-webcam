@@ -5,6 +5,7 @@ import {
 	WebcamState,
 	WebcamStateInternal,
 	WebcamConfiguration,
+	FocusMode,
 } from "./types";
 
 export class Webcam {
@@ -532,6 +533,8 @@ export class Webcam {
 		if (this.isTorchSupported()) {
 			// @ts-ignore
 			await track.applyConstraints({ advanced: [{ torch: enabled }] });
+			this.state.torch = enabled; // Update internal state
+			this._callStateChange();
 		} else {
 			throw new Error("Torch is not supported on this device");
 		}
@@ -568,6 +571,8 @@ export class Webcam {
 		if (this.isZoomSupported()) {
 			// @ts-ignore
 			await track.applyConstraints({ advanced: [{ zoom }] });
+			this.state.zoom = zoom; // Update internal state
+			this._callStateChange();
 		} else {
 			throw new Error("Zoom is not supported on this device");
 		}
@@ -604,6 +609,8 @@ export class Webcam {
 		if (this.isFocusSupported()) {
 			// @ts-ignore
 			await track.applyConstraints({ advanced: [{ focusMode: mode }] });
+			this.state.focusMode = mode as FocusMode; // Update internal state
+			this._callStateChange();
 		} else {
 			throw new Error("Focus mode is not supported on this device");
 		}
