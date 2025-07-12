@@ -49,18 +49,18 @@ export class WebcamService {
 	 * // Request both camera and microphone
 	 * await service.requestPermissionsAndLoadDevices({ video: true, audio: true });
 	 */
-	async requestPermissionsAndLoadDevices(
+	async requestPermissions(
 		options: PermissionRequestOptions = { video: true, audio: false },
-	) {
+	): Promise<boolean> {
 		try {
 			const perms = await this.webcam.requestPermissions(options);
+			console.log("Permissions:", perms);
 			this.permissionChecked.set(true);
-			if (!this.isPermissionDenied(perms)) {
-				await this.loadDevices();
-			}
+			return !this.isPermissionDenied(perms);
 		} catch (e) {
 			console.error("Permission request failed:", e);
 			this.permissionChecked.set(false);
+			return false;
 		}
 	}
 
@@ -83,8 +83,9 @@ export class WebcamService {
 		);
 	}
 
-	async loadDevices() {
+	async getAvailableDevices() {
 		try {
+			// Check if device list is already available
 			const devices = await this.webcam.getVideoDevices();
 			this.devices.set(devices);
 			console.log("Devices:", this.devices());

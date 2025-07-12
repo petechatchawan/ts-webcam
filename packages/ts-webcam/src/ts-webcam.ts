@@ -1,5 +1,11 @@
 import { WebcamError, WebcamErrorCode } from "./errors";
-import { DeviceCapability, PermissionRequestOptions, WebcamState, WebcamStateInternal, WebcamConfiguration } from "./types";
+import {
+	DeviceCapability,
+	PermissionRequestOptions,
+	WebcamState,
+	WebcamStateInternal,
+	WebcamConfiguration,
+} from "./types";
 
 export class Webcam {
 	/**
@@ -68,7 +74,9 @@ export class Webcam {
 	 * @param options PermissionRequestOptions
 	 * @returns Record<string, PermissionState>
 	 */
-	async requestPermissions(options: PermissionRequestOptions = { video: true, audio: false }): Promise<Record<string, PermissionState>> {
+	async requestPermissions(
+		options: PermissionRequestOptions = { video: true, audio: false },
+	): Promise<Record<string, PermissionState>> {
 		this._ensureNotDisposed();
 
 		try {
@@ -103,7 +111,10 @@ export class Webcam {
 			this._callDeviceChange(videoDevices);
 			return videoDevices;
 		} catch (error) {
-			const webcamError = new WebcamError("Failed to enumerate devices", WebcamErrorCode.DEVICES_ERROR);
+			const webcamError = new WebcamError(
+				"Failed to enumerate devices",
+				WebcamErrorCode.DEVICES_ERROR,
+			);
 			this._setError(webcamError);
 			this._callError(webcamError);
 			throw webcamError;
@@ -179,13 +190,19 @@ export class Webcam {
 		this._ensureNotDisposed();
 
 		if (!this.state.activeStream || this.state.status !== "ready") {
-			const error = new WebcamError("Camera is not ready for capture", WebcamErrorCode.STREAM_FAILED);
+			const error = new WebcamError(
+				"Camera is not ready for capture",
+				WebcamErrorCode.STREAM_FAILED,
+			);
 			this._callError(error);
 			throw error;
 		}
 
 		if (!this.state.videoElement) {
-			const error = new WebcamError("No video element available for capture", WebcamErrorCode.VIDEO_ELEMENT_NOT_SET);
+			const error = new WebcamError(
+				"No video element available for capture",
+				WebcamErrorCode.VIDEO_ELEMENT_NOT_SET,
+			);
 			this._callError(error);
 			throw error;
 		}
@@ -193,7 +210,10 @@ export class Webcam {
 		try {
 			return await this._captureFromVideoElement(this.state.videoElement);
 		} catch (error) {
-			const webcamError = new WebcamError("Failed to capture image", WebcamErrorCode.CAPTURE_FAILED);
+			const webcamError = new WebcamError(
+				"Failed to capture image",
+				WebcamErrorCode.CAPTURE_FAILED,
+			);
 			this._callError(webcamError);
 			throw webcamError;
 		}
@@ -209,7 +229,9 @@ export class Webcam {
 
 		try {
 			// Test stream to get capabilities
-			const testStream = await navigator.mediaDevices.getUserMedia({ video: { deviceId: { exact: deviceId } } });
+			const testStream = await navigator.mediaDevices.getUserMedia({
+				video: { deviceId: { exact: deviceId } },
+			});
 			const track = testStream.getVideoTracks()[0];
 			const capabilities = track.getCapabilities();
 			const settings = track.getSettings();
@@ -225,7 +247,9 @@ export class Webcam {
 				minWidth: capabilities.width?.min || 320,
 				minHeight: capabilities.height?.min || 240,
 				supportedFrameRates:
-					capabilities.frameRate && capabilities.frameRate.min !== undefined && capabilities.frameRate.max !== undefined
+					capabilities.frameRate &&
+					capabilities.frameRate.min !== undefined &&
+					capabilities.frameRate.max !== undefined
 						? [capabilities.frameRate.min, capabilities.frameRate.max]
 						: undefined,
 				hasZoom: "zoom" in capabilities,
@@ -237,7 +261,9 @@ export class Webcam {
 			};
 		} catch (error) {
 			const webcamError = new WebcamError(
-				`Failed to get device capabilities: ${error instanceof Error ? error.message : "Unknown error"}`,
+				`Failed to get device capabilities: ${
+					error instanceof Error ? error.message : "Unknown error"
+				}`,
 				WebcamErrorCode.DEVICES_ERROR,
 			);
 			this._callError(webcamError);
@@ -359,7 +385,9 @@ export class Webcam {
 	 */
 	private _buildConstraints(config: WebcamConfiguration): MediaStreamConstraints {
 		const { deviceInfo, preferredResolutions, enableAudio } = config;
-		const resolution = Array.isArray(preferredResolutions) ? preferredResolutions[0] : preferredResolutions;
+		const resolution = Array.isArray(preferredResolutions)
+			? preferredResolutions[0]
+			: preferredResolutions;
 		if (!resolution) {
 			throw new Error("No resolution specified in preferredResolutions");
 		}
@@ -380,9 +408,13 @@ export class Webcam {
 	private _handleStartCameraError(error: any, config?: WebcamConfiguration): WebcamError {
 		// Extract device and resolution info
 		let deviceLabel = config?.deviceInfo?.label || config?.deviceInfo?.deviceId || "Unknown device";
-		let resolution = Array.isArray(config?.preferredResolutions) ? config?.preferredResolutions[0] : config?.preferredResolutions;
-		let resolutionText = resolution ? `${resolution.width}x${resolution.height}` : "Unknown resolution";
-		let context = "startCamera";
+		let resolution = Array.isArray(config?.preferredResolutions)
+			? config?.preferredResolutions[0]
+			: config?.preferredResolutions;
+		let resolutionText = resolution
+			? `${resolution.width}x${resolution.height}`
+			: "Unknown resolution";
+		let context = "Start Camera";
 
 		if (error instanceof WebcamError) {
 			// Add context if not present
@@ -420,10 +452,20 @@ export class Webcam {
 		}
 
 		// เพิ่มรายละเอียด error message
-		const details = [error?.message, error?.name, error?.code, error?.constraint, error?.toString && error.toString()].filter(Boolean).join(" | ");
+		const details = [
+			error?.message,
+			error?.name,
+			error?.code,
+			error?.constraint,
+			error?.toString && error.toString(),
+		]
+			.filter(Boolean)
+			.join(" | ");
 
 		return new WebcamError(
-			`${baseMsg}Failed to start camera: ${details || "Unknown error"} (Device: ${deviceLabel}, Resolution: ${resolutionText})`,
+			`${baseMsg}Failed to start camera: ${
+				details || "Unknown error"
+			} (Device: ${deviceLabel}, Resolution: ${resolutionText})`,
 			WebcamErrorCode.UNKNOWN_ERROR,
 		);
 	}
