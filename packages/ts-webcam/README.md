@@ -1,5 +1,5 @@
 <div align="center">
-  <h1>TS-Webcam 2.0.2</h1>
+  <h1>TS-Webcam</h1>
   <p>
     <strong>A modern, type-safe TypeScript library for webcam interactions in the browser</strong>
   </p>
