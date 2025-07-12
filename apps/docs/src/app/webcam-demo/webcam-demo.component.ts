@@ -258,7 +258,8 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
 			this.checkTorchSupport();
 			this.checkVideoReady();
 			// Update device capabilities after camera starts
-			this.lastTestedDeviceCapabilities.set(this.deviceCapabilities());
+			const caps = this.webcamService.getDeviceCapabilities()();
+			this.deviceCapabilities.set(caps);
 		}, 100);
 	}
 
