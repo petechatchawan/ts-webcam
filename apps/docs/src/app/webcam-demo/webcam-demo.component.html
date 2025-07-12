@@ -8,7 +8,7 @@
 
 		<!-- Permission Check -->
 		<div
-			*ngIf="!permissionChecked()"
+			*ngIf="!webcamService.permissionChecked()"
 			class="bg-white rounded-lg shadow-sm border border-gray-300 p-4 sm:p-6 mb-4">
 			<div class="flex items-center justify-center gap-3 text-gray-500">
 				<svg class="animate-spin h-5 w-5 text-blue-500" viewBox="0 0 24 24">
@@ -28,7 +28,7 @@
 
 		<!-- Permission Denied -->
 		<div
-			*ngIf="permissionChecked() && isPermissionCameraDenied()"
+			*ngIf="webcamService.permissionChecked() && webcamService.isPermissionDenied()"
 			class="permission-denied p-4 sm:p-6">
 			<div class="permission-denied-content">
 				<div
@@ -75,7 +75,7 @@
 
 		<!-- Main Interface -->
 		<div
-			*ngIf="permissionChecked() && !isPermissionCameraDenied()"
+			*ngIf="webcamService.permissionChecked() && !webcamService.isPermissionDenied()"
 			class="flex flex-col lg:grid lg:grid-cols-3 gap-4 lg:gap-6">
 			<!-- Video Display - Takes up 2 columns -->
 			<div class="lg:col-span-2 bg-white rounded-lg shadow-sm border border-gray-300 p-4 sm:p-6">
@@ -150,7 +150,9 @@
 
 					<!-- Error Display -->
 					<div
-						*ngIf="error() && permissionChecked() && !isPermissionCameraDenied()"
+						*ngIf="
+							error() && webcamService.permissionChecked() && !webcamService.isPermissionDenied()
+						"
 						class="absolute inset-0 flex flex-col items-center justify-center bg-red-900 bg-opacity-75 text-white p-8">
 						<svg
 							class="w-12 h-12 mb-3"
@@ -183,7 +185,7 @@
 					<button
 						(click)="startCamera()"
 						[disabled]="!uiState().canStart"
-						class="w-full sm:w-auto order-first flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm">
+						class="w-full sm:w-auto order-first flex items-center justify-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm">
 						<svg
 							class="w-4 h-4"
 							fill="none"
@@ -199,9 +201,9 @@
 					</button>
 
 					<button
-						(click)="capture()"
+						(click)="captureImage()"
 						[disabled]="!uiState().canCapture"
-						class="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm">
+						class="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm">
 						<svg
 							class="w-4 h-4"
 							fill="none"
@@ -223,7 +225,7 @@
 					<button
 						(click)="stopCamera()"
 						[disabled]="!uiState().canStop"
-						class="w-full sm:w-auto order-last flex items-center justify-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+						class="w-full sm:w-auto order-last flex items-center justify-center gap-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm">
 						<svg
 							class="w-4 h-4"
 							fill="none"
@@ -309,10 +311,10 @@
 					</label>
 
 					<!-- Torch toggle if supported -->
-					<label *ngIf="deviceCapabilities()?.hasTorch" class="flex items-center gap-2">
+					<label *ngIf="webcamService.deviceCapability()?.hasTorch" class="flex items-center gap-2">
 						<input
 							type="checkbox"
-							[checked]="torchEnabled()"
+							[checked]="enableTorch()"
 							(change)="toggleTorch()"
 							[disabled]="!uiState().isReady"
 							class="rounded text-yellow-500 focus:ring-yellow-500" />
@@ -321,7 +323,9 @@
 
 					<!-- Zoom slider if supported -->
 					<div
-						*ngIf="deviceCapabilities()?.hasZoom && minZoom() !== null && maxZoom() !== null"
+						*ngIf="
+							webcamService.deviceCapability()?.hasZoom && minZoom() !== null && maxZoom() !== null
+						"
 						class="flex items-center gap-2">
 						<label for="zoom-slider" class="text-xs sm:text-sm text-gray-700">Zoom</label>
 						<input
@@ -330,16 +334,16 @@
 							[min]="minZoom()"
 							[max]="maxZoom()"
 							[step]="0.1"
-							[value]="zoom()"
+							[value]="zoomValue()"
 							(input)="onZoomChange($event)"
 							[disabled]="!uiState().isReady"
 							class="flex-1" />
-						<span class="text-xs text-gray-600">{{ zoom() }}</span>
+						<span class="text-xs text-gray-600">{{ zoomValue() }}</span>
 					</div>
 
 					<!-- Focus mode select if supported -->
 					<div
-						*ngIf="deviceCapabilities()?.hasFocus && supportedFocusModes().length > 0"
+						*ngIf="webcamService.deviceCapability()?.hasFocus && supportedFocusModes().length > 0"
 						class="flex items-center gap-2">
 						<label for="focus-mode-select" class="text-xs sm:text-sm text-gray-700">Focus</label>
 						<select
@@ -391,23 +395,33 @@
 						</div>
 
 						<div class="flex justify-between">
-							<span class="text-gray-600">Status</span>
+							<span class="text-gray-600">Torch Support</span>
 							<span
 								class="font-medium"
-								[class]="
-									uiState().isReady
-										? 'text-green-600'
-										: uiState().isLoading
-										? 'text-yellow-600'
-										: 'text-gray-500'
-								">
-								{{ getStatusText() }}
+								[class.text-green-600]="webcamService.isTorchSupported()"
+								[class.text-gray-500]="!webcamService.isTorchSupported()">
+								{{ webcamService.isTorchSupported() ? "Available" : "Not Available" }}
 							</span>
 						</div>
 
-						<div *ngIf="hasTorch()" class="flex justify-between">
-							<span class="text-gray-600">Torch Support</span>
-							<span class="font-medium text-green-600">Available</span>
+						<div class="flex justify-between">
+							<span class="text-gray-600">Zoom Support</span>
+							<span
+								class="font-medium"
+								[class.text-green-600]="webcamService.isZoomSupported()"
+								[class.text-gray-500]="!webcamService.isZoomSupported()">
+								{{ webcamService.isZoomSupported() ? "Available" : "Not Available" }}
+							</span>
+						</div>
+
+						<div class="flex justify-between">
+							<span class="text-gray-600">Focus Support</span>
+							<span
+								class="font-medium"
+								[class.text-green-600]="webcamService.isFocusSupported()"
+								[class.text-gray-500]="!webcamService.isFocusSupported()">
+								{{ webcamService.isFocusSupported() ? "Available" : "Not Available" }}
+							</span>
 						</div>
 
 						<div *ngIf="enableAudio()" class="flex justify-between">
@@ -439,7 +453,7 @@
 					Test Device
 				</button>
 				<!-- Show last tested device capabilities -->
-				<div *ngIf="lastTestedDeviceCapabilities()" class="bg-gray-50 rounded-lg p-3 sm:p-4 mt-4">
+				<div *ngIf="webcamService.deviceCapability()" class="bg-gray-50 rounded-lg p-3 sm:p-4 mt-4">
 					<div class="flex items-center gap-2 mb-3">
 						<svg class="w-5 h-5 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
 							<path
@@ -452,7 +466,7 @@
 						</h3>
 					</div>
 					<div class="bg-gray-100 rounded p-2 overflow-x-auto">
-						<pre class="text-xs text-gray-700">{{ lastTestedDeviceCapabilities() | json }}</pre>
+						<pre class="text-xs text-gray-700">{{ webcamService.deviceCapability() | json }}</pre>
 					</div>
 				</div>
 			</div>

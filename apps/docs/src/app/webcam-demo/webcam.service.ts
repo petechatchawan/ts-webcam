@@ -1,37 +1,26 @@
-import { Injectable, signal, Signal } from "@angular/core";
+import { Injectable, signal } from "@angular/core";
 import {
 	DeviceCapability,
 	PermissionRequestOptions,
 	Webcam,
-	WebcamState,
 	WebcamConfiguration,
+	WebcamState,
 } from "ts-webcam";
 
 @Injectable({ providedIn: "root" })
 export class WebcamService {
 	webcam = new Webcam();
-	state = signal<WebcamState>(this.webcam.getState());
-	devices = signal<MediaDeviceInfo[]>([]);
-	permissionChecked = signal<boolean>(false);
-	deviceCapabilities = signal<DeviceCapability | null>(null);
+	private _state = signal<WebcamState>(this.webcam.getState());
+	private _devices = signal<MediaDeviceInfo[]>([]);
+	private _permissionChecked = signal<boolean>(false);
+	private _deviceCapability = signal<DeviceCapability | null>(null);
+
+	public state = this._state.asReadonly();
+	public devices = this._devices.asReadonly();
+	public permissionChecked = this._permissionChecked.asReadonly();
+	public deviceCapability = this._deviceCapability.asReadonly();
 
 	constructor() {}
-
-	getState(): Signal<WebcamState> {
-		return this.state.asReadonly();
-	}
-
-	getDevices(): Signal<MediaDeviceInfo[]> {
-		return this.devices.asReadonly();
-	}
-
-	getPermissionChecked(): Signal<boolean> {
-		return this.permissionChecked.asReadonly();
-	}
-
-	getDeviceCapabilities(): Signal<DeviceCapability | null> {
-		return this.deviceCapabilities.asReadonly();
-	}
 
 	/** Type-safe getter for the underlying TsWebcam instance */
 	get webcamInstance(): Webcam {
@@ -41,25 +30,18 @@ export class WebcamService {
 	/**
 	 * Requests permissions and loads available devices
 	 * @param options Permission options for video and audio access
-	 * @returns Promise<void>
-	 * @example
-	 * // Request only camera
-	 * await service.requestPermissionsAndLoadDevices({ video: true, audio: false });
-	 *
-	 * // Request both camera and microphone
-	 * await service.requestPermissionsAndLoadDevices({ video: true, audio: true });
+	 * @returns Promise<boolean> - True if permissions are granted, false otherwise
 	 */
 	async requestPermissions(
 		options: PermissionRequestOptions = { video: true, audio: false },
 	): Promise<boolean> {
 		try {
 			const perms = await this.webcam.requestPermissions(options);
-			console.log("Permissions:", perms);
-			this.permissionChecked.set(true);
-			return !this.isPermissionCameraDenied(perms);
+			this._permissionChecked.set(true);
+			return !this.isPermissionDenied(perms);
 		} catch (e) {
 			console.error("Permission request failed:", e);
-			this.permissionChecked.set(false);
+			this._permissionChecked.set(false);
 			return false;
 		}
 	}
@@ -68,24 +50,25 @@ export class WebcamService {
 	 * Checks if camera or microphone permissions are denied
 	 * @param perms Optional permissions object, uses current state if not provided
 	 * @returns boolean - True if any required permission is denied or in prompt state
-	 * @example
-	 * if (service.isPermissionDenied()) {
-	 *   console.log('Please allow camera access');
-	 * }
 	 */
-	isPermissionCameraDenied(perms?: Record<string, PermissionState>): boolean {
-		const p = perms || this.state().permissions;
-		return p["camera"] === "denied" || p["camera"] === "prompt";
+	public isPermissionDenied(perms?: Record<"camera" | "microphone", PermissionState>): boolean {
+		const permissions = perms || this.state().permissions;
+		return permissions["camera"] === "denied" || permissions["camera"] === "prompt";
 	}
 
-	async getAvailableDevices() {
+	/**
+	 * Loads available video devices
+	 * @returns Promise<MediaDeviceInfo[]>
+	 */
+	async getAvailableDevices(): Promise<MediaDeviceInfo[]> {
 		try {
 			// Check if device list is already available
 			const devices = await this.webcam.getVideoDevices();
-			this.devices.set(devices);
-			console.log("Devices:", this.devices());
+			this._devices.set(devices);
+			return devices ?? [];
 		} catch (e) {
 			console.error("Load devices failed:", e);
+			return [];
 		}
 	}
 
@@ -95,7 +78,7 @@ export class WebcamService {
 			const configWithCallbacks: WebcamConfiguration = {
 				...config,
 				onStateChange: (state: WebcamState) => {
-					this.state.set(state);
+					this._state.set(state);
 				},
 				onStreamStart: (stream: MediaStream) => {
 					console.log("Stream started:", stream);
@@ -108,34 +91,47 @@ export class WebcamService {
 				},
 				onPermissionChange: (permissions) => {
 					console.log("Permissions changed:", permissions);
-					this.permissionChecked.set(true);
+					this._permissionChecked.set(true);
 				},
 				onDeviceChange: (devices) => {
-					this.devices.set(devices);
+					this._devices.set(devices);
 				},
 			};
 
 			await this.webcam.startCamera(configWithCallbacks);
+			await this.testDeviceCapabilitiesByDeviceId(configWithCallbacks.deviceInfo.deviceId);
 		} catch (e) {
 			console.error("Start camera failed:", e);
 		}
 	}
 
+	/**
+	 * Stops the camera stream
+	 */
 	stopCamera() {
 		this.webcam.stopCamera();
 	}
 
-	async testDeviceCapabilities(deviceId: string) {
-		this.deviceCapabilities.set(null);
+	/**
+	 * Tests device capabilities for a given device ID
+	 * @param deviceId ID of the device to test
+	 */
+	async testDeviceCapabilitiesByDeviceId(deviceId: string) {
+		this._deviceCapability.set(null);
+
 		try {
 			const caps = await this.webcam.getDeviceCapabilities(deviceId);
-			this.deviceCapabilities.set(caps);
+			this._deviceCapability.set(caps);
 		} catch (e) {
 			console.error("Test device capabilities failed:", e);
 		}
 	}
 
-	async capture(): Promise<Blob> {
+	/**
+	 * Captures an image from the webcam
+	 * @returns Promise<Blob> - A blob containing the captured image
+	 */
+	async captureImage(): Promise<Blob> {
 		try {
 			return await this.webcam.captureImage();
 		} catch (e) {
@@ -145,6 +141,33 @@ export class WebcamService {
 		}
 	}
 
+	/**
+	 * Checks if the device supports torch
+	 * @returns boolean
+	 */
+	isTorchSupported() {
+		return this.webcam.isTorchSupported();
+	}
+
+	/**
+	 * Checks if the device supports zoom
+	 * @returns boolean
+	 */
+	isZoomSupported() {
+		return this.webcam.isZoomSupported();
+	}
+
+	/**
+	 * Checks if the device supports focus
+	 * @returns boolean
+	 */
+	isFocusSupported() {
+		return this.webcam.isFocusSupported();
+	}
+
+	/**
+	 * Disposes of the webcam resources
+	 */
 	dispose() {
 		this.webcam.dispose();
 	}

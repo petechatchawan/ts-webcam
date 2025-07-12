@@ -11,12 +11,11 @@ import {
 } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import {
-	DeviceCapability,
 	PermissionRequestOptions,
 	Resolution,
-	WebcamState,
 	WebcamConfiguration,
-	WebcamStatus,
+	WebcamState,
+	WebcamStatus
 } from "ts-webcam";
 import { WebcamService } from "./webcam.service";
 
@@ -61,18 +60,15 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
 	readonly permissionOptions = signal<PermissionRequestOptions>({ video: true, audio: false });
 	readonly selectedDevice = signal<MediaDeviceInfo | null>(null);
 	readonly selectedResolution = signal<Resolution>(this.resolutions[0]);
-	readonly enableMirror = signal<boolean>(true);
 	readonly enableAudio = signal<boolean>(false);
-	readonly torchEnabled = signal<boolean>(false);
-	readonly hasTorch = signal<boolean>(false);
-	readonly videoReady = signal<boolean>(false);
-	readonly zoom = signal<number | null>(null);
+	readonly enableMirror = signal<boolean>(true);
+	readonly enableTorch = signal<boolean>(false);
+	readonly zoomValue = signal<number | null>(null);
 	readonly minZoom = signal<number | null>(null);
 	readonly maxZoom = signal<number | null>(null);
 	readonly focusMode = signal<string | null>(null);
 	readonly supportedFocusModes = signal<string[]>([]);
 	readonly capturedImageUrl = signal<string | null>(null);
-	readonly lastTestedDeviceCapabilities = signal<DeviceCapability | null>(null);
 
 	// Store event listeners for cleanup
 	private videoEventListeners: { [key: string]: () => void } = {};
@@ -99,8 +95,6 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
 	// Reactive state from service
 	readonly devices = signal<MediaDeviceInfo[]>([]);
 	readonly webcamState = signal<WebcamState | null>(null);
-	readonly permissionChecked = signal<boolean>(false);
-	readonly deviceCapabilities = signal<DeviceCapability | null>(null);
 
 	// Computed properties from webcam state
 	readonly error = computed(() => this.webcamState()?.error?.message || null);
@@ -114,7 +108,8 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
 		const isReady = currentStatus === "ready";
 		const isError = currentStatus === "error";
 		const hasSelectedDevice = !!this.selectedDevice();
-		const isPermissionGranted = this.permissionChecked() && !this.isPermissionCameraDenied();
+		const isPermissionGranted =
+			this.webcamService.permissionChecked() && !this.webcamService.isPermissionDenied();
 
 		return {
 			isLoading,
@@ -145,14 +140,12 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
 		// Use effects for service signals synchronization
 		effect(
 			() => {
-				const state = this.webcamService.getState()();
-				console.log("Webcam state changed:", state); // Debug log
+				const state = this.webcamService.state();
+				console.log("Webcam state changed:", state);
 				this.webcamState.set(state);
 
 				// Reset video ready state when status changes to non-ready states
 				if (state.status !== "ready") {
-					this.videoReady.set(false);
-
 					// Also clear video source if status is idle or error
 					if (state.status === "idle" || state.status === "error") {
 						const videoElement = this.videoElementRef?.nativeElement;
@@ -167,7 +160,7 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
 
 		effect(
 			() => {
-				const devices = this.webcamService.getDevices()();
+				const devices = this.webcamService.devices();
 				this.devices.set(devices);
 			},
 			{ allowSignalWrites: true },
@@ -175,32 +168,15 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
 
 		effect(
 			() => {
-				const checked = this.webcamService.getPermissionChecked()();
-				this.permissionChecked.set(checked);
-			},
-			{ allowSignalWrites: true },
-		);
-
-		effect(
-			() => {
-				const caps = this.webcamService.getDeviceCapabilities()();
-				this.deviceCapabilities.set(caps);
-			},
-			{ allowSignalWrites: true },
-		);
-
-		effect(
-			() => {
-				const caps = this.deviceCapabilities();
+				const caps = this.webcamService.deviceCapability();
 				if (caps && typeof caps.maxZoom === "number" && typeof caps.minZoom === "number") {
 					this.minZoom.set(caps.minZoom);
 					this.maxZoom.set(caps.maxZoom);
-					// Optionally set default zoom to minZoom
-					this.zoom.set(caps.minZoom);
+					this.zoomValue.set(caps.minZoom);
 				} else {
 					this.minZoom.set(null);
 					this.maxZoom.set(null);
-					this.zoom.set(null);
+					this.zoomValue.set(null);
 				}
 				if (caps && Array.isArray(caps.supportedFocusModes)) {
 					this.supportedFocusModes.set(caps.supportedFocusModes);
@@ -238,40 +214,35 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
 		await this.webcamService.getAvailableDevices();
 	}
 
-	isPermissionCameraDenied(): boolean {
-		return this.webcamService.isPermissionCameraDenied();
-	}
-
-	// Camera control methods
-	public async startCamera() {
+	/**
+	 * Starts the camera with the current configuration.
+	 * This method initializes the camera with the selected device and settings, and updates the video source.
+	 */
+	public async startCamera(): Promise<void> {
 		const config = this.currentConfig();
 		if (!config) {
 			console.error("Configuration is invalid, please check settings");
 			return;
 		}
 
-		// Start camera
+		// Start camera with configuration
 		await this.webcamService.startCamera(config);
 
 		// Check torch support and set video ready state
 		setTimeout(() => {
-			this.checkTorchSupport();
-			this.checkVideoReady();
 			// Update device capabilities after camera starts
-			const caps = this.webcamService.getDeviceCapabilities()();
-			this.deviceCapabilities.set(caps);
+			// const caps = this.webcamService.deviceCapability();
+			// this.webcamService.deviceCapability.set(caps);
 		}, 100);
 	}
 
-	// Stop camera
+	/**
+	 * Stops the currently running camera.
+	 * This method releases the camera resources and clears the video source.
+	 */
 	public stopCamera() {
 		// Stop camera
 		this.webcamService.stopCamera();
-
-		// Reset torch state and video ready state when stopping camera
-		this.hasTorch.set(false);
-		this.torchEnabled.set(false);
-		this.videoReady.set(false);
 
 		// Clear video source and clean up event listeners
 		const videoElement = this.videoElementRef?.nativeElement;
@@ -298,7 +269,10 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
 			return;
 		}
 
+		// Stop the current camera
 		this.stopCamera();
+
+		// Restart the camera with the new configuration
 		await this.startCamera();
 	}
 
@@ -307,10 +281,16 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
 	 * This method stops the current camera, updates the selected resolution, and restarts the camera with the new configuration.
 	 * @returns A Promise that resolves when the resolution switch is complete.
 	 */
-	async switchResolution() {
-		if (!this.uiState().canSwitchResolution) return;
+	async switchResolution(): Promise<void> {
+		if (!this.uiState().canSwitchResolution) {
+			console.error("Cannot switch resolution: no resolution selected or camera is loading");
+			return;
+		}
 
+		// Stop the current camera
 		this.stopCamera();
+
+		// Restart the camera with the new configuration
 		await this.startCamera();
 	}
 
@@ -319,14 +299,14 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
 	 * This method triggers the capture process and updates the captured image URL.
 	 * @returns A Promise that resolves when the capture is complete.
 	 */
-	async capture(): Promise<void> {
+	async captureImage(): Promise<void> {
 		if (!this.uiState().canCapture) {
 			console.error("Cannot capture: no device selected or camera is loading");
 			return;
 		}
 
 		try {
-			const blob = await this.webcamService.capture();
+			const blob = await this.webcamService.captureImage();
 			if (blob) {
 				// Create a temporary object URL for preview
 				const url = URL.createObjectURL(blob);
@@ -364,9 +344,9 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
 				this.stopCamera();
 			}
 			// Test device capabilities via service
-			await this.webcamService.testDeviceCapabilities(device.deviceId);
+			await this.webcamService.testDeviceCapabilitiesByDeviceId(device.deviceId);
 			// Store the result for display
-			this.lastTestedDeviceCapabilities.set(this.deviceCapabilities());
+			// this.deviceCapability.set(this.deviceCapability());
 			// Optionally, start camera again after testing
 			// await this.startCamera();
 		} catch (e) {
@@ -466,8 +446,8 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
 	 */
 	async onZoomChange(event: Event) {
 		const value = +(event.target as HTMLInputElement)?.value;
-		if (isNaN(value) || this.zoom() === value) return;
-		this.zoom.set(value);
+		if (isNaN(value) || this.zoomValue() === value) return;
+		this.zoomValue.set(value);
 		try {
 			await this.webcamService.webcamInstance.setZoom(value);
 		} catch (e) {
@@ -495,72 +475,16 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
 	 * This method checks if the device supports torch, toggles the torch state, and updates the UI accordingly.
 	 */
 	async toggleTorch() {
-		if (!this.hasTorch()) return;
+		if (!this.webcamService.webcamInstance.isTorchSupported()) {
+			return;
+		}
+
 		try {
-			const enabled = !this.torchEnabled();
+			const enabled = !this.enableTorch();
 			await this.webcamService.webcamInstance.setTorch(enabled);
-			this.torchEnabled.set(enabled);
+			this.enableTorch.set(enabled);
 		} catch (error) {
 			console.error("Failed to toggle torch:", error);
-		}
-	}
-
-	/**
-	 * Checks if the device supports torch.
-	 * This method retrieves the video track capabilities and updates the hasTorch state accordingly.
-	 */
-	private checkTorchSupport() {
-		const stream = this.videoElementRef?.nativeElement?.srcObject as MediaStream;
-		if (stream) {
-			const track = stream.getVideoTracks()[0];
-			if (track) {
-				const capabilities = track.getCapabilities();
-				this.hasTorch.set("torch" in capabilities);
-			}
-		}
-	}
-
-	/**
-	 * Checks if the video is ready and playing.
-	 * This method updates the videoReady state based on the video element's source and playback status.
-	 */
-	private checkVideoReady() {
-		const videoElement = this.videoElementRef?.nativeElement;
-		if (videoElement && videoElement.srcObject) {
-			const stream = videoElement.srcObject as MediaStream;
-			const isActive = stream.active && stream.getVideoTracks().length > 0;
-			this.videoReady.set(isActive);
-
-			// Clean up previous event listeners
-			Object.keys(this.videoEventListeners).forEach((eventName) => {
-				videoElement.removeEventListener(eventName, this.videoEventListeners[eventName]);
-			});
-
-			// Create new event listener function
-			const updateVideoReady = () => {
-				const hasStream = !!videoElement.srcObject;
-				const streamActive = hasStream && (videoElement.srcObject as MediaStream).active;
-				const isPlaying = !videoElement.paused && !videoElement.ended;
-				const hasActiveTracks =
-					hasStream && (videoElement.srcObject as MediaStream).getVideoTracks().length > 0;
-				this.videoReady.set(hasStream && streamActive && isPlaying && hasActiveTracks);
-			};
-
-			// Store event listeners for proper cleanup
-			this.videoEventListeners = {
-				loadedmetadata: updateVideoReady,
-				play: updateVideoReady,
-				pause: updateVideoReady,
-				ended: updateVideoReady,
-			};
-
-			// Add event listeners
-			Object.keys(this.videoEventListeners).forEach((eventName) => {
-				videoElement.addEventListener(eventName, this.videoEventListeners[eventName]);
-			});
-		} else {
-			// No video source, definitely not ready
-			this.videoReady.set(false);
 		}
 	}
 
