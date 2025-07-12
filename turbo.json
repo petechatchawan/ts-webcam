@@ -1,17 +1,35 @@
 {
   "$schema": "https://turborepo.com/schema.json",
-  "globalDependencies": ["**/.env.*local"],
+  "globalDependencies": [
+    "**/.env.*local"
+  ],
   "tasks": {
     "build": {
-      "dependsOn": ["^build"],
-      "outputs": ["./dist"]
+      "dependsOn": [
+        "^build"
+      ],
+      "outputs": [
+        "./dist"
+      ]
     },
     "lint": {
-      "dependsOn": ["^lint"]
+      "dependsOn": [
+        "^lint"
+      ]
     },
     "start": {
       "cache": false,
-      "persistent": true
+      "persistent": true,
+      "outputs": [
+        "http://localhost:4200"
+      ]
+    },
+    "docs:start": {
+      "cache": false,
+      "persistent": true,
+      "outputs": [
+        "http://localhost:4201"
+      ]
     },
     "clean": {
       "cache": false
