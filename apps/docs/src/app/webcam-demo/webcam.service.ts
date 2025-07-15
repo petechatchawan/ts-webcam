@@ -1,5 +1,6 @@
 import { Injectable, signal } from "@angular/core";
 import {
+	CaptureResult,
 	DeviceCapability,
 	PermissionRequestOptions,
 	Webcam,
@@ -156,7 +157,7 @@ export class WebcamService {
 	 * Captures an image from the webcam
 	 * @returns Promise<Blob> - A blob containing the captured image
 	 */
-	async captureImage(): Promise<Blob> {
+	async captureImage(): Promise<CaptureResult> {
 		try {
 			return await this.webcam.captureImage();
 		} catch (e) {

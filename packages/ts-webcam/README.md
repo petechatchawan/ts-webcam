@@ -68,8 +68,19 @@ const config = {
 // Start the camera
 await webcam.startCamera(config);
 
-// Take a photo
-const photoBlob = await webcam.capture();
+// Take a photo with default settings
+const result = await webcam.captureImage();
+console.log("Base64 image:", result.base64);
+
+// Or with custom options
+const customCapture = await webcam.captureImage({
+	imageType: "image/jpeg", // default: 'image/jpeg'
+	quality: 0.8, // 0-1, default: 0.92
+	scale: 0.5, // 0.1-2, default: 1.0
+});
+
+// Result contains both blob and base64 formats
+const { blob, base64, width, height, mimeType, timestamp } = customCapture;
 
 // Stop the camera when done
 webcam.stopCamera();
@@ -81,10 +92,10 @@ webcam.stopCamera();
 
 | Method                            | Description                                    |
 | --------------------------------- | ---------------------------------------------- |
-| `new TsWebcam()`                  | Creates a new webcam instance                  |
+| `new Webcam()`                    | Creates a new webcam instance                  |
 | `startCamera(config)`             | Starts the camera with the given configuration |
 | `stopCamera()`                    | Stops the camera and releases resources        |
-| `capture(options?)`               | Captures a photo from the camera               |
+| `captureImage(options?)`          | Captures a photo with advanced options         |
 | `getVideoDevices()`               | Lists available video devices                  |
 | `getDeviceCapabilities(deviceId)` | Gets capabilities of a specific device         |
 | `requestPermissions(constraints)` | Requests camera permissions                    |
@@ -92,6 +103,34 @@ webcam.stopCamera();
 | `setZoom(factor)`                 | Sets the camera zoom level (if supported)      |
 | `setFocusMode(mode)`              | Sets focus mode (if supported)                 |
 | `dispose()`                       | Cleans up all resources                        |
+
+### 📸 Capture Options
+
+```typescript
+interface CaptureOptions {
+	/** Image type, e.g., 'image/jpeg' or 'image/png' (default: 'image/jpeg') */
+	imageType?: string;
+	/** Image quality from 0 to 1 (only applicable for image/jpeg) (default: 0.92) */
+	quality?: number;
+	/** Scale factor (0.1-2) to resize the captured image (default: 1.0) */
+	scale?: number;
+}
+
+interface CaptureResult {
+	/** The captured image as a Blob */
+	blob: Blob;
+	/** Base64 encoded image data */
+	base64: string;
+	/** Width of the captured image in pixels */
+	width: number;
+	/** Height of the captured image in pixels */
+	height: number;
+	/** MIME type of the captured image */
+	mimeType: string;
+	/** Timestamp when the capture was taken */
+	timestamp: number;
+}
+```
 
 ### ⚙️ Configuration Options
 

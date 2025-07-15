@@ -1,4 +1,5 @@
 import { WebcamError, WebcamErrorCode } from "./errors";
+import type { CaptureOptions, CaptureResult } from "./types";
 import {
 	DeviceCapability,
 	PermissionRequestOptions,
@@ -272,9 +273,24 @@ export class Webcam {
 
 	/**
 	 * Capture an image from the webcam.
-	 * @returns A Promise that resolves with a Blob containing the captured image.
+   * @param options Capture options including image type, quality, and scale
+   * @returns A Promise that resolves with a CaptureResult object containing both blob and base64
+   * @example
+   * // Basic usage - returns { blob, base64, width, height, mimeType, timestamp }
+   * const result = await webcam.captureImage();
+   * console.log("Base64 image:", result.base64);
+   * 
+   * // With options
+   * const result = await webcam.captureImage({
+   *   imageType: 'image/jpeg',
+   *   quality: 0.8,
+   *   scale: 0.5
+   * });
+   * 
+   * // Or destructure what you need
+   * const { base64, blob } = await webcam.captureImage();
 	 */
-	async captureImage(): Promise<Blob> {
+	async captureImage(options: CaptureOptions = {}): Promise<CaptureResult> {
 		this._ensureNotDisposed();
 
 		if (!this.state.activeStream || this.state.status !== "ready") {
@@ -296,10 +312,18 @@ export class Webcam {
 		}
 
 		try {
-			return await this._captureFromVideoElement(this.state.videoElement);
+			// Set default options
+			const captureOptions: Required<Omit<CaptureOptions, 'returnBase64'>> = {
+				imageType: options.imageType || 'image/jpeg',
+				quality: options.quality !== undefined ? Math.max(0, Math.min(1, options.quality)) : 0.92,
+				scale: options.scale !== undefined ? Math.max(0.1, Math.min(2, options.scale)) : 1.0
+			};
+
+			return await this._captureFromVideoElement(this.state.videoElement, captureOptions);
 		} catch (error) {
+			const errorMessage = error instanceof Error ? error.message : 'Unknown error during capture';
 			const webcamError = new WebcamError(
-				"Failed to capture image",
+				`Failed to capture image: ${errorMessage}`,
 				WebcamErrorCode.CAPTURE_FAILED,
 			);
 			this._callError(webcamError);
@@ -597,7 +621,11 @@ export class Webcam {
 		);
 	}
 
-	private async _captureFromVideoElement(videoElement: HTMLVideoElement): Promise<Blob> {
+	private async _captureFromVideoElement(
+		videoElement: HTMLVideoElement,
+		options: Required<Omit<CaptureOptions, 'returnBase64'>>
+	): Promise<CaptureResult> {
+		const { imageType, quality, scale } = options;
 		const canvas = document.createElement("canvas");
 		const context = canvas.getContext("2d");
 
@@ -605,23 +633,70 @@ export class Webcam {
 			throw new Error("Could not get canvas context");
 		}
 
-		canvas.width = videoElement.videoWidth;
-		canvas.height = videoElement.videoHeight;
-		context.drawImage(videoElement, 0, 0);
+		// Check video dimensions
+		if (videoElement.videoWidth === 0 || videoElement.videoHeight === 0) {
+			throw new Error("Video dimensions are zero - video may not be loaded");
+		}
 
-		return new Promise((resolve, reject) => {
+		// Calculate new dimensions based on scale
+		const width = Math.floor(videoElement.videoWidth * scale);
+		const height = Math.floor(videoElement.videoHeight * scale);
+
+		canvas.width = width;
+		canvas.height = height;
+
+		try {
+			// Draw video frame to canvas
+			context.drawImage(
+				videoElement,
+				0, 0, videoElement.videoWidth, videoElement.videoHeight,  // source
+				0, 0, width, height  // destination
+			);
+		} catch (error) {
+			throw new Error(`Failed to draw video to canvas: ${error instanceof Error ? error.message : String(error)}`);
+		}
+
+		// Convert canvas to Blob
+		const blob = await new Promise<Blob>((resolve, reject) => {
+			const timeout = setTimeout(() => {
+				reject(new Error("Capture timed out - could not convert to blob"));
+			}, 5000);
+
 			canvas.toBlob(
 				(blob) => {
-					if (blob) {
-						resolve(blob);
-					} else {
+					clearTimeout(timeout);
+					if (!blob) {
 						reject(new Error("Failed to create blob from canvas"));
+						return;
 					}
+					resolve(blob);
 				},
-				"image/jpeg",
-				0.9,
+				imageType,
+				quality
 			);
 		});
+
+		// Convert Blob to base64
+		const base64 = await new Promise<string>((resolve, reject) => {
+			const reader = new FileReader();
+			reader.onloadend = () => {
+				const result = reader.result as string;
+				// Remove the data URL prefix (e.g., "data:image/jpeg;base64,")
+				const base64Data = result.split(',')[1];
+				resolve(base64Data);
+			};
+			reader.onerror = reject;
+			reader.readAsDataURL(blob);
+		});
+
+		return {
+			blob,
+			base64,
+			width,
+			height,
+			mimeType: imageType,
+			timestamp: Date.now()
+		};
 	}
 
 	/**

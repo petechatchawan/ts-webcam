@@ -93,7 +93,6 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
 			videoElement: this.videoElementRef.nativeElement,
 			enableMirror: this.enableMirror(),
 			enableAudio: this.enableAudio(),
-			debug: true
 		} as WebcamConfiguration;
 	});
 
@@ -311,7 +310,7 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
 		}
 
 		try {
-			const blob = await this.webcamService.captureImage();
+			const { blob } = await this.webcamService.captureImage();
 			if (blob) {
 				// Create a temporary object URL for preview
 				const url = URL.createObjectURL(blob);

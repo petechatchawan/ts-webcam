@@ -5,6 +5,28 @@ All notable changes to the TS-Webcam project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.8] - 2025-07-16
+
+### ✨ Added
+
+- **Enhanced Image Capture**:
+  - Added `CaptureResult` interface with `blob`, `base64`, `width`, `height`, `mimeType`, and `timestamp`
+  - Improved `captureImage()` to return both blob and base64 formats
+  - Added support for image scaling and quality adjustment
+  - Added comprehensive error handling and input validation
+
+### 🐛 Fixed
+
+- Fixed potential memory leaks in image capture
+- Improved error messages for better debugging
+- Fixed TypeScript type definitions for better developer experience
+
+### 🔄 Changed
+
+- Updated `captureImage()` method signature to return `Promise<CaptureResult>`
+- Improved documentation with usage examples
+- Optimized image capture performance
+
 ## [2.0.7] - 2025-07-16
 
 ### ✨ New Features
