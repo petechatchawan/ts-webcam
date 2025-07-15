@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [2.0.9] - 2025-07-16
 
 ### ✨ Changed
+
 - Updated `captureImage()` to return full data URL in `base64` field (including data URL prefix)
 - Improved video element initialization and error handling
 
