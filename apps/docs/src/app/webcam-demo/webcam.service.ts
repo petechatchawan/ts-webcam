@@ -20,12 +20,14 @@ export class WebcamService {
 	public permissionChecked = this._permissionChecked.asReadonly();
 	public deviceCapability = this._deviceCapability.asReadonly();
 
-	constructor() {}
+	constructor() { }
 
 	/** Type-safe getter for the underlying TsWebcam instance */
 	get webcamInstance(): Webcam {
 		return this.webcam;
 	}
+
+
 
 	/**
 	 * Requests permissions and loads available devices
@@ -43,6 +45,23 @@ export class WebcamService {
 			console.error("Permission request failed:", e);
 			this._permissionChecked.set(false);
 			return false;
+		}
+	}
+
+	/**
+	 * Checks the current permissions for camera and microphone
+	 * @returns Promise<Record<string, PermissionState>> - Object with permission states
+	 */
+	async checkPermission(): Promise<Record<string, PermissionState>> {
+		try {
+			const permissions = await this.webcam.checkPermissions();
+			// Update the permission checked state
+			this._permissionChecked.set(permissions['camera'] === 'granted');
+			return permissions;
+		} catch (error) {
+			console.error('Failed to check permissions:', error);
+			this._permissionChecked.set(false);
+			return { camera: 'denied' as PermissionState, microphone: 'denied' as PermissionState };
 		}
 	}
 
@@ -80,8 +99,12 @@ export class WebcamService {
 				onStateChange: (state: WebcamState) => {
 					this._state.set(state);
 				},
-				onStreamStart: (stream: MediaStream) => {
+				onStreamStart: async (stream: MediaStream) => {
 					console.log("Stream started:", stream);
+					const activeDevice = await this.webcam.getCurrentDevice();
+					console.log("Active device:", activeDevice);
+					const activeResolution = this.webcam.getCurrentResolution();
+					console.log("Active resolution:", activeResolution);
 				},
 				onStreamStop: () => {
 					console.log("Stream stopped");
@@ -99,7 +122,9 @@ export class WebcamService {
 			};
 
 			await this.webcam.startCamera(configWithCallbacks);
-			await this.testDeviceCapabilitiesByDeviceId(configWithCallbacks.deviceInfo.deviceId);
+			if (configWithCallbacks.deviceInfo) {
+				await this.testDeviceCapabilitiesByDeviceId(configWithCallbacks.deviceInfo.deviceId);
+			}
 		} catch (e) {
 			console.error("Start camera failed:", e);
 		}

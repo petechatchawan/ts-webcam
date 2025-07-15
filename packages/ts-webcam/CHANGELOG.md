@@ -5,6 +5,27 @@ All notable changes to the TS-Webcam project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.7] - 2025-07-16
+
+### ✨ New Features
+
+- **Device and Resolution Tracking**: Added `getCurrentDevice()` and `getCurrentResolution()` methods to track active camera and resolution
+- **Improved Debugging**: Introduced dedicated debug logging system with `enableDebug()`, `disableDebug()`, and `debugLog()` methods
+- **Enhanced Resolution Handling**: Improved support for multiple preferred resolutions with automatic fallback mechanism
+
+### 🛠️ Improvements
+
+- **Resolution Validation**: Made resolution validation mandatory when specifying preferred resolutions
+- **Cleaner Configuration**: Removed `validateResolution` and `debug` options from configuration, using dedicated methods instead
+- **Better Error Messages**: Enhanced error messages with attempted resolutions and device information
+- **Simplified Device Selection**: Made `deviceInfo` optional in configuration, automatically selecting first available device if not provided
+- **Resolution Fallback**: Improved resolution fallback mechanism to try multiple resolutions until a working one is found
+
+### 🐛 Bug Fixes
+
+- **Stream Variable Initialization**: Fixed TypeScript error related to stream variable initialization
+- **Error Code Consistency**: Fixed incorrect error code usage (NO_DEVICE_FOUND -> DEVICE_NOT_FOUND)
+
 ## [2.0.0] - 2025-07-02
 
 ### 🔥 Breaking Changes

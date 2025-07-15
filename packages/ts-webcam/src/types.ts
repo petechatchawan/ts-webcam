@@ -31,13 +31,18 @@ export interface PermissionRequestOptions {
 	audio?: boolean;
 }
 
+export interface ResolutionInfo {
+	width: number;
+	height: number;
+	name: string;
+}
+
 export interface WebcamConfiguration {
-	deviceInfo: MediaDeviceInfo;
+	deviceInfo?: MediaDeviceInfo;
 	preferredResolutions?: Resolution | Resolution[];
 	videoElement?: HTMLVideoElement;
 	enableAudio?: boolean;
 	enableMirror?: boolean;
-	debug?: boolean;
 
 	// Callback-based handlers (optional)
 	onStateChange?: (state: WebcamState) => void;

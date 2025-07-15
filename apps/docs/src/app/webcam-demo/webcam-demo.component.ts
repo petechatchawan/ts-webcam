@@ -85,10 +85,15 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
 
 		return {
 			deviceInfo,
-			preferredResolutions: this.selectedResolution(),
+			preferredResolutions: [
+				{ name: "S1920", width: 1920, height: 1920 },
+				{ name: "S1080", width: 1080, height: 1080 },
+				{ name: "S720", width: 720, height: 720 },
+			],
 			videoElement: this.videoElementRef.nativeElement,
 			enableMirror: this.enableMirror(),
 			enableAudio: this.enableAudio(),
+			debug: true
 		} as WebcamConfiguration;
 	});
 

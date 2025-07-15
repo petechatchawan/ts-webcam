@@ -1,6 +1,6 @@
 {
 	"name": "ts-webcam",
-	"version": "2.0.4",
+	"version": "2.0.7",
 	"description": "A production-grade TypeScript webcam library with callback-based APIs, flexible permission handling, and comprehensive device support",
 	"main": "dist/index.js",
 	"types": "dist/index.d.ts",
@@ -36,7 +36,12 @@
 	},
 	"scripts": {
 		"build": "tsc",
+		"prepare": "npm run build",
 		"prepublishOnly": "npm run build"
+	},
+	"peerDependencies": {
+		"@angular/common": ">=17.0.0",
+		"@angular/core": ">=17.0.0"
 	},
 	"devDependencies": {
 		"@types/node": "^24.0.7",

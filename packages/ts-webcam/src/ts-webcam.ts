@@ -6,6 +6,7 @@ import {
 	WebcamStateInternal,
 	WebcamConfiguration,
 	FocusMode,
+	Resolution,
 } from "./types";
 
 export class Webcam {
@@ -25,10 +26,43 @@ export class Webcam {
 	private _deviceChangeListener?: () => void;
 	private _disposed = false;
 	private _config?: WebcamConfiguration;
+	private _debugEnabled = false;
 
 	constructor() {
 		// Simple callback-based approach
 		// todo: set default config like debug mode
+	}
+
+	/**
+	 * Enable debug logging
+	 */
+	enableDebug(): void {
+		this._debugEnabled = true;
+	}
+
+	/**
+	 * Disable debug logging
+	 */
+	disableDebug(): void {
+		this._debugEnabled = false;
+	}
+
+	/**
+	 * Check if debug logging is enabled
+	 */
+	isDebugEnabled(): boolean {
+		return this._debugEnabled;
+	}
+
+	/**
+	 * Log debug message if debug is enabled
+	 * @param message The message to log
+	 * @param args Additional arguments to log
+	 */
+	debugLog(message: string, ...args: any[]): void {
+		if (this._debugEnabled) {
+			console.log(`[Webcam Debug] ${message}`, ...args);
+		}
 	}
 
 	/**
@@ -44,6 +78,38 @@ export class Webcam {
 	 * Check the current permissions of the user.
 	 * @returns Record<string, PermissionState>
 	 */
+	async getCurrentDevice(): Promise<MediaDeviceInfo | null> {
+		if (!this.state.activeStream) return null;
+
+		const tracks = this.state.activeStream.getVideoTracks();
+		if (tracks.length === 0) return null;
+
+		const track = tracks[0];
+		const deviceId = track.getSettings().deviceId;
+
+		// Get device info from enumerateDevices
+		const devices = await navigator.mediaDevices.enumerateDevices();
+		return devices.find(d => d.deviceId === deviceId) || null;
+	}
+
+	getCurrentResolution(): Resolution | null {
+		if (!this.state.activeStream) return null;
+
+		const tracks = this.state.activeStream.getVideoTracks();
+		if (tracks.length === 0) return null;
+
+		const track = tracks[0];
+		const settings = track.getSettings();
+		const width = settings.width || 0;
+		const height = settings.height || 0;
+
+		return {
+			width,
+			height,
+			name: `${width}x${height}`
+		} as Resolution;
+	}
+
 	async checkPermissions(): Promise<Record<string, PermissionState>> {
 		this._ensureNotDisposed();
 		const permissions: Record<string, PermissionState> = {};
@@ -135,8 +201,29 @@ export class Webcam {
 			this._setStatus("initializing");
 			this._callStateChange();
 
-			const constraints = this._buildConstraints(config);
-			const stream = await navigator.mediaDevices.getUserMedia(constraints);
+			let stream: MediaStream | null = null;
+			if (Array.isArray(config.preferredResolutions)) {
+				let lastError: Error | undefined;
+				for (const resolution of config.preferredResolutions) {
+					try {
+						const constraints = await this._buildConstraints({
+							...config,
+							preferredResolutions: resolution
+						});
+						stream = await navigator.mediaDevices.getUserMedia(constraints);
+						break; // Found a working resolution
+					} catch (error) {
+						lastError = error instanceof Error ? error : new Error('Failed to get media stream');
+						continue;
+					}
+				}
+				if (!stream) {
+					throw lastError || new Error('No resolution worked');
+				}
+			} else {
+				const constraints = await this._buildConstraints(config);
+				stream = await navigator.mediaDevices.getUserMedia(constraints);
+			}
 
 			// Configure video element if provided
 			if (config.videoElement) {
@@ -249,8 +336,8 @@ export class Webcam {
 				minHeight: capabilities.height?.min || 240,
 				supportedFrameRates:
 					capabilities.frameRate &&
-					capabilities.frameRate.min !== undefined &&
-					capabilities.frameRate.max !== undefined
+						capabilities.frameRate.min !== undefined &&
+						capabilities.frameRate.max !== undefined
 						? [capabilities.frameRate.min, capabilities.frameRate.max]
 						: undefined,
 				hasZoom: "zoom" in capabilities,
@@ -262,8 +349,7 @@ export class Webcam {
 			};
 		} catch (error) {
 			const webcamError = new WebcamError(
-				`Failed to get device capabilities: ${
-					error instanceof Error ? error.message : "Unknown error"
+				`Failed to get device capabilities: ${error instanceof Error ? error.message : "Unknown error"
 				}`,
 				WebcamErrorCode.DEVICES_ERROR,
 			);
@@ -331,6 +417,16 @@ export class Webcam {
 	}
 
 	/**
+	 * Call the onDeviceChange callback with the current devices.
+	 * @param devices The current devices.
+	 */
+	private _callDeviceChange(devices: MediaDeviceInfo[]): void {
+		if (this._config?.onDeviceChange) {
+			this._config.onDeviceChange(devices);
+		}
+	}
+
+	/**
 	 * Call the onStreamStart callback with the current stream.
 	 * @param stream The MediaStream that has started.
 	 */
@@ -373,36 +469,65 @@ export class Webcam {
 	 * Call the onDeviceChange callback with the current devices.
 	 * @param devices The current devices.
 	 */
-	private _callDeviceChange(devices: MediaDeviceInfo[]): void {
-		if (this._config?.onDeviceChange) {
-			this._config.onDeviceChange(devices);
-		}
-	}
+	private async _buildConstraints(config: WebcamConfiguration): Promise<MediaStreamConstraints> {
+		// Validate resolution if specified
+		if (config.preferredResolutions) {
+			const resolutions = Array.isArray(config.preferredResolutions)
+				? config.preferredResolutions
+				: [config.preferredResolutions];
 
-	/**
-	 * Build the MediaStreamConstraints object based on the provided configuration.
-	 * @param config The webcam configuration.
-	 * @returns The MediaStreamConstraints object.
-	 */
-	private _buildConstraints(config: WebcamConfiguration): MediaStreamConstraints {
-		const { deviceInfo, preferredResolutions, enableAudio } = config;
-		const resolution = Array.isArray(preferredResolutions)
-			? preferredResolutions[0]
-			: preferredResolutions;
-		if (!resolution) {
-			throw new Error("No resolution specified in preferredResolutions");
+			for (const res of resolutions) {
+				if (!res.width || !res.height) {
+					throw new WebcamError(
+						`Invalid resolution: width and height must be specified`,
+						WebcamErrorCode.INVALID_CONFIG
+					);
+				}
+				if (res.width <= 0 || res.height <= 0) {
+					throw new WebcamError(
+						`Invalid resolution: width and height must be positive numbers`,
+						WebcamErrorCode.INVALID_CONFIG
+					);
+				}
+				if (res.width > 4096 || res.height > 4096) {
+					throw new WebcamError(
+						`Invalid resolution: maximum width/height is 4096 pixels`,
+						WebcamErrorCode.INVALID_CONFIG
+					);
+				}
+			}
 		}
 
+		// Get device info if not provided
+		if (!config.deviceInfo) {
+			try {
+				const devices = await navigator.mediaDevices.enumerateDevices();
+				const videoDevices = devices.filter(d => d.kind === 'videoinput');
+				if (videoDevices.length === 0) {
+					throw new WebcamError(
+						`No video devices found`,
+						WebcamErrorCode.DEVICE_NOT_FOUND
+					);
+				}
+				config.deviceInfo = videoDevices[0];
+			} catch (error) {
+				throw new WebcamError(
+					`Failed to get video devices: ${error instanceof Error ? error.message : 'Unknown error'}`,
+					WebcamErrorCode.DEVICES_ERROR
+				);
+			}
+		}
+
+		// Build constraints
 		const videoConstraints: MediaTrackConstraints = {
-			deviceId: { exact: deviceInfo.deviceId },
-			width: { exact: resolution.width },
-			height: { exact: resolution.height },
-			aspectRatio: { exact: resolution.width / resolution.height },
+			deviceId: { exact: config.deviceInfo.deviceId },
+			width: { exact: Array.isArray(config.preferredResolutions) ? config.preferredResolutions[0].width : config.preferredResolutions?.width || 1280 },
+			height: { exact: Array.isArray(config.preferredResolutions) ? config.preferredResolutions[0].height : config.preferredResolutions?.height || 720 },
 		};
 
 		return {
 			video: videoConstraints,
-			audio: enableAudio || false,
+			audio: config.enableAudio || false,
 		};
 	}
 
@@ -412,9 +537,11 @@ export class Webcam {
 		let resolution = Array.isArray(config?.preferredResolutions)
 			? config?.preferredResolutions[0]
 			: config?.preferredResolutions;
-		let resolutionText = resolution
-			? `${resolution.width}x${resolution.height}`
-			: "Unknown resolution";
+		let resolutionText = Array.isArray(config?.preferredResolutions)
+			? config?.preferredResolutions.map(r => `${r.width}x${r.height}`).join(', ')
+			: resolution
+				? `${resolution.width}x${resolution.height}`
+				: "Unknown resolution";
 		let context = "Start Camera";
 
 		if (error instanceof WebcamError) {
@@ -464,8 +591,7 @@ export class Webcam {
 			.join(" | ");
 
 		return new WebcamError(
-			`${baseMsg}Failed to start camera: ${
-				details || "Unknown error"
+			`${baseMsg}Failed to start camera: ${details || "Unknown error"
 			} (Device: ${deviceLabel}, Resolution: ${resolutionText})`,
 			WebcamErrorCode.UNKNOWN_ERROR,
 		);
