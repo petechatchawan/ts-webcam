@@ -676,14 +676,12 @@ export class Webcam {
 			);
 		});
 
-		// Convert Blob to base64
+		// Convert Blob to base64 data URL
 		const base64 = await new Promise<string>((resolve, reject) => {
 			const reader = new FileReader();
 			reader.onloadend = () => {
 				const result = reader.result as string;
-				// Remove the data URL prefix (e.g., "data:image/jpeg;base64,")
-				const base64Data = result.split(',')[1];
-				resolve(base64Data);
+				resolve(result); // Return full data URL including prefix
 			};
 			reader.onerror = reject;
 			reader.readAsDataURL(blob);

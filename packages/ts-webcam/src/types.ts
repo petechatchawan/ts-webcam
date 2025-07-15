@@ -72,27 +72,25 @@ export interface WebcamStateInternal {
 export type WebcamState = Readonly<WebcamStateInternal>;
 
 export interface CaptureOptions {
-  /** Image type, e.g., 'image/jpeg' or 'image/png' (default: 'image/jpeg') */
-  imageType?: string;
-  /** Image quality from 0 to 1 (only applicable for image/jpeg) (default: 0.92) */
-  quality?: number;
-  /** Scale factor (0.1-2) to resize the captured image (default: 1.0) */
-  scale?: number;
-  /** Whether to include base64 string in the result (default: true) */
-  returnBase64?: boolean;
+	/** Image type, e.g., 'image/jpeg' or 'image/png' (default: 'image/jpeg') */
+	imageType?: string;
+	/** Image quality from 0 to 1 (only applicable for image/jpeg) (default: 0.92) */
+	quality?: number;
+	/** Scale factor (0.1-2) to resize the captured image (default: 1.0) */
+	scale?: number;
 }
 
 export interface CaptureResult {
-  /** Captured image as Blob */
-  blob: Blob;
-  /** Base64 encoded image data */
-  base64: string;
-  /** Image width */
-  width: number;
-  /** Image height */
-  height: number;
-  /** MIME type of the image */
-  mimeType: string;
-  /** Timestamp when the capture was taken */
-  timestamp: number;
+	/** Captured image as Blob */
+	blob: Blob;
+	/** Base64 encoded image data */
+	base64: string;
+	/** Image width */
+	width: number;
+	/** Image height */
+	height: number;
+	/** MIME type of the image */
+	mimeType: string;
+	/** Timestamp when the capture was taken */
+	timestamp: number;
 }
