@@ -274,25 +274,22 @@
 									class="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
 									Camera
 								</p>
-								<div class="space-y-3">
-									<div
-										*ngFor="let device of devices(); trackBy: trackByDeviceId"
-										class="flex items-center p-3 rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200">
-										<p-radiobutton 
-											[inputId]="device.deviceId" 
-											name="camera" 
-											[value]="device" 
-											[(ngModel)]="selectedDeviceForRadio" 
-											(onChange)="onDeviceChange(device)" 
-											size="small" 
-											class="mr-3"></p-radiobutton>
-										<label
-											[for]="device.deviceId"
-											class="cursor-pointer flex-1 text-sm sm:text-base font-medium text-gray-700 dark:text-gray-300 leading-relaxed min-h-[44px] flex items-center">
-											{{ device.label || "Camera " + device.deviceId.slice(0, 8) + "..." }}
-										</label>
-									</div>
-								</div>
+								<p-select
+									[options]="devices()"
+									[(ngModel)]="selectedDevice"
+									[disabled]="uiState().isLoading"
+									optionLabel="label"
+									placeholdr="Selct Camera"
+									class="w-full"
+									[checkmark]="true"
+									(onChange)="onDeviceChange($event)">
+									<ng-template pTemplate="selectedItem" let-sd>
+										{{ sd?.label || "Camera " + sd?.deviceId?.slice(0, 8) + "..." }}
+									</ng-template>
+									<ng-template pTemplate="item" let-d>
+										{{ d.label || "Camera " + d.devceId.slice(0, 8) + "..." }}
+									</ng-template>
+								</p-select>
 							</div>
 
 							<div>
@@ -307,6 +304,7 @@
 									placeholder="Select Resolution"
 									optionLabel="label"
 									class="w-full"
+									[checkmark]="true"
 									(onChange)="onResolutionChange($event)">
 									<ng-template pTemplate="selectedItem" let-sr>
 										{{ sr?.label }} ({{ sr?.width }}×{{ sr?.height }})
@@ -371,7 +369,7 @@
 
 						<p-divider></p-divider>
 
-						<div class="flex flex-col gap-2 w-full">
+						<div class="flex flex-col gap-2">
 							<div class="flex gap-2">
 								<p-button
 									label="Find Front Camera"
@@ -386,7 +384,6 @@
 							<p-button
 								label="Test Current Device Capabilities"
 								size="small"
-								fluid="true"
 								[disabled]="!selectedDevice()"
 								(onClick)="testDeviceCapabilities()"></p-button>
 						</div>
