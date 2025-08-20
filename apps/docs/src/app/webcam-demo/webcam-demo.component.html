@@ -278,16 +278,16 @@
 									[options]="devices()"
 									[(ngModel)]="selectedDevice"
 									[disabled]="uiState().isLoading"
+									dataKey="deviceId"
+									placeholder="Select Camera"
 									optionLabel="label"
-									placeholdr="Selct Camera"
 									class="w-full"
-									[checkmark]="true"
-									(onChange)="onDeviceChange($event)">
+									(onChange)="onDeviceChange($event.value)">
 									<ng-template pTemplate="selectedItem" let-sd>
 										{{ sd?.label || "Camera " + sd?.deviceId?.slice(0, 8) + "..." }}
 									</ng-template>
 									<ng-template pTemplate="item" let-d>
-										{{ d.label || "Camera " + d.devceId.slice(0, 8) + "..." }}
+										{{ d.label || "Camera " + d.deviceId.slice(0, 8) + "..." }}
 									</ng-template>
 								</p-select>
 							</div>
@@ -304,7 +304,6 @@
 									placeholder="Select Resolution"
 									optionLabel="label"
 									class="w-full"
-									[checkmark]="true"
 									(onChange)="onResolutionChange($event)">
 									<ng-template pTemplate="selectedItem" let-sr>
 										{{ sr?.label }} ({{ sr?.width }}×{{ sr?.height }})
@@ -329,7 +328,7 @@
 									{{ getDeviceType() }}
 								</span>
 							</div>
-							<div class="flex justify-betw </div> een">
+							<div class="flex justify-between">
 								<span class="text-gray-600 dark:text-gray-400">Current Camera</span>
 								<span
 									class="font-medium text-right max-w-[220px] truncate text-gray-900 dark:text-gray-100"

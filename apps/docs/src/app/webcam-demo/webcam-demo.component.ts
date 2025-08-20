@@ -27,7 +27,7 @@ import {
 } from "ts-webcam";
 import { WebcamService } from "./webcam.service";
 import { SelectChangeEvent, SelectModule } from "primeng/select";
-import { CameraDevice, DeviceManagerUtils } from "../utils/device-manager-utils";
+import { DeviceManagerUtils } from "../utils/device-manager-utils";
 import { DividerModule } from "primeng/divider";
 import { ToastModule } from "primeng/toast";
 import { TooltipModule } from "primeng/tooltip";
@@ -37,7 +37,6 @@ import { TagModule } from "primeng/tag";
 import { ToggleSwitchChangeEvent, ToggleSwitchModule } from "primeng/toggleswitch";
 import { DialogModule } from "primeng/dialog";
 import { SkeletonModule } from "primeng/skeleton";
-import { RadioButtonModule } from "primeng/radiobutton";
 
 interface UiState {
 	isLoading: boolean;
@@ -61,7 +60,6 @@ interface UiState {
 		TagModule,
 		ToggleSwitchModule,
 		SelectModule,
-		RadioButtonModule,
 		CheckboxModule,
 		SliderModule,
 		CardModule,
@@ -73,7 +71,6 @@ interface UiState {
 		TooltipModule,
 		DialogModule,
 		SkeletonModule,
-		SelectModule,
 	],
 	providers: [MessageService],
 	templateUrl: "./webcam-demo.component.html",
@@ -178,56 +175,68 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
 	// Add effect to update zoom/focus UI state from deviceCapabilities
 	constructor() {
 		// Auto-select first device when devices change
-		effect(() => {
-			const devices = this.devices();
-			if (devices.length > 0 && !this.selectedDevice()) {
-				this.showToast(`Selecting first device ${devices[0].label}`);
-				this.selectedDevice.set(devices[0]);
-			}
-		});
+		effect(
+			() => {
+				const devices = this.devices();
+				if (devices.length > 0 && !this.selectedDevice()) {
+					this.showToast(`Selecting first device ${devices[0].label}`);
+					this.selectedDevice.set(devices[0]);
+				}
+			},
+			{ allowSignalWrites: true },
+		);
 
 		// Use effects for service signals synchronization
-		effect(() => {
-			const state = this.webcamService.state();
-			this.showToast(`Webcam state changed: ${state.status}`);
-			this.webcamState.set(state);
+		effect(
+			() => {
+				const state = this.webcamService.state();
+				this.showToast(`Webcam state changed: ${state.status}`);
+				this.webcamState.set(state);
 
-			// Reset video ready state when status changes to non-ready states
-			if (state.status !== "ready") {
-				// Also clear video source if status is idle or error
-				if (state.status === "idle" || state.status === "error") {
-					const videoElement = this.videoElementRef?.nativeElement;
-					if (videoElement) {
-						videoElement.srcObject = null;
+				// Reset video ready state when status changes to non-ready states
+				if (state.status !== "ready") {
+					// Also clear video source if status is idle or error
+					if (state.status === "idle" || state.status === "error") {
+						const videoElement = this.videoElementRef?.nativeElement;
+						if (videoElement) {
+							videoElement.srcObject = null;
+						}
 					}
 				}
-			}
-		});
+			},
+			{ allowSignalWrites: true },
+		);
 
-		effect(() => {
-			const devices = this.webcamService.devices();
-			this.devices.set(devices);
-		});
+		effect(
+			() => {
+				const devices = this.webcamService.devices();
+				this.devices.set(devices);
+			},
+			{ allowSignalWrites: true },
+		);
 
-		effect(() => {
-			const caps = this.webcamService.deviceCapability();
-			if (caps && typeof caps.maxZoom === "number" && typeof caps.minZoom === "number") {
-				this.minZoom.set(caps.minZoom);
-				this.maxZoom.set(caps.maxZoom);
-				this.zoomValue.set(caps.minZoom);
-			} else {
-				this.minZoom.set(null);
-				this.maxZoom.set(null);
-				this.zoomValue.set(null);
-			}
-			if (caps && Array.isArray(caps.supportedFocusModes)) {
-				this.supportedFocusModes.set(caps.supportedFocusModes);
-				this.focusMode.set(caps.supportedFocusModes[0] || null);
-			} else {
-				this.supportedFocusModes.set([]);
-				this.focusMode.set(null);
-			}
-		});
+		effect(
+			() => {
+				const caps = this.webcamService.deviceCapability();
+				if (caps && typeof caps.maxZoom === "number" && typeof caps.minZoom === "number") {
+					this.minZoom.set(caps.minZoom);
+					this.maxZoom.set(caps.maxZoom);
+					this.zoomValue.set(caps.minZoom);
+				} else {
+					this.minZoom.set(null);
+					this.maxZoom.set(null);
+					this.zoomValue.set(null);
+				}
+				if (caps && Array.isArray(caps.supportedFocusModes)) {
+					this.supportedFocusModes.set(caps.supportedFocusModes);
+					this.focusMode.set(caps.supportedFocusModes[0] || null);
+				} else {
+					this.supportedFocusModes.set([]);
+					this.focusMode.set(null);
+				}
+			},
+			{ allowSignalWrites: true },
+		);
 	}
 
 	async ngOnInit(): Promise<void> {
@@ -738,13 +747,12 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
 	 * This method updates the selected device and triggers an auto-switch if the camera is already running.
 	 * @param device The selected MediaDeviceInfo, or null to clear the selection.
 	 */
-	async onDeviceChange(event: SelectChangeEvent) {
-		const selectedDevice = event.value as MediaDeviceInfo;
-		this.selectedDevice.set(selectedDevice);
+	async onDeviceChange(device: MediaDeviceInfo | null) {
+		this.selectedDevice.set(device);
 		// Only auto-switch if camera is already running
 		if (this.uiState().isReady) {
 			await this.switchDevice();
-			this.showToast(`Device set to ${selectedDevice?.label}`);
+			this.showToast(`Device set to ${device?.label}`);
 		}
 	}
 
@@ -905,16 +913,6 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
 
 	closeHelpDialog() {
 		this.helpDialogVisible.set(false);
-	}
-
-	/**
-	 * TrackBy function for device list to improve performance
-	 * @param index The index of the item in the array
-	 * @param device The MediaDeviceInfo object
-	 * @returns The unique deviceId for tracking
-	 */
-	trackByDeviceId(index: number, device: MediaDeviceInfo): string {
-		return device.deviceId;
 	}
 
 	showToast(message: string) {
