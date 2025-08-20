@@ -43,95 +43,60 @@
 		</p-toolbar>
 
 		<!-- Permission Checking -->
-		<p-card
-			*ngIf="!webcamService.permissionChecked()"
-			styleClass="mb-4 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm">
-			<ng-template pTemplate="content">
-				<div
-					class="flex flex-col items-center justify-center gap-4 text-gray-600 dark:text-gray-400">
-					<p-progressSpinner
-						styleClass="w-5 h-5"
-						strokeWidth="4"
-						fill="transparent"></p-progressSpinner>
-					<span class="text-sm">Checking permissions…</span>
-				</div>
-			</ng-template>
-		</p-card>
+		<div
+			*ngIf="permissionState() === 'checking'"
+			class="flex flex-col items-center justify-center min-h-[400px] text-center">
+			<p-progressSpinner
+				styleClass="w-12 h-12"
+				strokeWidth="4"
+				animationDuration="1s"></p-progressSpinner>
+			<p class="mt-4 text-gray-600 dark:text-gray-400">Checking camera access permissions...</p>
+		</div>
 
 		<!-- Permission Denied -->
-		<p-card
-			*ngIf="webcamService.permissionChecked() && webcamService.isPermissionDenied()"
-			styleClass="permission-denied mb-5 border border-red-200 dark:border-red-800 rounded-xl shadow-sm">
-			<ng-template pTemplate="title">
-				<div class="flex items-center gap-2 text-red-700 dark:text-red-400">
-					<i class="pi pi-ban"></i>
-					<span class="font-semibold">Camera Access Denied</span>
+		<div
+			*ngIf="permissionState() === 'denied' || permissionState() === 'prompt'"
+			class="flex flex-col items-center justify-center min-h-[400px] text-center p-6">
+			<div class="bg-red-50 dark:bg-red-900/20 rounded-lg p-6 max-w-md">
+				<div class="flex items-center justify-center w-12 h-12 mx-auto mb-4 bg-red-100 dark:bg-red-900/40 rounded-full">
+					<i class="pi pi-exclamation-triangle text-red-600 dark:text-red-400 text-xl"></i>
 				</div>
-			</ng-template>
-			<ng-template pTemplate="content">
-				<p class="text-sm text-gray-700 dark:text-gray-300">
-					Please allow camera access to use this feature.
+				<h3 class="text-lg font-semibold text-red-800 dark:text-red-200 mb-2">
+					{{ permissionState() === 'denied' ? 'Camera Access Not Permitted' : 'Camera Access Required' }}
+				</h3>
+				<p class="text-red-600 dark:text-red-300 text-sm mb-4">
+					{{ permissionState() === 'denied' 
+						? 'Please allow camera access in your browser settings or click the button below to try again' 
+						: 'Please allow camera access to use this feature' }}
 				</p>
-
-				<div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 my-4">
-					<div class="flex flex-wrap justify-center gap-4">
-						<div class="flex items-center gap-2">
-							<p-toggleswitch
-								[ngModel]="permissionOptions().video"
-								(onChange)="onVideoPermissionChange($event)"></p-toggleswitch>
-							<span class="text-sm text-gray-700 dark:text-gray-300">Video</span>
-						</div>
-						<div class="flex items-center gap-2">
-							<p-toggleswitch
-								[ngModel]="permissionOptions().audio"
-								(onChange)="onAudioPermissionChange($event)"></p-toggleswitch>
-							<span class="text-sm text-gray-700 dark:text-gray-300">Audio</span>
-						</div>
+				<div class="flex flex-col gap-3 justify-center">
+					<div class="flex gap-2 justify-center">
+						<p-button
+							label="{{ permissionState() === 'denied' ? 'Try Again' : 'Request Permission' }}"
+							icon="pi pi-refresh"
+							(onClick)="retryPermissions()"
+							severity="danger"
+							size="small"></p-button>
+						<p-button
+							label="Check Status"
+							icon="pi pi-search"
+							(onClick)="checkPermissionState()"
+							severity="secondary"
+							size="small"></p-button>
 					</div>
-				</div>
-
-				<div class="flex flex-wrap gap-2">
 					<p-button
-						label="Retry"
-						(onClick)="requestPermissionsAndLoadDevices()"
-						styleClass="p-button-info"></p-button>
-					<p-button label="Help" severity="secondary" (onClick)="openHelpDialog()"></p-button>
+						label="Troubleshooting"
+						icon="pi pi-question-circle"
+						severity="help"
+						size="small"
+						(onClick)="showPermissionGuidance()"></p-button>
 				</div>
-
-				<p-dialog
-					[visible]="helpDialogVisible()"
-					(visibleChange)="helpDialogVisible.set($event)"
-					[modal]="true"
-					[draggable]="false"
-					[resizable]="false"
-					[dismissableMask]="true"
-					header="Camera Permission Help"
-					styleClass="max-w-md w-[92vw]">
-					<div class="text-sm leading-6 text-gray-700 dark:text-gray-300">
-						<p class="mb-2">If permission is permanently denied:</p>
-						<ol class="list-decimal ml-5 space-y-1">
-							<li>Open browser Site Settings</li>
-							<li>Allow Camera & Microphone</li>
-							<li>Reload the page</li>
-						</ol>
-						<p class="mt-3 text-xs text-gray-500 dark:text-gray-400">
-							Tip: On iOS Safari, ensure Settings → Safari → Camera is "Allow".
-						</p>
-					</div>
-					<ng-template pTemplate="footer">
-						<p-button label="Close" (onClick)="closeHelpDialog()" />
-					</ng-template>
-				</p-dialog>
-
-				<p class="text-xs text-gray-500 dark:text-gray-400 mt-3">
-					If permanently denied, check browser settings and refresh the page.
-				</p>
-			</ng-template>
-		</p-card>
+			</div>
+		</div>
 
 		<!-- Main Interface -->
 		<div
-			*ngIf="webcamService.permissionChecked() && !webcamService.isPermissionDenied()"
+			*ngIf="permissionState() === 'granted'"
 			class="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
 			<!-- Left: Video -->
 			<p-card
@@ -167,11 +132,9 @@
 						</div>
 
 						<!-- Error -->
-						<div
-							*ngIf="
-								error() && webcamService.permissionChecked() && !webcamService.isPermissionDenied()
-							"
-							class="absolute inset-0 flex flex-col items-center justify-center bg-red-900/80 text-white p-6 text-center">
+				<div
+					*ngIf="error() && permissionState() === 'granted'"
+					class="absolute inset-0 flex flex-col items-center justify-center bg-red-900/80 text-white p-6 text-center">
 							<i class="pi pi-times-circle text-3xl mb-2"></i>
 							<h4 class="font-semibold text-lg sm:text-xl mb-2">Error while starting camera</h4>
 							<p class="text-xs sm:text-sm opacity-90 mb-2">
@@ -326,17 +289,19 @@
 									class="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
 									Resolution
 								</p>
+
 								<p-select
 									[options]="resolutions"
 									[(ngModel)]="selectedResolution"
-									optionLabel="name"
-									styleClass="w-full"
+									placeholder="Select Resolution"
+									optionLabel="label"
+									class="w-full"
 									(onChange)="onResolutionChange($event)">
 									<ng-template pTemplate="selectedItem" let-sr>
-										{{ sr?.name }} ({{ sr?.width }}×{{ sr?.height }})
+										{{ sr?.label }} ({{ sr?.width }}×{{ sr?.height }})
 									</ng-template>
 									<ng-template pTemplate="item" let-r>
-										{{ r.name }} ({{ r.width }}×{{ r.height }})
+										{{ r.label }} ({{ r.width }}×{{ r.height }})
 									</ng-template>
 								</p-select>
 							</div>

@@ -4,16 +4,16 @@ export type CameraSelector = (devices: CameraDevice[]) => CameraDevice | null;
 export const DEVICE_PATTERNS = {
 	IOS: {
 		FRONT: {
-			PRIMARY: /^(front camera|กล้องด้านหน้า)$/i,
-			ULTRA_WIDE: /^(front ultra wide camera|กล้องด้านหน้าอัลตร้าไวด์)$/i,
+			PRIMARY: /^(front camera|front camera)$/i,
+		ULTRA_WIDE: /^(front ultra wide camera|front ultra wide camera)$/i,
 		},
 		BACK: {
-			TRIPLE: /^(back triple camera|กล้องสามตัวด้านหลัง)$/i,
-			DUAL: /^(back dual camera|กล้องคู่ด้านหลัง)$/i,
-			PRIMARY: /^(back camera|กล้องด้านหลัง)$/i,
+			TRIPLE: /^(back triple camera|back triple camera)$/i,
+		DUAL: /^(back dual camera|back dual camera)$/i,
+		PRIMARY: /^(back camera|back camera)$/i,
 		},
 	},
-	DESKTOP: /^(camera|กล้อง|facetime|integrated)$/i,
+	DESKTOP: /^(camera|camera|facetime|integrated)$/i,
 } as const;
 
 export interface CameraDevice {
@@ -138,7 +138,7 @@ export class DeviceManagerUtils {
 
 	public isFrontCamera(device: MediaDeviceInfo): boolean {
 		const label = device.label.toLowerCase();
-		const frontKeywords = ["front", "หน้า", "facetime", "integrated", "facing front"];
+		const frontKeywords = ["front", "front", "facetime", "integrated", "facing front"];
 		const exp = new RegExp(frontKeywords.join("|"), "i");
 		return exp.test(label);
 	}

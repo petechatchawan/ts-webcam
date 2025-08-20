@@ -167,7 +167,7 @@ p-message .p-message-text {
   z-index: 9500 !important;
 }
 
-/* ทำให้แน่ใจว่า toast จะอยู่บนสุดเสมอ */
+/* Ensure toast is always on top */
 body .p-toast {
   z-index: 99999 !important;
 }

@@ -95,12 +95,12 @@ body {
 	box-sizing: border-box;
 }
 
-/* ทำให้ router-outlet แสดงผลเต็มหน้าจอ */
+/* Make router-outlet display full screen */
 router-outlet {
 	display: contents;
 }
 
-/* ทำให้คอมโพเนนต์ที่โหลดผ่าน router-outlet แสดงผลเต็มหน้าจอ */
+/* Make components loaded through router-outlet display full screen */
 router-outlet + * {
 	display: flex;
 	flex-direction: column;

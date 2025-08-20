@@ -159,7 +159,7 @@ export class WebcamService {
 		try {
 			return await this.webcam.captureImage();
 		} catch (e) {
-			const errorMessage = e instanceof Error ? e.message : "ไม่สามารถจับภาพได้";
+			const errorMessage = e instanceof Error ? e.message : "Unable to capture image";
 			console.error("Capture failed:", errorMessage);
 			throw new Error(errorMessage);
 		}
