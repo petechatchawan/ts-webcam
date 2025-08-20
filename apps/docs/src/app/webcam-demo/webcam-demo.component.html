@@ -2,7 +2,7 @@
 	<div class="w-full overflow-auto mx-auto max-w-6xl p-4 sm:p-6 lg:p-8">
 		<!-- Top Toolbar -->
 		<p-toolbar
-			styleClass="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 mb-5 shadow-sm">
+			class="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 mb-5 shadow-sm">
 			<div class="p-toolbar-group-left">
 				<div class="flex items-center gap-3">
 					<i class="pi pi-video text-gray-700 dark:text-gray-300"></i>
@@ -47,7 +47,7 @@
 			*ngIf="permissionState() === 'checking'"
 			class="flex flex-col items-center justify-center min-h-[400px] text-center">
 			<p-progressSpinner
-				styleClass="w-12 h-12"
+				class="w-12 h-12"
 				strokeWidth="4"
 				animationDuration="1s"></p-progressSpinner>
 			<p class="mt-4 text-gray-600 dark:text-gray-400">Checking camera access permissions...</p>
@@ -107,14 +107,14 @@
 			class="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
 			<!-- Left: Video -->
 			<p-card
-				styleClass="lg:col-span-2 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm">
+				class="lg:col-span-2 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm">
 				<ng-template pTemplate="content">
 					<!-- Video Area -->
 					<div class="relative bg-black/90 rounded-lg overflow-hidden aspect-video mb-4">
 						<!-- Skeleton while loading -->
 						<div *ngIf="uiState().isLoading" class="absolute inset-0">
 							<div class="w-full h-full">
-								<p-skeleton styleClass="w-full h-full !rounded-none"></p-skeleton>
+								<p-skeleton class="w-full h-full !rounded-none"></p-skeleton>
 							</div>
 						</div>
 
@@ -207,18 +207,23 @@
 			<div class="space-y-4">
 				<p-card
 					header="Quick Controls"
-					styleClass="border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm">
+					class="border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm">
 					<ng-template pTemplate="content">
-						<div class="grid grid-cols-1 gap-3">
-							<div class="flex items-center justify-between">
-								<span class="text-xs sm:text-sm text-gray-700 dark:text-gray-300">
-									Mirror Video
-								</span>
-								<p-toggleswitch [(ngModel)]="enableMirror" [disabled]="uiState().isLoading" />
+						<div class="grid grid-cols-2 gap-3">
+							<div class="col-span-2">
+								<div class="flex items-center justify-between">
+									<span class="text-xs sm:text-sm text-gray-700 dark:text-gray-300">
+										Mirror Video
+									</span>
+									<p-toggleswitch [(ngModel)]="enableMirror" [disabled]="uiState().isLoading" />
+								</div>
 							</div>
-							<div class="flex items-center justify-between">
-								<span class="text-xs sm:text-sm text-gray-700 dark:text-gray-300">Audio</span>
-								<p-toggleswitch [(ngModel)]="enableAudio" [disabled]="uiState().isLoading" />
+
+							<div class="col-span-2">
+								<div class="flex items-center justify-between">
+									<span class="text-xs sm:text-sm text-gray-700 dark:text-gray-300">Audio</span>
+									<p-toggleswitch [(ngModel)]="enableAudio" [disabled]="uiState().isLoading" />
+								</div>
 							</div>
 
 							<div class="col-span-2" *ngIf="webcamService.deviceCapability()?.hasTorch">
@@ -249,6 +254,7 @@
 									[step]="0.1"
 									[disabled]="!uiState().isReady"></p-slider>
 							</div>
+
 							<div
 								class="col-span-2"
 								*ngIf="webcamService.deviceCapability()?.hasFocus && supportedFocusModes().length">
@@ -259,7 +265,7 @@
 									[options]="supportedFocusModes()"
 									[(ngModel)]="focusMode"
 									placeholder="Select"
-									styleClass="w-full"></p-select>
+									class="w-full"></p-select>
 							</div>
 						</div>
 					</ng-template>
@@ -320,7 +326,7 @@
 
 				<p-card
 					header="Diagnostics"
-					styleClass="border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm">
+					class="border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm">
 					<ng-template pTemplate="content">
 						<div class="text-xs sm:text-sm space-y-2">
 							<div class="flex justify-between">
