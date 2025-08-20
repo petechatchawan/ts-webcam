@@ -170,6 +170,7 @@
 							(onClick)="startCamera()"></p-button>
 						<p-button
 							label="Capture"
+							severity="secondary"
 							[disabled]="!uiState().canCapture"
 							(onClick)="captureImage()"></p-button>
 						<p-button
@@ -215,23 +216,30 @@
 									<span class="text-xs sm:text-sm text-gray-700 dark:text-gray-300">
 										Mirror Video
 									</span>
-									<p-toggleswitch [(ngModel)]="enableMirror" [disabled]="uiState().isLoading" />
+									<p-toggleswitch
+										[(ngModel)]="enableMirror"
+										[disabled]="uiState().isLoading"
+										(onChange)="onMirrorChange($event)" />
 								</div>
 							</div>
 
 							<div class="col-span-2">
 								<div class="flex items-center justify-between">
 									<span class="text-xs sm:text-sm text-gray-700 dark:text-gray-300">Audio</span>
-									<p-toggleswitch [(ngModel)]="enableAudio" [disabled]="uiState().isLoading" />
+									<p-toggleswitch
+										[(ngModel)]="enableAudio"
+										[disabled]="uiState().isLoading"
+										(onChange)="toggleAudio($event)" />
 								</div>
 							</div>
 
 							<div class="col-span-2" *ngIf="webcamService.deviceCapability()?.hasTorch">
 								<div class="flex items-center justify-between">
 									<span class="text-xs sm:text-sm text-gray-700 dark:text-gray-300">Torch</span>
-									<p-inputSwitch
+									<p-toggleswitch
 										[(ngModel)]="enableTorch"
-										[disabled]="!uiState().isReady"></p-inputSwitch>
+										[disabled]="!uiState().isReady"
+										(onChange)="toggleTorch($event)"></p-toggleswitch>
 								</div>
 							</div>
 
@@ -252,7 +260,8 @@
 									[min]="minZoom()"
 									[max]="maxZoom()"
 									[step]="0.1"
-									[disabled]="!uiState().isReady"></p-slider>
+									[disabled]="!uiState().isReady"
+									(onChange)="onZoomChange($event)"></p-slider>
 							</div>
 
 							<div
@@ -265,7 +274,8 @@
 									[options]="supportedFocusModes()"
 									[(ngModel)]="focusMode"
 									placeholder="Select"
-									class="w-full"></p-select>
+									class="w-full"
+									(onChange)="onFocusModeChange($event)"></p-select>
 							</div>
 						</div>
 					</ng-template>
@@ -375,7 +385,7 @@
 
 						<p-divider></p-divider>
 
-						<div class="flex flex-col gap-2">
+						<div class="flex flex-col gap-2 w-full">
 							<div class="flex gap-2">
 								<p-button
 									label="Find Front Camera"
@@ -390,6 +400,7 @@
 							<p-button
 								label="Test Current Device Capabilities"
 								size="small"
+								fluid="true"
 								[disabled]="!selectedDevice()"
 								(onClick)="testDeviceCapabilities()"></p-button>
 						</div>

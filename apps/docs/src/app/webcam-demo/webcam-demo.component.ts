@@ -779,8 +779,8 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
 	 * This method updates the mirror state and triggers a camera restart if the camera is already running.
 	 * @param event The event object containing the checkbox state.
 	 */
-	async onMirrorChange(event: Event) {
-		const checked = (event.target as HTMLInputElement)?.checked ?? false;
+	async onMirrorChange(event: ToggleSwitchChangeEvent) {
+		const checked = event.checked;
 		this.enableMirror.set(checked);
 		try {
 			await this.startCamera();
@@ -795,8 +795,8 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
 	 * This method updates the audio state and triggers a camera restart if the camera is already running.
 	 * @param event The event object containing the checkbox state.
 	 */
-	async onAudioChange(event: Event) {
-		const checked = (event.target as HTMLInputElement)?.checked ?? false;
+	async toggleAudio(event: ToggleSwitchChangeEvent) {
+		const checked = event.checked;
 		this.enableAudio.set(checked);
 		try {
 			await this.startCamera();
@@ -828,8 +828,8 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
 	 * This method updates the focus mode and triggers a camera restart if the camera is already running.
 	 * @param event The event object containing the selected focus mode value.
 	 */
-	async onFocusModeChange(event: Event) {
-		const value = (event.target as HTMLSelectElement)?.value;
+	async onFocusModeChange(event: SelectChangeEvent) {
+		const value = event.value;
 		this.focusMode.set(value);
 		try {
 			await this.webcamService.webcamInstance.setFocusMode(value);
@@ -843,14 +843,14 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
 	 * Toggles the torch state.
 	 * This method checks if the device supports torch, toggles the torch state, and updates the UI accordingly.
 	 */
-	async toggleTorch() {
+	async toggleTorch(event: ToggleSwitchChangeEvent) {
+		const enabled = event.checked;
 		if (!this.webcamService.webcamInstance.isTorchSupported()) {
 			this.showToast("Torch is not supported on this device");
 			return;
 		}
 
 		try {
-			const enabled = !this.enableTorch();
 			await this.webcamService.webcamInstance.setTorch(enabled);
 			this.enableTorch.set(enabled);
 			this.showToast(`Torch ${enabled ? "enabled" : "disabled"}`);
