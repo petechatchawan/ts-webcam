@@ -104,6 +104,8 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
 	// Reactive state using signals
 	readonly permissionOptions = signal<PermissionRequestOptions>({ video: true, audio: false });
 	readonly selectedDevice = signal<MediaDeviceInfo | null>(null);
+	// Regular property for radio button binding (synced with signal)
+	selectedDeviceForRadio: MediaDeviceInfo | null = null;
 	readonly selectedResolution = signal<Resolution>(this.resolutions[0]);
 	readonly enableAudio = signal<boolean>(false);
 	readonly enableMirror = signal<boolean>(true);
@@ -184,6 +186,14 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
 					this.showToast(`Selecting first device ${devices[0].label}`);
 					this.selectedDevice.set(devices[0]);
 				}
+			},
+			{ allowSignalWrites: true },
+		);
+
+		// Sync selectedDeviceForRadio with selectedDevice signal
+		effect(
+			() => {
+				this.selectedDeviceForRadio = this.selectedDevice();
 			},
 			{ allowSignalWrites: true },
 		);
@@ -745,12 +755,15 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
 	}
 
 	/**
-	 * Handles changes in the device selection dropdown.
+	 * Handles changes in the device selection (radio button or dropdown).
 	 * This method updates the selected device and triggers an auto-switch if the camera is already running.
 	 * @param device The selected MediaDeviceInfo, or null to clear the selection.
 	 */
 	async onDeviceChange(device: MediaDeviceInfo | null) {
+		// Update both signal and radio button property
 		this.selectedDevice.set(device);
+		this.selectedDeviceForRadio = device;
+		
 		// Only auto-switch if camera is already running
 		if (this.uiState().isReady) {
 			await this.switchDevice();

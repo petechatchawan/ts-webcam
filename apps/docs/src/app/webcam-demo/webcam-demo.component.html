@@ -278,13 +278,13 @@
 									<div
 										*ngFor="let device of devices(); trackBy: trackByDeviceId"
 										class="flex items-center p-3 rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200">
-										<p-radiobutton
-											[inputId]="device.deviceId"
-											name="camera"
-											[value]="device"
-											[(ngModel)]="selectedDevice"
-											(onChange)="onDeviceChange(device)"
-											size="small"
+										<p-radiobutton 
+											[inputId]="device.deviceId" 
+											name="camera" 
+											[value]="device" 
+											[(ngModel)]="selectedDeviceForRadio" 
+											(onChange)="onDeviceChange(device)" 
+											size="small" 
 											class="mr-3"></p-radiobutton>
 										<label
 											[for]="device.deviceId"
