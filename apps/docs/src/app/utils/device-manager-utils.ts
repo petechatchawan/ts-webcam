@@ -23,6 +23,108 @@ export interface CameraDevice {
 	facingMode: CameraType;
 }
 
+export const mockDeviceOld: MediaDeviceInfo[] = [
+	{
+		label: "camera2 1, facing front",
+		deviceId: "*********************",
+		kind: "videoinput",
+		groupId: "",
+		toJSON: () => ({
+			label: "mock device",
+			deviceId: "mock device id",
+			kind: "videoinput",
+			groupId: "",
+		}),
+	},
+	{
+		label: "camera2 2, facing front",
+		deviceId: "*********************",
+		kind: "videoinput",
+		groupId: "",
+		toJSON: () => ({
+			label: "mock device",
+			deviceId: "mock device id",
+			kind: "videoinput",
+			groupId: "",
+		}),
+	},
+	{
+		label: "camera2 0, facing back",
+		deviceId: "*********************",
+		kind: "videoinput",
+		groupId: "",
+		toJSON: () => ({
+			label: "mock device",
+			deviceId: "mock device id",
+			kind: "videoinput",
+			groupId: "",
+		}),
+	},
+	{
+		label: "camera2 3, facing back",
+		deviceId: "*********************",
+		kind: "videoinput",
+		groupId: "",
+		toJSON: () => ({
+			label: "mock device",
+			deviceId: "mock device id",
+			kind: "videoinput",
+			groupId: "",
+		}),
+	},
+];
+
+export const mockDeviceNew: MediaDeviceInfo[] = [
+	{
+		label: "camera 1, facing front",
+		deviceId: "*********************",
+		kind: "videoinput",
+		groupId: "",
+		toJSON: () => ({
+			label: "mock device",
+			deviceId: "mock device id",
+			kind: "videoinput",
+			groupId: "",
+		}),
+	},
+	{
+		label: "camera 3, facing front",
+		deviceId: "*********************",
+		kind: "videoinput",
+		groupId: "",
+		toJSON: () => ({
+			label: "mock device",
+			deviceId: "mock device id",
+			kind: "videoinput",
+			groupId: "",
+		}),
+	},
+	{
+		label: "camera 0, facing back",
+		deviceId: "*********************",
+		kind: "videoinput",
+		groupId: "",
+		toJSON: () => ({
+			label: "mock device",
+			deviceId: "mock device id",
+			kind: "videoinput",
+			groupId: "",
+		}),
+	},
+	{
+		label: "camera 2, facing back",
+		deviceId: "*********************",
+		kind: "videoinput",
+		groupId: "",
+		toJSON: () => ({
+			label: "mock device",
+			deviceId: "mock device id",
+			kind: "videoinput",
+			groupId: "",
+		}),
+	},
+];
+
 export type CameraType = "environment" | "user";
 
 export class DeviceManagerUtils {
@@ -80,7 +182,9 @@ export class DeviceManagerUtils {
 		index: number,
 	): Promise<CameraDevice> {
 		const facingMode = await this.determineFacingMode(device);
-		const deviceIndex = this.isAndroidDevice() ? this.parseAndroidIndex(device.label) : index;
+		const deviceIndex = this.isAndroidDevice()
+			? this.parseAndroidIndexWithPatternDetection(device.label)
+			: index;
 
 		return {
 			...device,
@@ -108,6 +212,34 @@ export class DeviceManagerUtils {
 		const [firstPart] = label.split(",").map((part) => part.trim());
 		const [, indexStr] = firstPart.split(" ");
 		return Number.parseInt(indexStr, 10) || 0;
+	}
+
+	// Parse Android index for new pattern: "camera 1, facing front" -> index 1
+	private parseAndroidIndexNew(label: string): number {
+		const [firstPart] = label.split(",").map((part) => part.trim());
+		const [, indexStr] = firstPart.split(" ");
+		return Number.parseInt(indexStr, 10) || 0;
+	}
+
+	// Detect pattern and use appropriate parser
+	private parseAndroidIndexWithPatternDetection(label: string): number {
+		const [firstPart] = label.split(",").map((part) => part.trim());
+
+		// Check if it's the old pattern "camera[number] X" (e.g., "camera2 1", "camera3 2")
+		const oldPatternRegex = /^camera\d+\s/;
+		// Check if it's the new pattern "camera X" (e.g., "camera 1")
+		const newPatternRegex = /^camera\s/;
+
+		if (oldPatternRegex.test(firstPart)) {
+			// Old pattern: "camera2 1, facing front", "camera3 2, facing back", etc.
+			return this.parseAndroidIndex(label);
+		} else if (newPatternRegex.test(firstPart)) {
+			// New pattern: "camera 1, facing front"
+			return this.parseAndroidIndexNew(label);
+		}
+
+		// Fallback to old parser for unknown patterns
+		return this.parseAndroidIndex(label);
 	}
 
 	private selectDeviceByPlatform(

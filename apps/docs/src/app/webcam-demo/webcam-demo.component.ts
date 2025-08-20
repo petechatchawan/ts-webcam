@@ -82,17 +82,17 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
 
 	// Static data
 	readonly resolutions: Resolution[] = [
-		{ name: "VGA-Landscape", width: 640, height: 480 },
-		{ name: "VGA-Portrait", width: 480, height: 640 },
-		{ name: "HD-Landscape", width: 1280, height: 720 },
-		{ name: "HD-Portrait", width: 720, height: 1280 },
-		{ name: "Full-HD-Landscape", width: 1920, height: 1080 },
-		{ name: "Full-HD-Portrait", width: 1080, height: 1920 },
-		{ name: "S720", width: 720, height: 720 },
-		{ name: "S1080", width: 1080, height: 1080 },
-		{ name: "S1280", width: 1280, height: 1280 },
-		{ name: "S1440", width: 1440, height: 1440 },
-		{ name: "S1920", width: 1920, height: 1920 },
+		{ label: "VGA-Landscape", width: 640, height: 480 },
+		{ label: "VGA-Portrait", width: 480, height: 640 },
+		{ label: "HD-Landscape", width: 1280, height: 720 },
+		{ label: "HD-Portrait", width: 720, height: 1280 },
+		{ label: "Full-HD-Landscape", width: 1920, height: 1080 },
+		{ label: "Full-HD-Portrait", width: 1080, height: 1920 },
+		{ label: "S720", width: 720, height: 720 },
+		{ label: "S1080", width: 1080, height: 1080 },
+		{ label: "S1280", width: 1280, height: 1280 },
+		{ label: "S1440", width: 1440, height: 1440 },
+		{ label: "S1920", width: 1920, height: 1920 },
 	];
 
 	// Inject() to get instance of services
@@ -130,10 +130,10 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
 		return {
 			deviceInfo,
 			preferredResolutions: [
-				{ name: "S1920", width: 1920, height: 1920 },
-				{ name: "S1080", width: 1080, height: 1080 },
-				{ name: "S720", width: 720, height: 720 },
-			],
+				{ label: "S1920", width: 1920, height: 1920 },
+				{ label: "S1080", width: 1080, height: 1080 },
+				{ label: "S720", width: 720, height: 720 },
+			] as Resolution[],
 			videoElement: this.videoElementRef.nativeElement,
 			enableMirror: this.enableMirror(),
 			enableAudio: this.enableAudio(),
@@ -471,7 +471,7 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
 			}
 		}
 
-		this.showToast(`Resolution set to ${selectedResolution?.name}`);
+		this.showToast(`Resolution set to ${selectedResolution?.label}`);
 	}
 
 	/**
