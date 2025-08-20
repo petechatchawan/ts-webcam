@@ -813,13 +813,18 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
 	 */
 	async onZoomChange(event: SliderChangeEvent) {
 		const value = event.value as number;
-		if (isNaN(value) || this.zoomValue() === value) return;
+		if (value === null) return;
+
 		this.zoomValue.set(value);
-		try {
-			await this.webcamService.webcamInstance.setZoom(value);
-			this.showToast(`Zoom set to ${value}`);
-		} catch (e) {
-			this.showToast("Failed to set zoom");
+
+		// Only set zoom if camera is ready
+		if (this.uiState().isReady) {
+			try {
+				await this.webcamService.webcamInstance.setZoom(value);
+				this.showToast(`Zoom set to ${value}`);
+			} catch (e) {
+				this.showToast("Failed to set zoom");
+			}
 		}
 	}
 
