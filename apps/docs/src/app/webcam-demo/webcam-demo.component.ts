@@ -27,6 +27,7 @@ import {
 } from "ts-webcam";
 import { WebcamService } from "./webcam.service";
 import { SelectChangeEvent, SelectModule } from "primeng/select";
+import { RadioButtonModule } from "primeng/radiobutton";
 import { DeviceManagerUtils } from "../utils/device-manager-utils";
 import { DividerModule } from "primeng/divider";
 import { ToastModule } from "primeng/toast";
@@ -60,6 +61,7 @@ interface UiState {
 		TagModule,
 		ToggleSwitchModule,
 		SelectModule,
+		RadioButtonModule,
 		CheckboxModule,
 		SliderModule,
 		CardModule,
@@ -913,6 +915,16 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
 
 	closeHelpDialog() {
 		this.helpDialogVisible.set(false);
+	}
+
+	/**
+	 * TrackBy function for device list to improve performance
+	 * @param index The index of the item in the array
+	 * @param device The MediaDeviceInfo object
+	 * @returns The unique deviceId for tracking
+	 */
+	trackByDeviceId(index: number, device: MediaDeviceInfo): string {
+		return device.deviceId;
 	}
 
 	showToast(message: string) {
