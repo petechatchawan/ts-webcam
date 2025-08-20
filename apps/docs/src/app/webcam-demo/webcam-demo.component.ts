@@ -7,9 +7,17 @@ import {
 	ViewChild,
 	computed,
 	effect,
+	inject,
 	signal,
 } from "@angular/core";
 import { FormsModule } from "@angular/forms";
+import { ButtonModule } from "primeng/button";
+import { CheckboxModule } from "primeng/checkbox";
+import { SliderModule } from "primeng/slider";
+import { SliderChangeEvent } from "primeng/slider";
+import { CardModule } from "primeng/card";
+import { PanelModule } from "primeng/panel";
+import { ProgressSpinnerModule } from "primeng/progressspinner";
 import {
 	PermissionRequestOptions,
 	Resolution,
@@ -18,6 +26,17 @@ import {
 	WebcamStatus,
 } from "ts-webcam";
 import { WebcamService } from "./webcam.service";
+import { SelectChangeEvent, SelectModule } from "primeng/select";
+import { DeviceManagerUtils } from "../utils/device-manager-utils";
+import { DividerModule } from "primeng/divider";
+import { ToastModule } from "primeng/toast";
+import { TooltipModule } from "primeng/tooltip";
+import { MessageService } from "primeng/api";
+import { ToolbarModule } from "primeng/toolbar";
+import { TagModule } from "primeng/tag";
+import { ToggleSwitchChangeEvent, ToggleSwitchModule } from "primeng/toggleswitch";
+import { DialogModule } from "primeng/dialog";
+import { SkeletonModule } from "primeng/skeleton";
 
 interface UiState {
 	isLoading: boolean;
@@ -33,7 +52,27 @@ interface UiState {
 @Component({
 	selector: "app-webcam-demo",
 	standalone: true,
-	imports: [CommonModule, FormsModule],
+	imports: [
+		CommonModule,
+		FormsModule,
+		// PrimeNG
+		ToolbarModule,
+		TagModule,
+		ToggleSwitchModule,
+		SelectModule,
+		CheckboxModule,
+		SliderModule,
+		CardModule,
+		PanelModule,
+		ProgressSpinnerModule,
+		ButtonModule,
+		DividerModule,
+		ToastModule,
+		TooltipModule,
+		DialogModule,
+		SkeletonModule,
+	],
+	providers: [MessageService],
 	templateUrl: "./webcam-demo.component.html",
 	styleUrls: ["./webcam-demo.component.css"],
 })
@@ -56,6 +95,10 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
 		{ name: "S1920", width: 1920, height: 1920 },
 	];
 
+	// Inject() to get instance of services
+	readonly webcamService: WebcamService = inject(WebcamService);
+	readonly messageService: MessageService = inject(MessageService);
+
 	// Reactive state using signals
 	readonly permissionOptions = signal<PermissionRequestOptions>({ video: true, audio: false });
 	readonly selectedDevice = signal<MediaDeviceInfo | null>(null);
@@ -69,7 +112,8 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
 	readonly focusMode = signal<string | null>(null);
 	readonly supportedFocusModes = signal<string[]>([]);
 	readonly capturedImageUrl = signal<string | null>(null);
-
+	readonly selectDeviceDetails = signal<MediaDeviceInfo | null>(null);
+	readonly helpDialogVisible = signal(false);
 	// Store event listeners for cleanup
 	private videoEventListeners: { [key: string]: () => void } = {};
 
@@ -128,13 +172,13 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
 	});
 
 	// Add effect to update zoom/focus UI state from deviceCapabilities
-	constructor(public webcamService: WebcamService) {
+	constructor() {
 		// Auto-select first device when devices change
 		effect(
 			() => {
 				const devices = this.devices();
 				if (devices.length > 0 && !this.selectedDevice()) {
-					console.log("Selecting first device:", devices[0]);
+					this.showToast(`Selecting first device ${devices[0].label}`);
 					this.selectedDevice.set(devices[0]);
 				}
 			},
@@ -145,7 +189,7 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
 		effect(
 			() => {
 				const state = this.webcamService.state();
-				console.log("Webcam state changed:", state);
+				this.showToast(`Webcam state changed: ${state.status}`);
 				this.webcamState.set(state);
 
 				// Reset video ready state when status changes to non-ready states
@@ -225,7 +269,7 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
 	public async startCamera(): Promise<void> {
 		const config = this.currentConfig();
 		if (!config) {
-			console.error("Configuration is invalid, please check settings");
+			this.showToast("Configuration is invalid, please check settings");
 			return;
 		}
 
@@ -247,6 +291,7 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
 	public stopCamera() {
 		// Stop camera
 		this.webcamService.stopCamera();
+		this.showToast(`Camera stopped`);
 
 		// Clear video source and clean up event listeners
 		const videoElement = this.videoElementRef?.nativeElement;
@@ -269,7 +314,7 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
 	 */
 	async switchDevice(): Promise<void> {
 		if (!this.uiState().canSwitchDevice) {
-			console.error("Cannot switch device: no device selected or camera is loading");
+			this.showToast("Cannot switch device: no device selected or camera is loading");
 			return;
 		}
 
@@ -287,7 +332,7 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
 	 */
 	async switchResolution(): Promise<void> {
 		if (!this.uiState().canSwitchResolution) {
-			console.error("Cannot switch resolution: no resolution selected or camera is loading");
+			this.showToast("Cannot switch resolution: no resolution selected or camera is loading");
 			return;
 		}
 
@@ -305,7 +350,7 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
 	 */
 	async captureImage(): Promise<void> {
 		if (!this.uiState().canCapture) {
-			console.error("Cannot capture: no device selected or camera is loading");
+			this.showToast("Cannot capture: no device selected or camera is loading");
 			return;
 		}
 
@@ -317,7 +362,7 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
 				this.capturedImageUrl.set(url);
 			}
 		} catch (error) {
-			console.error("Capture failed:", error);
+			this.showToast(`Capture failed`);
 		}
 	}
 
@@ -333,6 +378,13 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
 		}
 	}
 
+	async testSelectDevice(facing: "front" | "back") {
+		const deviceManagerUtils = new DeviceManagerUtils();
+		const devices = await this.webcamService.getAvailableDevices();
+		const selectDevice = await deviceManagerUtils.selectCamera(devices, facing);
+		this.selectDeviceDetails.set(selectDevice);
+	}
+
 	/**
 	 * Tests the capabilities of the currently selected device.
 	 * This method stops the camera, tests the device capabilities, and restarts the camera if needed.
@@ -340,7 +392,10 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
 	 */
 	async testDeviceCapabilities() {
 		const device = this.selectedDevice();
-		if (!device) return;
+		if (!device) {
+			this.showToast(`Please select a device`);
+			return;
+		}
 
 		try {
 			// Stop camera if running
@@ -353,8 +408,9 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
 			// this.deviceCapability.set(this.deviceCapability());
 			// Optionally, start camera again after testing
 			// await this.startCamera();
+			this.showToast(`Test device capabilities success`);
 		} catch (e) {
-			console.error("Test device capabilities failed:", e);
+			this.showToast(`Test device capabilities failed`);
 		}
 	}
 
@@ -371,8 +427,8 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
 	 * This method updates the permission options and triggers a permission check.
 	 * @param event The event object containing the checkbox state.
 	 */
-	onVideoPermissionChange(event: Event) {
-		const checked = (event.target as HTMLInputElement)?.checked ?? false;
+	onVideoPermissionChange(event: ToggleSwitchChangeEvent) {
+		const checked = event.checked;
 		this.updatePermissionOptions({ video: checked });
 	}
 
@@ -381,8 +437,8 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
 	 * This method updates the permission options and triggers a permission check.
 	 * @param event The event object containing the checkbox state.
 	 */
-	onAudioPermissionChange(event: Event) {
-		const checked = (event.target as HTMLInputElement)?.checked ?? false;
+	onAudioPermissionChange(event: ToggleSwitchChangeEvent) {
+		const checked = event.checked;
 		this.updatePermissionOptions({ audio: checked });
 	}
 
@@ -391,30 +447,31 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
 	 * This method updates the selected device and triggers an auto-switch if the camera is already running.
 	 * @param device The selected MediaDeviceInfo, or null to clear the selection.
 	 */
-	onDeviceChange(device: MediaDeviceInfo | null) {
-		console.log("Selected device:", device);
+	async onDeviceChange(device: MediaDeviceInfo | null) {
 		this.selectedDevice.set(device);
 		// Only auto-switch if camera is already running
 		if (this.uiState().isReady) {
-			this.switchDevice();
+			await this.switchDevice();
+			this.showToast(`Device set to ${device?.label}`);
 		}
 	}
 
 	/**
 	 * Handles changes in the resolution selection dropdown.
 	 * This method updates the selected resolution and triggers an auto-switch if the camera is already running.
-	 * @param event The event object containing the selected resolution value.
+	 * @param event The DropdownChangeEvent object containing the selected resolution.
 	 */
-	onResolutionChange(event: Event) {
-		const value = (event.target as HTMLSelectElement)?.value ?? "0";
-		const index = parseInt(value, 10);
-		if (index >= 0 && index < this.resolutions.length) {
-			this.selectedResolution.set(this.resolutions[index]);
+	async onResolutionChange(event: SelectChangeEvent) {
+		const selectedResolution = event.value as Resolution;
+		if (selectedResolution) {
+			this.selectedResolution.set(selectedResolution);
 			// Only auto-switch if camera is already running
 			if (this.uiState().isReady) {
-				this.switchResolution();
+				await this.switchResolution();
 			}
 		}
+
+		this.showToast(`Resolution set to ${selectedResolution?.name}`);
 	}
 
 	/**
@@ -426,9 +483,10 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
 		const checked = (event.target as HTMLInputElement)?.checked ?? false;
 		this.enableMirror.set(checked);
 		try {
-			this.webcamService.webcamInstance.setMirror(checked);
+			await this.startCamera();
+			this.showToast(`Mirror ${checked ? "enabled" : "disabled"}`);
 		} catch (e) {
-			console.error("Failed to set mirror:", e);
+			this.showToast("Failed to set mirror");
 		}
 	}
 
@@ -440,22 +498,28 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
 	async onAudioChange(event: Event) {
 		const checked = (event.target as HTMLInputElement)?.checked ?? false;
 		this.enableAudio.set(checked);
-		await this.startCamera();
+		try {
+			await this.startCamera();
+			this.showToast(`Audio ${checked ? "enabled" : "disabled"}`);
+		} catch (e) {
+			this.showToast("Failed to set audio");
+		}
 	}
 
 	/**
 	 * Handles changes in the zoom input field.
 	 * This method updates the zoom level and triggers a camera restart if the camera is already running.
-	 * @param event The event object containing the zoom value.
+	 * @param event The SliderChangeEvent object containing the zoom value.
 	 */
-	async onZoomChange(event: Event) {
-		const value = +(event.target as HTMLInputElement)?.value;
+	async onZoomChange(event: SliderChangeEvent) {
+		const value = event.value as number;
 		if (isNaN(value) || this.zoomValue() === value) return;
 		this.zoomValue.set(value);
 		try {
 			await this.webcamService.webcamInstance.setZoom(value);
+			this.showToast(`Zoom set to ${value}`);
 		} catch (e) {
-			console.error("Failed to set zoom:", e);
+			this.showToast("Failed to set zoom");
 		}
 	}
 
@@ -469,8 +533,9 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
 		this.focusMode.set(value);
 		try {
 			await this.webcamService.webcamInstance.setFocusMode(value);
+			this.showToast(`Focus mode set to ${value}`);
 		} catch (e) {
-			console.error("Failed to set focus mode:", e);
+			this.showToast("Failed to set focus mode");
 		}
 	}
 
@@ -480,6 +545,7 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
 	 */
 	async toggleTorch() {
 		if (!this.webcamService.webcamInstance.isTorchSupported()) {
+			this.showToast("Torch is not supported on this device");
 			return;
 		}
 
@@ -487,8 +553,9 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
 			const enabled = !this.enableTorch();
 			await this.webcamService.webcamInstance.setTorch(enabled);
 			this.enableTorch.set(enabled);
+			this.showToast(`Torch ${enabled ? "enabled" : "disabled"}`);
 		} catch (error) {
-			console.error("Failed to toggle torch:", error);
+			this.showToast("Failed to toggle torch");
 		}
 	}
 
@@ -500,7 +567,6 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
 	public getCurrentCameraName(): string {
 		const device = this.selectedDevice();
 		if (!device) return "Unknown camera";
-
 		return device.label || `Camera (${device.deviceId.slice(0, 8)}...)`;
 	}
 
@@ -539,5 +605,22 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
 			default:
 				return "Unknown";
 		}
+	}
+
+	openHelpDialog() {
+		this.helpDialogVisible.set(true);
+	}
+
+	closeHelpDialog() {
+		this.helpDialogVisible.set(false);
+	}
+
+	showToast(message: string) {
+		this.messageService.add({
+			severity: "contrast",
+			summary: "Info",
+			detail: message,
+			life: 1500,
+		});
 	}
 }

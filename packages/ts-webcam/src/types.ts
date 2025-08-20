@@ -3,7 +3,7 @@
 import { WebcamError } from "./errors";
 
 export interface Resolution {
-	name: string;
+	label: string;
 	width: number;
 	height: number;
 }

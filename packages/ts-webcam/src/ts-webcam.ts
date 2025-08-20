@@ -90,7 +90,7 @@ export class Webcam {
 
 		// Get device info from enumerateDevices
 		const devices = await navigator.mediaDevices.enumerateDevices();
-		return devices.find(d => d.deviceId === deviceId) || null;
+		return devices.find((d) => d.deviceId === deviceId) || null;
 	}
 
 	getCurrentResolution(): Resolution | null {
@@ -107,7 +107,7 @@ export class Webcam {
 		return {
 			width,
 			height,
-			name: `${width}x${height}`
+			label: `${width}x${height}`,
 		} as Resolution;
 	}
 
@@ -209,17 +209,17 @@ export class Webcam {
 					try {
 						const constraints = await this._buildConstraints({
 							...config,
-							preferredResolutions: resolution
+							preferredResolutions: resolution,
 						});
 						stream = await navigator.mediaDevices.getUserMedia(constraints);
 						break; // Found a working resolution
 					} catch (error) {
-						lastError = error instanceof Error ? error : new Error('Failed to get media stream');
+						lastError = error instanceof Error ? error : new Error("Failed to get media stream");
 						continue;
 					}
 				}
 				if (!stream) {
-					throw lastError || new Error('No resolution worked');
+					throw lastError || new Error("No resolution worked");
 				}
 			} else {
 				const constraints = await this._buildConstraints(config);
@@ -273,22 +273,22 @@ export class Webcam {
 
 	/**
 	 * Capture an image from the webcam.
-   * @param options Capture options including image type, quality, and scale
-   * @returns A Promise that resolves with a CaptureResult object containing both blob and base64
-   * @example
-   * // Basic usage - returns { blob, base64, width, height, mimeType, timestamp }
-   * const result = await webcam.captureImage();
-   * console.log("Base64 image:", result.base64);
-   * 
-   * // With options
-   * const result = await webcam.captureImage({
-   *   imageType: 'image/jpeg',
-   *   quality: 0.8,
-   *   scale: 0.5
-   * });
-   * 
-   * // Or destructure what you need
-   * const { base64, blob } = await webcam.captureImage();
+	 * @param options Capture options including image type, quality, and scale
+	 * @returns A Promise that resolves with a CaptureResult object containing both blob and base64
+	 * @example
+	 * // Basic usage - returns { blob, base64, width, height, mimeType, timestamp }
+	 * const result = await webcam.captureImage();
+	 * console.log("Base64 image:", result.base64);
+	 *
+	 * // With options
+	 * const result = await webcam.captureImage({
+	 *   imageType: 'image/jpeg',
+	 *   quality: 0.8,
+	 *   scale: 0.5
+	 * });
+	 *
+	 * // Or destructure what you need
+	 * const { base64, blob } = await webcam.captureImage();
 	 */
 	async captureImage(options: CaptureOptions = {}): Promise<CaptureResult> {
 		this._ensureNotDisposed();
@@ -313,15 +313,15 @@ export class Webcam {
 
 		try {
 			// Set default options
-			const captureOptions: Required<Omit<CaptureOptions, 'returnBase64'>> = {
-				imageType: options.imageType || 'image/jpeg',
+			const captureOptions: Required<Omit<CaptureOptions, "returnBase64">> = {
+				imageType: options.imageType || "image/jpeg",
 				quality: options.quality !== undefined ? Math.max(0, Math.min(1, options.quality)) : 0.92,
-				scale: options.scale !== undefined ? Math.max(0.1, Math.min(2, options.scale)) : 1.0
+				scale: options.scale !== undefined ? Math.max(0.1, Math.min(2, options.scale)) : 1.0,
 			};
 
 			return await this._captureFromVideoElement(this.state.videoElement, captureOptions);
 		} catch (error) {
-			const errorMessage = error instanceof Error ? error.message : 'Unknown error during capture';
+			const errorMessage = error instanceof Error ? error.message : "Unknown error during capture";
 			const webcamError = new WebcamError(
 				`Failed to capture image: ${errorMessage}`,
 				WebcamErrorCode.CAPTURE_FAILED,
@@ -360,8 +360,8 @@ export class Webcam {
 				minHeight: capabilities.height?.min || 240,
 				supportedFrameRates:
 					capabilities.frameRate &&
-						capabilities.frameRate.min !== undefined &&
-						capabilities.frameRate.max !== undefined
+					capabilities.frameRate.min !== undefined &&
+					capabilities.frameRate.max !== undefined
 						? [capabilities.frameRate.min, capabilities.frameRate.max]
 						: undefined,
 				hasZoom: "zoom" in capabilities,
@@ -373,7 +373,8 @@ export class Webcam {
 			};
 		} catch (error) {
 			const webcamError = new WebcamError(
-				`Failed to get device capabilities: ${error instanceof Error ? error.message : "Unknown error"
+				`Failed to get device capabilities: ${
+					error instanceof Error ? error.message : "Unknown error"
 				}`,
 				WebcamErrorCode.DEVICES_ERROR,
 			);
@@ -504,19 +505,19 @@ export class Webcam {
 				if (!res.width || !res.height) {
 					throw new WebcamError(
 						`Invalid resolution: width and height must be specified`,
-						WebcamErrorCode.INVALID_CONFIG
+						WebcamErrorCode.INVALID_CONFIG,
 					);
 				}
 				if (res.width <= 0 || res.height <= 0) {
 					throw new WebcamError(
 						`Invalid resolution: width and height must be positive numbers`,
-						WebcamErrorCode.INVALID_CONFIG
+						WebcamErrorCode.INVALID_CONFIG,
 					);
 				}
 				if (res.width > 4096 || res.height > 4096) {
 					throw new WebcamError(
 						`Invalid resolution: maximum width/height is 4096 pixels`,
-						WebcamErrorCode.INVALID_CONFIG
+						WebcamErrorCode.INVALID_CONFIG,
 					);
 				}
 			}
@@ -526,18 +527,17 @@ export class Webcam {
 		if (!config.deviceInfo) {
 			try {
 				const devices = await navigator.mediaDevices.enumerateDevices();
-				const videoDevices = devices.filter(d => d.kind === 'videoinput');
+				const videoDevices = devices.filter((d) => d.kind === "videoinput");
 				if (videoDevices.length === 0) {
-					throw new WebcamError(
-						`No video devices found`,
-						WebcamErrorCode.DEVICE_NOT_FOUND
-					);
+					throw new WebcamError(`No video devices found`, WebcamErrorCode.DEVICE_NOT_FOUND);
 				}
 				config.deviceInfo = videoDevices[0];
 			} catch (error) {
 				throw new WebcamError(
-					`Failed to get video devices: ${error instanceof Error ? error.message : 'Unknown error'}`,
-					WebcamErrorCode.DEVICES_ERROR
+					`Failed to get video devices: ${
+						error instanceof Error ? error.message : "Unknown error"
+					}`,
+					WebcamErrorCode.DEVICES_ERROR,
 				);
 			}
 		}
@@ -545,8 +545,16 @@ export class Webcam {
 		// Build constraints
 		const videoConstraints: MediaTrackConstraints = {
 			deviceId: { exact: config.deviceInfo.deviceId },
-			width: { exact: Array.isArray(config.preferredResolutions) ? config.preferredResolutions[0].width : config.preferredResolutions?.width || 1280 },
-			height: { exact: Array.isArray(config.preferredResolutions) ? config.preferredResolutions[0].height : config.preferredResolutions?.height || 720 },
+			width: {
+				exact: Array.isArray(config.preferredResolutions)
+					? config.preferredResolutions[0].width
+					: config.preferredResolutions?.width || 1280,
+			},
+			height: {
+				exact: Array.isArray(config.preferredResolutions)
+					? config.preferredResolutions[0].height
+					: config.preferredResolutions?.height || 720,
+			},
 		};
 
 		return {
@@ -562,10 +570,10 @@ export class Webcam {
 			? config?.preferredResolutions[0]
 			: config?.preferredResolutions;
 		let resolutionText = Array.isArray(config?.preferredResolutions)
-			? config?.preferredResolutions.map(r => `${r.width}x${r.height}`).join(', ')
+			? config?.preferredResolutions.map((r) => `${r.width}x${r.height}`).join(", ")
 			: resolution
-				? `${resolution.width}x${resolution.height}`
-				: "Unknown resolution";
+			? `${resolution.width}x${resolution.height}`
+			: "Unknown resolution";
 		let context = "Start Camera";
 
 		if (error instanceof WebcamError) {
@@ -615,7 +623,8 @@ export class Webcam {
 			.join(" | ");
 
 		return new WebcamError(
-			`${baseMsg}Failed to start camera: ${details || "Unknown error"
+			`${baseMsg}Failed to start camera: ${
+				details || "Unknown error"
 			} (Device: ${deviceLabel}, Resolution: ${resolutionText})`,
 			WebcamErrorCode.UNKNOWN_ERROR,
 		);
@@ -623,7 +632,7 @@ export class Webcam {
 
 	private async _captureFromVideoElement(
 		videoElement: HTMLVideoElement,
-		options: Required<Omit<CaptureOptions, 'returnBase64'>>
+		options: Required<Omit<CaptureOptions, "returnBase64">>,
 	): Promise<CaptureResult> {
 		const { imageType, quality, scale } = options;
 		const canvas = document.createElement("canvas");
@@ -649,11 +658,19 @@ export class Webcam {
 			// Draw video frame to canvas
 			context.drawImage(
 				videoElement,
-				0, 0, videoElement.videoWidth, videoElement.videoHeight,  // source
-				0, 0, width, height  // destination
+				0,
+				0,
+				videoElement.videoWidth,
+				videoElement.videoHeight, // source
+				0,
+				0,
+				width,
+				height, // destination
 			);
 		} catch (error) {
-			throw new Error(`Failed to draw video to canvas: ${error instanceof Error ? error.message : String(error)}`);
+			throw new Error(
+				`Failed to draw video to canvas: ${error instanceof Error ? error.message : String(error)}`,
+			);
 		}
 
 		// Convert canvas to Blob
@@ -672,7 +689,7 @@ export class Webcam {
 					resolve(blob);
 				},
 				imageType,
-				quality
+				quality,
 			);
 		});
 
@@ -693,7 +710,7 @@ export class Webcam {
 			width,
 			height,
 			mimeType: imageType,
-			timestamp: Date.now()
+			timestamp: Date.now(),
 		};
 	}
 

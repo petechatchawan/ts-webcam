@@ -21,14 +21,12 @@ export class WebcamService {
 	public permissionChecked = this._permissionChecked.asReadonly();
 	public deviceCapability = this._deviceCapability.asReadonly();
 
-	constructor() { }
+	constructor() {}
 
 	/** Type-safe getter for the underlying TsWebcam instance */
 	get webcamInstance(): Webcam {
 		return this.webcam;
 	}
-
-
 
 	/**
 	 * Requests permissions and loads available devices
@@ -57,12 +55,12 @@ export class WebcamService {
 		try {
 			const permissions = await this.webcam.checkPermissions();
 			// Update the permission checked state
-			this._permissionChecked.set(permissions['camera'] === 'granted');
+			this._permissionChecked.set(permissions["camera"] === "granted");
 			return permissions;
 		} catch (error) {
-			console.error('Failed to check permissions:', error);
+			console.error("Failed to check permissions:", error);
 			this._permissionChecked.set(false);
-			return { camera: 'denied' as PermissionState, microphone: 'denied' as PermissionState };
+			return { camera: "denied" as PermissionState, microphone: "denied" as PermissionState };
 		}
 	}
 

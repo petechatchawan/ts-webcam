@@ -1,363 +1,449 @@
-<div class="webcam-container">
-	<div class="container mx-auto max-w-4xl lg:max-w-6xl p-3 sm:p-6 lg:p-8">
-		<!-- Header -->
-		<div class="header text-center mb-6">
-			<h1 class="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-2">Webcam Demo</h1>
-			<p class="text-gray-600 text-sm sm:text-base">TS-Webcam Library Showcase</p>
-		</div>
-
-		<!-- Permission Check -->
-		<div *ngIf="!webcamService.permissionChecked()"
-			class="bg-white rounded-lg shadow-sm border border-gray-300 p-4 sm:p-6 mb-4">
-			<div class="flex items-center justify-center gap-3 text-gray-500">
-				<svg class="animate-spin h-5 w-5 text-blue-500" viewBox="0 0 24 24">
-					<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"
-						fill="none"></circle>
-					<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
-				</svg>
-				<span class="text-sm">Checking permissions...</span>
+<div class="flex flex-col items-center justify-center">
+	<div class="w-full overflow-auto mx-auto max-w-6xl p-4 sm:p-6 lg:p-8">
+		<!-- Top Toolbar -->
+		<p-toolbar
+			styleClass="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 mb-5 shadow-sm">
+			<div class="p-toolbar-group-left">
+				<div class="flex items-center gap-3">
+					<i class="pi pi-video text-gray-700 dark:text-gray-300"></i>
+					<div class="flex-col flex gap-2 items-start">
+						<h1 class="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-gray-100">
+							Webcam Demo
+						</h1>
+						<p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
+							TS-Webcam Library Showcase
+						</p>
+					</div>
+				</div>
 			</div>
-		</div>
+			<div class="p-toolbar-group-right">
+				<p-tag
+					[severity]="
+						uiState().isReady
+							? 'success'
+							: uiState().isLoading
+							? 'warning'
+							: uiState().isError
+							? 'danger'
+							: 'secondary'
+					"
+					[value]="
+						uiState().isReady
+							? 'Active'
+							: uiState().isLoading
+							? 'Starting…'
+							: uiState().isError
+							? 'Error'
+							: 'Inactive'
+					"></p-tag>
+				<span class="ml-3 text-xs text-gray-400 dark:text-gray-500" aria-live="polite">
+					({{ status() }})
+				</span>
+			</div>
+		</p-toolbar>
+
+		<!-- Permission Checking -->
+		<p-card
+			*ngIf="!webcamService.permissionChecked()"
+			styleClass="mb-4 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm">
+			<ng-template pTemplate="content">
+				<div
+					class="flex flex-col items-center justify-center gap-4 text-gray-600 dark:text-gray-400">
+					<p-progressSpinner
+						styleClass="w-5 h-5"
+						strokeWidth="4"
+						fill="transparent"></p-progressSpinner>
+					<span class="text-sm">Checking permissions…</span>
+				</div>
+			</ng-template>
+		</p-card>
 
 		<!-- Permission Denied -->
-		<div *ngIf="webcamService.permissionChecked() && webcamService.isPermissionDenied()"
-			class="permission-denied p-4 sm:p-6">
-			<div class="permission-denied-content">
-				<div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3">
-					<svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-							d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-					</svg>
+		<p-card
+			*ngIf="webcamService.permissionChecked() && webcamService.isPermissionDenied()"
+			styleClass="permission-denied mb-5 border border-red-200 dark:border-red-800 rounded-xl shadow-sm">
+			<ng-template pTemplate="title">
+				<div class="flex items-center gap-2 text-red-700 dark:text-red-400">
+					<i class="pi pi-ban"></i>
+					<span class="font-semibold">Camera Access Denied</span>
 				</div>
-				<h3>Camera Access Denied</h3>
-				<p>Please allow camera access to use this feature</p>
+			</ng-template>
+			<ng-template pTemplate="content">
+				<p class="text-sm text-gray-700 dark:text-gray-300">
+					Please allow camera access to use this feature.
+				</p>
 
-				<div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-2 sm:p-3 my-4">
+				<div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 my-4">
 					<div class="flex flex-wrap justify-center gap-4">
-						<label class="flex items-center gap-2">
-							<input type="checkbox" (change)="onVideoPermissionChange($event)"
-								[checked]="permissionOptions().video" class="form-checkbox h-4 w-4" />
-							<span>Video</span>
-						</label>
-						<label class="flex items-center gap-2">
-							<input type="checkbox" (change)="onAudioPermissionChange($event)"
-								[checked]="permissionOptions().audio" class="form-checkbox h-4 w-4" />
-							<span>Audio</span>
-						</label>
+						<div class="flex items-center gap-2">
+							<p-toggleswitch
+								[ngModel]="permissionOptions().video"
+								(onChange)="onVideoPermissionChange($event)"></p-toggleswitch>
+							<span class="text-sm text-gray-700 dark:text-gray-300">Video</span>
+						</div>
+						<div class="flex items-center gap-2">
+							<p-toggleswitch
+								[ngModel]="permissionOptions().audio"
+								(onChange)="onAudioPermissionChange($event)"></p-toggleswitch>
+							<span class="text-sm text-gray-700 dark:text-gray-300">Audio</span>
+						</div>
 					</div>
 				</div>
 
-				<button (click)="requestPermissionsAndLoadDevices()" class="btn btn-primary">Retry</button>
+				<div class="flex flex-wrap gap-2">
+					<p-button
+						label="Retry"
+						(onClick)="requestPermissionsAndLoadDevices()"
+						styleClass="p-button-info"></p-button>
+					<p-button label="Help" severity="secondary" (onClick)="openHelpDialog()"></p-button>
+				</div>
 
-				<p class="text-xs text-gray-500 mt-3">
-					If permanently denied, please check browser settings and refresh the page
+				<p-dialog
+					[visible]="helpDialogVisible()"
+					(visibleChange)="helpDialogVisible.set($event)"
+					[modal]="true"
+					[draggable]="false"
+					[resizable]="false"
+					[dismissableMask]="true"
+					header="Camera Permission Help"
+					styleClass="max-w-md w-[92vw]">
+					<div class="text-sm leading-6 text-gray-700 dark:text-gray-300">
+						<p class="mb-2">If permission is permanently denied:</p>
+						<ol class="list-decimal ml-5 space-y-1">
+							<li>Open browser Site Settings</li>
+							<li>Allow Camera & Microphone</li>
+							<li>Reload the page</li>
+						</ol>
+						<p class="mt-3 text-xs text-gray-500 dark:text-gray-400">
+							Tip: On iOS Safari, ensure Settings → Safari → Camera is "Allow".
+						</p>
+					</div>
+					<ng-template pTemplate="footer">
+						<p-button label="Close" (onClick)="closeHelpDialog()" />
+					</ng-template>
+				</p-dialog>
+
+				<p class="text-xs text-gray-500 dark:text-gray-400 mt-3">
+					If permanently denied, check browser settings and refresh the page.
 				</p>
-			</div>
-		</div>
+			</ng-template>
+		</p-card>
 
 		<!-- Main Interface -->
-		<div *ngIf="webcamService.permissionChecked() && !webcamService.isPermissionDenied()"
-			class="flex flex-col lg:grid lg:grid-cols-3 gap-4 lg:gap-6">
-			<!-- Video Display - Takes up 2 columns -->
-			<div class="lg:col-span-2 bg-white rounded-lg shadow-sm border border-gray-300 p-4 sm:p-6">
-				<div class="flex items-center justify-between mb-4">
-					<h2 class="text-base sm:text-lg font-semibold text-gray-900">Video Stream</h2>
+		<div
+			*ngIf="webcamService.permissionChecked() && !webcamService.isPermissionDenied()"
+			class="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
+			<!-- Left: Video -->
+			<p-card
+				styleClass="lg:col-span-2 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm">
+				<ng-template pTemplate="content">
+					<!-- Video Area -->
+					<div class="relative bg-black/90 rounded-lg overflow-hidden aspect-video mb-4">
+						<!-- Skeleton while loading -->
+						<div *ngIf="uiState().isLoading" class="absolute inset-0">
+							<div class="w-full h-full">
+								<p-skeleton styleClass="w-full h-full !rounded-none"></p-skeleton>
+							</div>
+						</div>
 
-					<!-- Status Badge -->
-					<div class="flex items-center gap-2">
-						<div class="w-2 h-2 rounded-full" [class]="
-								uiState().isReady
-									? 'bg-green-500'
-									: uiState().isLoading
-									? 'bg-yellow-500'
-									: uiState().isError
-									? 'bg-red-500'
-									: 'bg-gray-400'
-							"></div>
-						<span class="text-xs sm:text-sm font-medium" [class]="
-								uiState().isReady
-									? 'text-green-600'
-									: uiState().isLoading
-									? 'text-yellow-600'
-									: uiState().isError
-									? 'text-red-600'
-									: 'text-gray-500'
-							">
-							{{
-							uiState().isReady
-							? "Active"
-							: uiState().isLoading
-							? "Starting..."
-							: uiState().isError
-							? "Error"
-							: "Inactive"
-							}}
-						</span>
-						<!-- Debug info -->
-						<span class="text-xs text-gray-400">({{ status() }})</span>
-					</div>
-				</div>
+						<video
+							#videoElement
+							autoplay
+							playsinline
+							muted
+							[class]="
+								[
+									'w-full h-full object-contain transition-transform duration-300',
+									enableMirror() ? 'scale-x-[-1]' : ''
+								].join(' ')
+							"></video>
 
-				<div
-					class="bg-gray-900 rounded-lg overflow-hidden aspect-video mb-4 flex items-center justify-center relative">
-					<video #videoElement autoplay playsinline muted class="w-full h-full object-contain"></video>
+						<!-- Placeholder -->
+						<div
+							*ngIf="!uiState().isReady && !error()"
+							class="absolute inset-0 flex flex-col items-center justify-center text-gray-300 dark:text-gray-600">
+							<i class="pi pi-video text-4xl mb-2"></i>
+							<p class="text-xs sm:text-sm">Start camera to see video stream</p>
+						</div>
 
-					<!-- Placeholder when no video -->
-					<div *ngIf="!uiState().isReady && !error()"
-						class="absolute inset-0 flex flex-col items-center justify-center text-gray-400 p-8">
-						<svg class="w-12 h-12 mb-3" fill="none" stroke="currentColor" stroke-width="1"
-							viewBox="0 0 24 24">
-							<path stroke-linecap="round" stroke-linejoin="round"
-								d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-						</svg>
-						<p class="text-center text-xs sm:text-sm">Start camera to see video stream</p>
-					</div>
-
-					<!-- Error Display -->
-					<div *ngIf="
-							error() && webcamService.permissionChecked() && !webcamService.isPermissionDenied()
-						" class="absolute inset-0 flex flex-col items-center justify-center bg-red-900 bg-opacity-75 text-white p-8">
-						<svg class="w-12 h-12 mb-3" fill="none" stroke="currentColor" stroke-width="2"
-							viewBox="0 0 24 24">
-							<path stroke-linecap="round" stroke-linejoin="round"
-								d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-						</svg>
-						<h4 class="font-medium text-lg sm:text-xl mb-2">Error while starting camera</h4>
-						<div *ngIf="selectedDevice() && selectedResolution()" class="mb-2 text-sm text-gray-200">
-							Device:
-							<span class="font-semibold">{{ getCurrentCameraName() }}</span>
-							| Resolution:
-							<span class="font-semibold">
+						<!-- Error -->
+						<div
+							*ngIf="
+								error() && webcamService.permissionChecked() && !webcamService.isPermissionDenied()
+							"
+							class="absolute inset-0 flex flex-col items-center justify-center bg-red-900/80 text-white p-6 text-center">
+							<i class="pi pi-times-circle text-3xl mb-2"></i>
+							<h4 class="font-semibold text-lg sm:text-xl mb-2">Error while starting camera</h4>
+							<p class="text-xs sm:text-sm opacity-90 mb-2">
+								{{ getCurrentCameraName() || "Unknown device" }} •
 								{{ selectedResolution().width }}×{{ selectedResolution().height }}
-							</span>
-						</div>
-						<p class="text-xs sm:text-sm text-center whitespace-pre-line">{{ error() }}</p>
-					</div>
-				</div>
-
-				<!-- Primary Actions -->
-				<div class="flex flex-wrap justify-center gap-2 sm:gap-3">
-					<button (click)="startCamera()" [disabled]="!uiState().canStart"
-						class="w-full sm:w-auto order-first flex items-center justify-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm">
-						<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-							<path stroke-linecap="round" stroke-linejoin="round"
-								d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h1m4 0h1m-6-8h8a2 2 0 012 2v8a2 2 0 01-2 2H7a2 2 0 01-2-2V8a2 2 0 012-2z" />
-						</svg>
-						Start Camera
-					</button>
-
-					<button (click)="captureImage()" [disabled]="!uiState().canCapture"
-						class="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm">
-						<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-							<path stroke-linecap="round" stroke-linejoin="round"
-								d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-							<path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-						</svg>
-						Capture
-					</button>
-
-					<button (click)="stopCamera()" [disabled]="!uiState().canStop"
-						class="w-full sm:w-auto order-last flex items-center justify-center gap-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm">
-						<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-							<path stroke-linecap="round" stroke-linejoin="round"
-								d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-							<path stroke-linecap="round" stroke-linejoin="round" d="M9 9l6 6m0-6l-6 6" />
-						</svg>
-						Stop
-					</button>
-				</div>
-
-				<!-- Captured Image -->
-				<div *ngIf="capturedImageUrl()" class="bg-white rounded-lg mt-6">
-					<div class="flex items-center justify-between mb-4">
-						<h3 class="text-base sm:text-lg font-semibold text-gray-900">Captured Image</h3>
-						<button (click)="clearCapturedImage()"
-							class="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
-							Clear
-						</button>
-					</div>
-					<div class="flex justify-center">
-						<img [src]="capturedImageUrl()" alt="Captured Image"
-							class="max-w-full h-auto rounded-lg border border-gray-300" />
-					</div>
-				</div>
-			</div>
-
-			<!-- Settings Panel -->
-			<div class="bg-white rounded-lg shadow-sm border border-gray-300 p-4 sm:p-6">
-				<h2 class="text-base sm:text-lg font-semibold text-gray-900 mb-4">Settings</h2>
-
-				<!-- Camera Selection -->
-				<div class="space-y-3 md:space-y-4">
-					<div>
-						<label for="camera-select" class="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
-							Camera
-						</label>
-						<select id="camera-select" [ngModel]="selectedDevice()" (ngModelChange)="onDeviceChange($event)"
-							[disabled]="uiState().isLoading"
-							class="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-xs sm:text-sm">
-							<option value="">Select Camera</option>
-							<option *ngFor="let device of devices()" [ngValue]="device">
-								{{ device.label || "Camera " + device.deviceId.slice(0, 8) + "..." }}
-							</option>
-						</select>
-					</div>
-
-					<div>
-						<label for="resolution-select" class="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
-							Resolution
-						</label>
-						<select id="resolution-select" [value]="resolutions.indexOf(selectedResolution())"
-							(change)="onResolutionChange($event)" [disabled]="uiState().isLoading"
-							class="w-full px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-xs sm:text-sm">
-							<option *ngFor="let res of resolutions; let i = index" [value]="i">
-								{{ res.name }} ({{ res.width }}×{{ res.height }})
-							</option>
-						</select>
-					</div>
-				</div>
-
-				<!-- Divider -->
-				<div class="border-t my-4"></div>
-
-				<!-- Options -->
-				<div class="space-y-3">
-					<label class="flex items-center gap-2">
-						<input type="checkbox" [checked]="enableMirror()" (change)="onMirrorChange($event)"
-							class="rounded text-blue-600 focus:ring-blue-500" />
-						<span class="text-xs sm:text-sm text-gray-700">Mirror Video</span>
-					</label>
-
-					<label class="flex items-center gap-2">
-						<input type="checkbox" [checked]="enableAudio()" (change)="onAudioChange($event)"
-							class="rounded text-blue-600 focus:ring-blue-500" />
-						<span class="text-xs sm:text-sm text-gray-700">Enable Audio</span>
-					</label>
-
-					<!-- Torch toggle if supported -->
-					<label *ngIf="webcamService.deviceCapability()?.hasTorch" class="flex items-center gap-2">
-						<input type="checkbox" [checked]="enableTorch()" (change)="toggleTorch()"
-							[disabled]="!uiState().isReady" class="rounded text-yellow-500 focus:ring-yellow-500" />
-						<span class="text-xs sm:text-sm text-gray-700">Torch</span>
-					</label>
-
-					<!-- Zoom slider if supported -->
-					<div *ngIf="
-							webcamService.deviceCapability()?.hasZoom && minZoom() !== null && maxZoom() !== null
-						" class="flex items-center gap-2">
-						<label for="zoom-slider" class="text-xs sm:text-sm text-gray-700">Zoom</label>
-						<input id="zoom-slider" type="range" [min]="minZoom()" [max]="maxZoom()" [step]="0.1"
-							[value]="zoomValue()" (input)="onZoomChange($event)" [disabled]="!uiState().isReady"
-							class="flex-1" />
-						<span class="text-xs text-gray-600">{{ zoomValue() }}</span>
-					</div>
-
-					<!-- Focus mode select if supported -->
-					<div *ngIf="webcamService.deviceCapability()?.hasFocus && supportedFocusModes().length > 0"
-						class="flex items-center gap-2">
-						<label for="focus-mode-select" class="text-xs sm:text-sm text-gray-700">Focus</label>
-						<select id="focus-mode-select" [value]="focusMode()" (change)="onFocusModeChange($event)"
-							[disabled]="!uiState().isReady" class="rounded border border-gray-300 px-2 py-1 text-sm">
-							<option *ngFor="let mode of supportedFocusModes()" [value]="mode">{{ mode }}</option>
-						</select>
-					</div>
-				</div>
-
-				<!-- Divider -->
-				<div class="border-t my-4"></div>
-
-				<!-- Device Info Section -->
-				<div class="bg-gray-50 rounded-lg p-3 sm:p-4 mt-4">
-					<div class="flex items-center gap-2 mb-3">
-						<svg class="w-5 h-5 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
-							<path fill-rule="evenodd"
-								d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-								clip-rule="evenodd"></path>
-						</svg>
-						<h3 class="text-sm sm:text-base font-semibold text-gray-900">Device Info</h3>
-					</div>
-
-					<div class="space-y-2 text-xs sm:text-sm">
-						<div class="flex justify-between">
-							<span class="text-gray-600">Device Type</span>
-							<span class="font-medium text-gray-900">{{ getDeviceType() }}</span>
+							</p>
+							<pre class="text-xs whitespace-pre-wrap max-w-full">{{ error() }}</pre>
 						</div>
 
-						<div class="flex justify-between">
-							<span class="text-gray-600">Current Camera</span>
-							<span class="font-medium text-gray-900 text-right max-w-full sm:max-w-[200px] truncate"
-								[title]="getCurrentCameraName()">
-								{{ getCurrentCameraName() }}
-							</span>
-						</div>
-
-						<div class="flex justify-between">
-							<span class="text-gray-600">Current Resolution</span>
-							<span class="font-medium text-gray-900">
-								{{ selectedResolution().width }}×{{ selectedResolution().height }}
-							</span>
-						</div>
-
-						<div class="flex justify-between">
-							<span class="text-gray-600">Torch Support</span>
-							<span class="font-medium" [class.text-green-600]="webcamService.isTorchSupported()"
-								[class.text-gray-500]="!webcamService.isTorchSupported()">
-								{{ webcamService.isTorchSupported() ? "Available" : "Not Available" }}
-							</span>
-						</div>
-
-						<div class="flex justify-between">
-							<span class="text-gray-600">Zoom Support</span>
-							<span class="font-medium" [class.text-green-600]="webcamService.isZoomSupported()"
-								[class.text-gray-500]="!webcamService.isZoomSupported()">
-								{{ webcamService.isZoomSupported() ? "Available" : "Not Available" }}
-							</span>
-						</div>
-
-						<div class="flex justify-between">
-							<span class="text-gray-600">Focus Support</span>
-							<span class="font-medium" [class.text-green-600]="webcamService.isFocusSupported()"
-								[class.text-gray-500]="!webcamService.isFocusSupported()">
-								{{ webcamService.isFocusSupported() ? "Available" : "Not Available" }}
-							</span>
-						</div>
-
-						<div *ngIf="enableAudio()" class="flex justify-between">
-							<span class="text-gray-600">Audio</span>
-							<span class="font-medium text-blue-600">Enabled</span>
+						<!-- Floating Controls -->
+						<div class="absolute right-2 top-2 flex gap-2">
+							<p-button
+								[rounded]="true"
+								[text]="true"
+								pTooltip="Test Capabilities"
+								[disabled]="!selectedDevice()"
+								(onClick)="testDeviceCapabilities()"></p-button>
 						</div>
 					</div>
-				</div>
 
-				<!-- Divider -->
-				<div class="border-t my-4"></div>
+					<!-- Primary Actions -->
+					<div class="flex flex-wrap justify-center gap-2 sm:gap-3">
+						<p-button
+							label="Start"
+							[disabled]="!uiState().canStart"
+							(onClick)="startCamera()"></p-button>
+						<p-button
+							label="Capture"
+							[disabled]="!uiState().canCapture"
+							(onClick)="captureImage()"></p-button>
+						<p-button
+							label="Stop"
+							[disabled]="!uiState().canStop"
+							(onClick)="stopCamera()"
+							severity="danger"></p-button>
+					</div>
 
-				<!-- Device Test -->
-				<button (click)="testDeviceCapabilities()" [disabled]="!selectedDevice()"
-					class="w-full flex items-center justify-center gap-2 px-3 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm">
-					<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-						<path stroke-linecap="round" stroke-linejoin="round"
-							d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-					</svg>
-					Test Device
-				</button>
-				<!-- Show last tested device capabilities -->
-				<div *ngIf="webcamService.deviceCapability()" class="bg-gray-50 rounded-lg p-3 sm:p-4 mt-4">
-					<div class="flex items-center gap-2 mb-3">
-						<svg class="w-5 h-5 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
-							<path fill-rule="evenodd"
-								d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-								clip-rule="evenodd"></path>
-						</svg>
-						<h3 class="text-sm sm:text-base font-semibold text-gray-900">
-							Last Tested Device Capabilities
-						</h3>
-					</div>
-					<div class="bg-gray-100 rounded p-2 overflow-x-auto">
-						<pre class="text-xs text-gray-700">{{ webcamService.deviceCapability() | json }}</pre>
-					</div>
-				</div>
+					<!-- Captured Image -->
+					<p-panel
+						*ngIf="capturedImageUrl()"
+						class="mt-5"
+						[toggleable]="true"
+						[collapsed]="false"
+						header="Captured Image">
+						<ng-template pTemplate="icons">
+							<p-button
+								label="Clear"
+								size="small"
+								severity="danger"
+								(onClick)="clearCapturedImage()"></p-button>
+						</ng-template>
+						<div class="flex justify-center">
+							<img
+								[src]="capturedImageUrl()"
+								alt="Captured"
+								class="max-w-full h-auto rounded-lg border border-gray-200 dark:border-gray-700" />
+						</div>
+					</p-panel>
+				</ng-template>
+			</p-card>
+
+			<!-- Right: Settings -->
+			<div class="space-y-4">
+				<p-card
+					header="Quick Controls"
+					styleClass="border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm">
+					<ng-template pTemplate="content">
+						<div class="grid grid-cols-1 gap-3">
+							<div class="flex items-center justify-between">
+								<span class="text-xs sm:text-sm text-gray-700 dark:text-gray-300">
+									Mirror Video
+								</span>
+								<p-toggleswitch [(ngModel)]="enableMirror" [disabled]="uiState().isLoading" />
+							</div>
+							<div class="flex items-center justify-between">
+								<span class="text-xs sm:text-sm text-gray-700 dark:text-gray-300">Audio</span>
+								<p-toggleswitch [(ngModel)]="enableAudio" [disabled]="uiState().isLoading" />
+							</div>
+
+							<div class="col-span-2" *ngIf="webcamService.deviceCapability()?.hasTorch">
+								<div class="flex items-center justify-between">
+									<span class="text-xs sm:text-sm text-gray-700 dark:text-gray-300">Torch</span>
+									<p-inputSwitch
+										[(ngModel)]="enableTorch"
+										[disabled]="!uiState().isReady"></p-inputSwitch>
+								</div>
+							</div>
+
+							<div
+								class="col-span-2"
+								*ngIf="
+									webcamService.deviceCapability()?.hasZoom &&
+									minZoom() !== null &&
+									maxZoom() !== null
+								">
+								<p class="block text-xs sm:text-sm text-gray-700 dark:text-gray-300 mb-1">
+									Zoom ({{ zoomValue() }}x)
+								</p>
+								<p-slider
+									[(ngModel)]="zoomValue"
+									[min]="minZoom()"
+									[max]="maxZoom()"
+									[step]="0.1"
+									[disabled]="!uiState().isReady"></p-slider>
+							</div>
+
+							<div
+								class="col-span-2"
+								*ngIf="webcamService.deviceCapability()?.hasFocus && supportedFocusModes().length">
+								<p class="block text-xs sm:text-sm text-gray-700 dark:text-gray-300 mb-1">
+									Focus Mode
+								</p>
+								<p-select
+									[options]="supportedFocusModes()"
+									[(ngModel)]="focusMode"
+									placeholder="Select"
+									styleClass="w-full"></p-select>
+							</div>
+						</div>
+					</ng-template>
+				</p-card>
+
+				<p-card
+					header="Device & Resolution"
+					class="border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm">
+					<ng-template pTemplate="content">
+						<div class="space-y-4">
+							<div>
+								<p
+									class="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+									Camera
+								</p>
+								<p-select
+									[options]="devices()"
+									[(ngModel)]="selectedDevice"
+									[disabled]="uiState().isLoading"
+									placeholder="Select Camera"
+									optionLabel="label"
+									[showClear]="true"
+									class="w-full"
+									(onChange)="onDeviceChange($event.value)">
+									<ng-template pTemplate="selectedItem" let-sd>
+										{{ sd?.label || "Camera " + sd?.deviceId?.slice(0, 8) + "..." }}
+									</ng-template>
+									<ng-template pTemplate="item" let-d>
+										{{ d.label || "Camera " + d.deviceId.slice(0, 8) + "..." }}
+									</ng-template>
+								</p-select>
+							</div>
+
+							<div>
+								<p
+									class="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+									Resolution
+								</p>
+								<p-select
+									[options]="resolutions"
+									[(ngModel)]="selectedResolution"
+									optionLabel="name"
+									styleClass="w-full"
+									(onChange)="onResolutionChange($event)">
+									<ng-template pTemplate="selectedItem" let-sr>
+										{{ sr?.name }} ({{ sr?.width }}×{{ sr?.height }})
+									</ng-template>
+									<ng-template pTemplate="item" let-r>
+										{{ r.name }} ({{ r.width }}×{{ r.height }})
+									</ng-template>
+								</p-select>
+							</div>
+						</div>
+					</ng-template>
+				</p-card>
+
+				<p-card
+					header="Diagnostics"
+					styleClass="border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm">
+					<ng-template pTemplate="content">
+						<div class="text-xs sm:text-sm space-y-2">
+							<div class="flex justify-between">
+								<span class="text-gray-600 dark:text-gray-400">Device Type</span>
+								<span class="font-medium text-gray-900 dark:text-gray-100">
+									{{ getDeviceType() }}
+								</span>
+							</div>
+							<div class="flex justify-between">
+								<span class="text-gray-600 dark:text-gray-400">Current Camera</span>
+								<span
+									class="font-medium text-right max-w-[220px] truncate text-gray-900 dark:text-gray-100"
+									[title]="getCurrentCameraName()">
+									{{ getCurrentCameraName() }}
+								</span>
+							</div>
+							<div class="flex justify-between">
+								<span class="text-gray-600 dark:text-gray-400">Resolution</span>
+								<span class="font-medium text-gray-900 dark:text-gray-100">
+									{{ selectedResolution().width }}×{{ selectedResolution().height }}
+								</span>
+							</div>
+							<div class="flex justify-between">
+								<span class="text-gray-600 dark:text-gray-400">Torch</span>
+								<p-tag
+									[severity]="webcamService.isTorchSupported() ? 'success' : 'secondary'"
+									[value]="webcamService.isTorchSupported() ? 'Available' : 'N/A'"></p-tag>
+							</div>
+							<div class="flex justify-between">
+								<span class="text-gray-600 dark:text-gray-400">Zoom</span>
+								<p-tag
+									[severity]="webcamService.isZoomSupported() ? 'success' : 'secondary'"
+									[value]="webcamService.isZoomSupported() ? 'Available' : 'N/A'"></p-tag>
+							</div>
+							<div class="flex justify-between">
+								<span class="text-gray-600 dark:text-gray-400">Focus</span>
+								<p-tag
+									[severity]="webcamService.isFocusSupported() ? 'success' : 'secondary'"
+									[value]="webcamService.isFocusSupported() ? 'Available' : 'N/A'"></p-tag>
+							</div>
+							<div *ngIf="enableAudio()" class="flex justify-between">
+								<span class="text-gray-600 dark:text-gray-400">Audio</span>
+								<p-tag severity="info" value="Enabled"></p-tag>
+							</div>
+						</div>
+
+						<p-divider></p-divider>
+
+						<div class="flex flex-col gap-2">
+							<div class="flex gap-2">
+								<p-button
+									label="Find Front Camera"
+									(onClick)="testSelectDevice('front')"
+									size="small"></p-button>
+								<p-button
+									label="Find Back Camera"
+									(onClick)="testSelectDevice('back')"
+									size="small"></p-button>
+							</div>
+
+							<p-button
+								label="Test Current Device Capabilities"
+								size="small"
+								[disabled]="!selectedDevice()"
+								(onClick)="testDeviceCapabilities()"></p-button>
+						</div>
+
+						<p-panel
+							*ngIf="selectDeviceDetails()"
+							header="Last Tested (Selection)"
+							[toggleable]="true"
+							class="mt-3">
+							<div class="bg-gray-100 dark:bg-gray-800 rounded p-2 overflow-x-auto">
+								<pre class="text-xs text-gray-700 dark:text-gray-300">{{
+									selectDeviceDetails() | json
+								}}</pre>
+							</div>
+						</p-panel>
+
+						<p-panel
+							*ngIf="webcamService.deviceCapability()"
+							header="Last Tested (Capabilities)"
+							[toggleable]="true"
+							class="mt-3">
+							<div class="bg-gray-100 dark:bg-gray-800 rounded p-2 overflow-x-auto">
+								<pre class="text-xs text-gray-700 dark:text-gray-300">{{
+									webcamService.deviceCapability() | json
+								}}</pre>
+							</div>
+						</p-panel>
+					</ng-template>
+				</p-card>
 			</div>
 		</div>
+
+		<!-- Toast for subtle feedback -->
+		<p-toast position="bottom-right" [baseZIndex]="9999"></p-toast>
 	</div>
 </div>
