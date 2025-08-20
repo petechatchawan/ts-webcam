@@ -231,23 +231,24 @@
 							</div>
 
 							<div
-								class="col-span-2"
+								class="col-span-2 space-y-4 mb-2"
 								*ngIf="
 									webcamService.deviceCapability()?.hasZoom &&
 									minZoom() !== null &&
 									maxZoom() !== null
 								">
-								<p class="block text-xs sm:text-sm text-gray-700 dark:text-gray-300 mb-1">
+								<p class="block text-xs sm:text-sm text-gray-700 dark:text-gray-300">
 									Zoom ({{ zoomValue() }}x)
 								</p>
+
 								<p-slider
+									class="px-2"
 									[(ngModel)]="zoomValue"
 									[min]="minZoom()"
 									[max]="maxZoom()"
 									[step]="0.1"
 									[disabled]="!uiState().isReady"></p-slider>
 							</div>
-
 							<div
 								class="col-span-2"
 								*ngIf="webcamService.deviceCapability()?.hasFocus && supportedFocusModes().length">
