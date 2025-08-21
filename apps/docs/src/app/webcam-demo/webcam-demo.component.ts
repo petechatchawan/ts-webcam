@@ -102,7 +102,7 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
 	// Reactive state using signals
 	readonly permissionOptions = signal<PermissionRequestOptions>({ video: true, audio: false });
 	readonly selectedDevice = signal<MediaDeviceInfo | null>(null);
-	readonly selectedResolution = signal<Resolution>(this.resolutions[0]);
+	readonly selectedResolution = signal<Resolution | null>(this.resolutions[0]);
 	readonly enableAudio = signal<boolean>(false);
 	readonly enableMirror = signal<boolean>(true);
 	readonly enableTorch = signal<boolean>(false);
@@ -131,11 +131,7 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
 
 		return {
 			deviceInfo,
-			preferredResolutions: [
-				{ label: "S1920", width: 1920, height: 1920 },
-				{ label: "S1080", width: 1080, height: 1080 },
-				{ label: "S720", width: 720, height: 720 },
-			] as Resolution[],
+			preferredResolutions: this.selectedResolution(),
 			videoElement: this.videoElementRef.nativeElement,
 			enableMirror: this.enableMirror(),
 			enableAudio: this.enableAudio(),
@@ -762,7 +758,7 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
 	 * @param event The DropdownChangeEvent object containing the selected resolution.
 	 */
 	async onResolutionChange(event: SelectChangeEvent) {
-		const selectedResolution = event.value as Resolution;
+		const selectedResolution = event.value;
 		if (selectedResolution) {
 			this.selectedResolution.set(selectedResolution);
 			// Only auto-switch if camera is already running
