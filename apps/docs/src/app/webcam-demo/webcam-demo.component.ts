@@ -186,7 +186,7 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
 		effect(
 			() => {
 				const state = this.webcamService.state();
-				this.showToast(`Webcam state changed: ${state.status}`);
+				// this.showToast(`Webcam state changed: ${state.status}`);
 				this.webcamState.set(state);
 
 				// Reset video ready state when status changes to non-ready states
@@ -780,7 +780,7 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
 		this.enableMirror.set(checked);
 		try {
 			await this.startCamera();
-			this.showToast(`Mirror ${checked ? "enabled" : "disabled"}`);
+			// this.showToast(`Mirror ${checked ? "enabled" : "disabled"}`);
 		} catch (e) {
 			this.showToast("Failed to set mirror");
 		}
@@ -796,7 +796,7 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
 		this.enableAudio.set(checked);
 		try {
 			await this.startCamera();
-			this.showToast(`Audio ${checked ? "enabled" : "disabled"}`);
+			// this.showToast(`Audio ${checked ? "enabled" : "disabled"}`);
 		} catch (e) {
 			this.showToast("Failed to set audio");
 		}
@@ -817,7 +817,7 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
 		if (this.uiState().isReady) {
 			try {
 				await this.webcamService.webcamInstance.setZoom(value);
-				this.showToast(`Zoom set to ${value}`);
+				// this.showToast(`Zoom set to ${value}`);
 			} catch (e) {
 				this.showToast("Failed to set zoom");
 			}
@@ -834,7 +834,7 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
 		this.focusMode.set(value);
 		try {
 			await this.webcamService.webcamInstance.setFocusMode(value);
-			this.showToast(`Focus mode set to ${value}`);
+			// this.showToast(`Focus mode set to ${value}`);
 		} catch (e) {
 			this.showToast("Failed to set focus mode");
 		}
@@ -854,7 +854,7 @@ export class WebcamDemoComponent implements OnInit, OnDestroy {
 		try {
 			await this.webcamService.webcamInstance.setTorch(enabled);
 			this.enableTorch.set(enabled);
-			this.showToast(`Torch ${enabled ? "enabled" : "disabled"}`);
+			// this.showToast(`Torch ${enabled ? "enabled" : "disabled"}`);
 		} catch (error) {
 			this.showToast("Failed to toggle torch");
 		}
