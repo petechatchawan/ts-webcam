@@ -5,12 +5,12 @@ export const DEVICE_PATTERNS = {
 	IOS: {
 		FRONT: {
 			PRIMARY: /^(front camera|front camera)$/i,
-		ULTRA_WIDE: /^(front ultra wide camera|front ultra wide camera)$/i,
+			ULTRA_WIDE: /^(front ultra wide camera|front ultra wide camera)$/i,
 		},
 		BACK: {
 			TRIPLE: /^(back triple camera|back triple camera)$/i,
-		DUAL: /^(back dual camera|back dual camera)$/i,
-		PRIMARY: /^(back camera|back camera)$/i,
+			DUAL: /^(back dual camera|back dual camera)$/i,
+			PRIMARY: /^(back camera|back camera)$/i,
 		},
 	},
 	DESKTOP: /^(camera|camera|facetime|integrated)$/i,
